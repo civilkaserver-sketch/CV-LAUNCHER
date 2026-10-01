@@ -399,12 +399,22 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
+    gap:3px;
     letter-spacing:0;
-    color:var(--text);
+    cursor:pointer;
   }
-  .more-btn svg{
-    display:block;
-    color:inherit;
+  .more-btn .dot{
+    width:4px;
+    height:4px;
+    background:var(--text);
+    border-radius:50%;
+    display:inline-block;
+    flex-shrink:0;
+    pointer-events:none;
+    transition:background .15s;
+  }
+  .more-btn:hover .dot{
+    background:var(--text-hover);
   }
   .more-menu,
   .folder-menu{
@@ -1088,13 +1098,7 @@
           <div class="banner-actions">
             <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
             <div class="more-wrap" id="moreWrap" style="display:none">
-              <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" title="Дополнительные действия">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <rect x="2" y="8" width="4" height="4" fill="#E2E2E2"/>
-                  <rect x="8" y="8" width="4" height="4" fill="#E2E2E2"/>
-                  <rect x="14" y="8" width="4" height="4" fill="#E2E2E2"/>
-                </svg>
-              </button>
+              <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" title="Дополнительные действия"><span class="dot"></span><span class="dot"></span><span class="dot"></span></button>
               <div class="more-menu" id="moreMenu">
                 <button class="more-item" onclick="openGameFolder(event)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
