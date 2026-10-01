@@ -420,6 +420,7 @@ namespace CivilizationLauncher
                     string filePath = Path.Combine(appDir, path.Replace('/', '\\'));
                     string mime = "application/octet-stream";
                     if (path.EndsWith(".png", StringComparison.OrdinalIgnoreCase)) mime = "image/png";
+                    else if (path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)) mime = "image/svg+xml";
                     else if (path.EndsWith(".ico", StringComparison.OrdinalIgnoreCase)) mime = "image/x-icon";
                     else if (path.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase)) mime = "font/ttf";
                     else if (path.EndsWith(".css", StringComparison.OrdinalIgnoreCase)) mime = "text/css; charset=utf-8";
