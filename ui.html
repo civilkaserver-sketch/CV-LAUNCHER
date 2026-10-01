@@ -331,14 +331,10 @@
     position:absolute !important;
     top:16px !important;
     left:18px !important;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    height:22px;
-    padding:0 9px;
+    display:inline-block;
+    padding:2px 8px;
     font-size:10px;
-    letter-spacing:1px;
-    line-height:1;
+    letter-spacing:1.5px;
     text-transform:uppercase;
     border-radius:4px;
     background:var(--card);
@@ -349,12 +345,10 @@
     transition:all .2s;
     user-select:none;
     box-sizing:border-box;
+    white-space:nowrap;
   }
   #bannerCard .banner-badge span{
-    display:inline-block;
-    line-height:1;
-    margin-top:-1px;
-    margin-right:-1px;
+    display:inline;
   }
   #bannerCard .banner-badge.not-installed{
     color:var(--dim);
@@ -1087,9 +1081,7 @@
 
         <!-- БАННЕР -->
         <div class="card" id="bannerCard">
-          <div class="banner-badge not-installed" id="bannerBadge">
-            <span id="badgeText">Не установлено</span>
-          </div>
+          <div class="banner-badge not-installed" id="bannerBadge"><span id="badgeText">Не установлено</span></div>
 
           <h1 class="banner-title">CIVILIZATION</h1>
 
