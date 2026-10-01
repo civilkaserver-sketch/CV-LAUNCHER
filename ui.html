@@ -488,25 +488,11 @@
     transition:width .3s linear;
   }
 
-  /* Карточки под баннером */
-  .bottom-grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:16px;
-    align-items:stretch;
-  }
-  .bottom-grid .card{
-    display:flex;
-    flex-direction:column;
-  }
-  @media (max-width: 860px){
-    .bottom-grid{
-      grid-template-columns:1fr;
-    }
-  }
-
+  /* Блок «Что нового» (на всю ширину) */
   .changelog-card{
-    justify-content:flex-start;
+    width:100%;
+    margin-top:16px;
+    padding:22px 26px 20px;
   }
   .changelog-head{
     display:flex;
@@ -516,11 +502,14 @@
   }
   .changelog-head h3{
     margin-bottom:0;
+    font-size:12px;
+    letter-spacing:3px;
+    color:var(--dim);
   }
   .changelog-ver{
     font-size:10px;
     letter-spacing:1.5px;
-    padding:2px 7px;
+    padding:2px 8px;
     border:1px solid var(--line-strong);
     border-radius:4px;
     color:var(--dim);
@@ -529,43 +518,120 @@
   .changelog-list{
     display:flex;
     flex-direction:column;
-    gap:9px;
+    gap:10px;
   }
   .changelog-item{
-    font-size:12px;
+    font-size:13px;
     color:var(--muted);
-    line-height:1.6;
+    line-height:1.5;
     display:flex;
+    align-items:center;
     gap:8px;
-  }
-  .changelog-item strong{
-    color:var(--text);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    min-width:0;
   }
   .changelog-item .bullet{
     color:var(--dim);
     user-select:none;
     flex-shrink:0;
   }
+  .changelog-item .cl-text{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    min-width:0;
+  }
+  .changelog-item strong{
+    color:var(--text);
+    font-weight:bold;
+  }
+  .changelog-more-link{
+    background:none;
+    border:none;
+    color:var(--dim);
+    font-family:inherit;
+    font-size:12px;
+    letter-spacing:1px;
+    cursor:pointer;
+    padding:10px 0 2px;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    transition:color .15s;
+    width:fit-content;
+    white-space:nowrap;
+  }
+  .changelog-more-link:hover{
+    color:var(--text);
+  }
   .changelog-latest{
     font-size:13px;
     color:var(--dim);
     letter-spacing:1px;
-    padding:16px 0;
+    padding:6px 0;
   }
 
-  .path-card{
-    justify-content:space-between;
-  }
-  .path-actions{
+  /* Тонкая строка «Папка» (~52px) */
+  .folder-bar{
     display:flex;
-    gap:10px;
-    margin-top:auto;
+    align-items:center;
+    gap:16px;
+    height:52px;
+    padding:0 18px;
+    margin-top:14px;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:var(--card);
+    box-sizing:border-box;
   }
-  .path-actions .btn{
+  .folder-bar-label{
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--dim);
+    font-weight:bold;
+    text-transform:uppercase;
+    flex-shrink:0;
+  }
+  .folder-bar-path{
     flex:1;
-    height:42px;
+    min-width:0;
     font-size:13px;
-    justify-content:center;
+    color:var(--muted);
+    font-family:monospace;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    letter-spacing:.3px;
+  }
+  .folder-change-wrap{
+    position:relative;
+    flex-shrink:0;
+  }
+  .folder-change-btn{
+    height:34px;
+    padding:0 14px;
+    font-size:12px;
+    letter-spacing:1px;
+    white-space:nowrap;
+  }
+  .folder-menu{
+    position:absolute;
+    bottom:calc(100% + 6px);
+    right:0;
+    background:#161618;
+    border:1px solid var(--line-strong);
+    border-radius:var(--r);
+    padding:6px;
+    display:none;
+    flex-direction:column;
+    min-width:190px;
+    box-shadow:0 12px 30px rgba(0,0,0,.7);
+    z-index:100;
+  }
+  .folder-menu.show{
+    display:flex;
   }
 
   .actions{display:flex;gap:12px;flex-wrap:wrap}
@@ -576,7 +642,10 @@
     display:inline-flex;align-items:center;justify-content:center;gap:8px;
     transition:background .15s,border-color .15s,opacity .15s,color .15s;
     background:none;color:var(--text);
+    white-space:nowrap;
+    user-select:none;
   }
+  .btn:focus-visible{outline:2px solid rgba(255,255,255,.4);outline-offset:2px}
   .btn.primary{background:#f0f0f2;color:#0b0b0d;font-weight:bold}
   .btn.primary:hover{background:#fff}
   .btn.ghost{border-color:var(--line);background:var(--card);color:var(--text)}
@@ -993,22 +1062,22 @@
 
           <div class="banner-actions">
             <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
-            <div class="more-wrap" id="moreWrap">
+            <div class="more-wrap" id="moreWrap" style="display:none">
               <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" title="Дополнительные действия">
-                <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
-                  <rect x="1" y="6.5" width="3" height="3" rx="0.5"/>
-                  <rect x="6.5" y="6.5" width="3" height="3" rx="0.5"/>
-                  <rect x="12" y="6.5" width="3" height="3" rx="0.5"/>
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                  <circle cx="3" cy="8" r="1.5"/>
+                  <circle cx="8" cy="8" r="1.5"/>
+                  <circle cx="13" cy="8" r="1.5"/>
                 </svg>
               </button>
               <div class="more-menu" id="moreMenu">
                 <button class="more-item" onclick="openGameFolder(event)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                  Открыть папку
+                  Открыть папку игры
                 </button>
                 <button class="more-item danger" onclick="confirmUninstall(event)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                  Удалить
+                  Удалить сборку…
                 </button>
               </div>
             </div>
@@ -1026,46 +1095,48 @@
           </div>
         </div>
 
-        <!-- НИЖЕ БАННЕРА: ДВЕ КАРТОЧКИ В РЯД -->
-        <div class="bottom-grid">
-          <!-- СЛЕВА: ЧТО НОВОГО -->
-          <div class="card changelog-card">
-            <div class="changelog-head">
-              <h3>ЧТО НОВОГО</h3>
-              <span class="changelog-ver">v1.21.8</span>
+        <!-- БЛОК «ЧТО НОВОГО» (НА ВСЮ ШИРИНУ) -->
+        <div class="card changelog-card">
+          <div class="changelog-head">
+            <h3>ЧТО НОВОГО</h3>
+            <span class="changelog-ver">v1.21.8</span>
+          </div>
+          <div class="changelog-list" id="changelogList">
+            <div class="changelog-item">
+              <span class="bullet">—</span>
+              <div class="cl-text"><strong>Система Наций и Границ</strong>: захват территорий, казна и команда /nation claim</div>
             </div>
-            <div class="changelog-list" id="changelogList">
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div><strong>Система Наций и Границ</strong>: захват территорий, казна и команда <code>/nation claim</code></div>
-              </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div><strong>Морские экспедиции</strong>: каравеллы, верфи, пушки и морские баталии</div>
-              </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div><strong>Дипломатия</strong>: альянсы, мирные договоры и торговые пакты</div>
-              </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div>Оптимизация рендера, расход оперативной памяти снижен на 25%</div>
-              </div>
+            <div class="changelog-item">
+              <span class="bullet">—</span>
+              <div class="cl-text"><strong>Морские экспедиции</strong>: каравеллы, верфи, пушки и морские баталии</div>
             </div>
-            <div class="changelog-latest" id="changelogLatest" style="display:none">
-              Вы на последней версии
+            <div class="changelog-item">
+              <span class="bullet">—</span>
+              <div class="cl-text"><strong>Дипломатия</strong>: альянсы, мирные договоры и торговые пакты</div>
             </div>
           </div>
+          <div class="changelog-latest" id="changelogLatest" style="display:none">
+            Вы на последней версии v1.21.8 · проверено сегодня
+          </div>
+          <button class="changelog-more-link" onclick="showNews()">Показать ещё →</button>
+        </div>
 
-          <!-- СПРАВА: ПАПКА MINECRAFT -->
-          <div class="card path-card">
-            <h3>ПАПКА MINECRAFT</h3>
-            <div class="field" style="margin-bottom:14px">
-              <input id="mcPath" placeholder="C:\Users\You\AppData\Roaming\.minecraft" spellcheck="false">
-            </div>
-            <div class="path-actions">
-              <button class="btn ghost" onclick="detectPath()">Определить заново</button>
-              <button class="btn line" onclick="pickFolder()">Обзор…</button>
+        <!-- СТРОКА «ПАПКА» (ТОНКАЯ, ~52px) -->
+        <div class="folder-bar">
+          <div class="folder-bar-label">ПАПКА</div>
+          <div class="folder-bar-path" id="mcPathDisplay" title="C:\Users\You\AppData\Roaming\.minecraft">C:\Users\You\AppData\Roaming\.minecraft</div>
+          <input type="hidden" id="mcPath" value="C:\Users\You\AppData\Roaming\.minecraft">
+          <div class="folder-change-wrap" id="folderChangeWrap">
+            <button class="btn line folder-change-btn" id="btnChangeFolder" onclick="toggleFolderMenu(event)">Изменить</button>
+            <div class="folder-menu" id="folderMenu">
+              <button class="more-item" onclick="onFolderMenuAction('detect', event)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                Найти автоматически
+              </button>
+              <button class="more-item" onclick="onFolderMenuAction('pick', event)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                Обзор…
+              </button>
             </div>
           </div>
         </div>
@@ -1296,10 +1367,39 @@
     if(pText) pText.textContent = '0%';
   }
 
+  function updatePathDisplay(path){
+    const disp = document.getElementById('mcPathDisplay');
+    const input = document.getElementById('mcPath');
+    const val = path || 'C:\\Users\\You\\AppData\\Roaming\\.minecraft';
+    if(input) input.value = val;
+    if(disp){
+      disp.textContent = val;
+      disp.title = val;
+    }
+  }
+
   function toggleMoreMenu(e){
     if(e) e.stopPropagation();
+    const fm = document.getElementById('folderMenu');
+    if(fm) fm.classList.remove('show');
     const m = document.getElementById('moreMenu');
     if(m) m.classList.toggle('show');
+  }
+
+  function toggleFolderMenu(e){
+    if(e) e.stopPropagation();
+    const mm = document.getElementById('moreMenu');
+    if(mm) mm.classList.remove('show');
+    const m = document.getElementById('folderMenu');
+    if(m) m.classList.toggle('show');
+  }
+
+  function onFolderMenuAction(type, e){
+    if(e) e.stopPropagation();
+    const m = document.getElementById('folderMenu');
+    if(m) m.classList.remove('show');
+    if(type === 'detect') detectPath();
+    else if(type === 'pick') pickFolder();
   }
 
   document.addEventListener('click', (e)=>{
@@ -1307,6 +1407,11 @@
     if(wrap && !wrap.contains(e.target)){
       const m = document.getElementById('moreMenu');
       if(m) m.classList.remove('show');
+    }
+    const folderWrap = document.getElementById('folderChangeWrap');
+    if(folderWrap && !folderWrap.contains(e.target)){
+      const fm = document.getElementById('folderMenu');
+      if(fm) fm.classList.remove('show');
     }
   });
 
@@ -1317,12 +1422,12 @@
     if(isBackend){
       try {
         await fetch('/api/open-folder', { method: 'POST' });
-        toast('Открыта папка сборки');
+        toast('Открыта папка игры');
         return;
       } catch(err) {}
     }
-    const path = document.getElementById('mcPath').value || 'папка Minecraft';
-    toast('Папка: ' + path);
+    const path = document.getElementById('mcPath').value || 'папка игры';
+    toast('Папка игры: ' + path);
   }
 
   function confirmUninstall(e){
@@ -1333,7 +1438,7 @@
       toast('Сборка ещё не установлена');
       return;
     }
-    if(confirm('Вы уверены, что хотите удалить сборку Civilization? Все файлы сборки будут очищены.')){
+    if(confirm('Вы действительно хотите удалить сборку Civilization? Все файлы сборки будут очищены.')){
       run('uninstall');
     }
   }
@@ -1402,6 +1507,11 @@
     const mainBtn = document.getElementById('btnMainAction');
     const playBtn = document.getElementById('playBtn');
 
+    const moreWrap = document.getElementById('moreWrap');
+    if(moreWrap){
+      moreWrap.style.display = ok ? 'inline-block' : 'none';
+    }
+
     if(!ok){
       if(badge){
         badge.className = 'banner-badge not-installed';
@@ -1446,7 +1556,7 @@
       const res = await fetch('/api/status');
       if(res.ok){
         const data = await res.json();
-        if(data.mcDir) document.getElementById('mcPath').value = data.mcDir;
+        if(data.mcDir) updatePathDisplay(data.mcDir);
         setStatus(data.installed);
         updateAvailable = !data.installed ? false : (data.updateAvailable || false);
         setStatus(data.installed);
@@ -1600,13 +1710,13 @@
         const res = await fetch('/api/detect-mc', { method: 'POST' });
         const data = await res.json();
         if(data.path){
-          document.getElementById('mcPath').value = data.path;
-          toast('Папка Minecraft найдена');
+          updatePathDisplay(data.path);
+          toast('Папка игры найдена');
           return;
         }
       } catch(e) {}
     }
-    document.getElementById('mcPath').value = 'C:\\Users\\You\\AppData\\Roaming\\.minecraft';
+    updatePathDisplay('C:\\Users\\You\\AppData\\Roaming\\.minecraft');
     toast('Папка найдена');
   }
 
@@ -1616,7 +1726,7 @@
         const res = await fetch('/api/pick-folder', { method: 'POST' });
         const data = await res.json();
         if(data.path){
-          document.getElementById('mcPath').value = data.path;
+          updatePathDisplay(data.path);
           toast('Папка выбрана');
           return;
         }
