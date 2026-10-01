@@ -403,28 +403,38 @@
     justify-content:center;
     letter-spacing:0;
   }
-  .more-menu{
+  .more-menu,
+  .folder-menu{
     position:absolute;
-    bottom:calc(100% + 8px);
-    left:0;
-    background:#161618;
-    border:1px solid var(--line-strong);
+    background:var(--card);
+    border:1px solid var(--line);
     border-radius:var(--r);
-    padding:6px;
+    padding:4px;
     display:none;
     flex-direction:column;
-    min-width:170px;
-    box-shadow:0 12px 30px rgba(0,0,0,.7);
+    gap:2px;
+    box-shadow:0 10px 28px rgba(0,0,0,.85), 0 0 0 1px var(--line);
     z-index:100;
   }
-  .more-menu.show{
+  .more-menu{
+    bottom:calc(100% + 8px);
+    left:0;
+    min-width:175px;
+  }
+  .folder-menu{
+    bottom:calc(100% + 8px);
+    right:0;
+    min-width:190px;
+  }
+  .more-menu.show,
+  .folder-menu.show{
     display:flex;
   }
   .more-item{
     background:transparent;
     border:none;
     color:var(--text);
-    padding:9px 12px;
+    padding:8px 12px;
     font-size:12px;
     letter-spacing:1px;
     text-align:left;
@@ -435,16 +445,31 @@
     gap:10px;
     transition:background .15s, color .15s;
     font-family:inherit;
+    white-space:nowrap;
+  }
+  .more-item svg{
+    color:var(--dim);
+    transition:color .15s;
+    flex-shrink:0;
   }
   .more-item:hover{
-    background:rgba(255,255,255,.07);
-    color:#fff;
+    background:var(--card-hover);
+    color:var(--text-hover);
+  }
+  .more-item:hover svg{
+    color:var(--text-hover);
   }
   .more-item.danger{
-    color:#e74c3c;
+    color:#e05252;
+  }
+  .more-item.danger svg{
+    color:#e05252;
   }
   .more-item.danger:hover{
-    background:rgba(231,76,60,.15);
+    background:rgba(224,82,82,.12);
+    color:#ff6b6b;
+  }
+  .more-item.danger:hover svg{
     color:#ff6b6b;
   }
 
@@ -632,23 +657,6 @@
   }
   .folder-change-btn:hover{
     color:var(--text);
-  }
-  .folder-menu{
-    position:absolute;
-    bottom:calc(100% + 6px);
-    right:0;
-    background:#161618;
-    border:1px solid var(--line-strong);
-    border-radius:var(--r);
-    padding:6px;
-    display:none;
-    flex-direction:column;
-    min-width:190px;
-    box-shadow:0 12px 30px rgba(0,0,0,.7);
-    z-index:100;
-  }
-  .folder-menu.show{
-    display:flex;
   }
 
   .actions{display:flex;gap:12px;flex-wrap:wrap}
