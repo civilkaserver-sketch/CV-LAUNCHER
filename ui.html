@@ -295,47 +295,297 @@
     margin-bottom:12px;
   }
 
-  #statusCard{
+  #bannerCard{
     position:relative;
     overflow:hidden;
     margin-bottom:16px;
-    min-height:230px;
-    display:flex;flex-direction:column;justify-content:space-between;
-    padding:26px 30px 24px;
+    min-height:345px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding:34px 36px 30px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
   }
-  #statusCard::before{
-    content:'';position:absolute;inset:0;
-    background:url('assets/bg.png') center 42% / cover no-repeat;
-    image-rendering:pixelated;
+  #bannerCard::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:url('assets/bg.png') center right / cover no-repeat;
   }
-  #statusCard::after{
-    content:'';position:absolute;inset:0;
-    background:linear-gradient(180deg,rgba(6,6,7,.35) 0%,rgba(6,6,7,.78) 55%,rgba(6,6,7,.94) 100%),
-               linear-gradient(90deg,rgba(6,6,7,.75),rgba(6,6,7,.15));
+  #bannerCard::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to right, rgba(12,12,12,0.96) 0%, rgba(12,12,12,0.85) 42%, rgba(12,12,12,0.32) 75%, rgba(12,12,12,0.02) 100%),
+               linear-gradient(to top, rgba(12,12,12,0.65) 0%, transparent 45%);
+    pointer-events:none;
   }
-  #statusCard > *{position:relative;z-index:2}
-  #statusCard .big{font-size:27px;letter-spacing:3px;}
-  #statusCard .foot{margin-top:auto}
-  #statusCard .meta{font-size:13px;color:#c9c9d1;text-shadow:0 2px 0 rgba(0,0,0,.75)}
+  #bannerCard > *{
+    position:relative;
+    z-index:2;
+  }
 
-  /* прогресс всегда на месте — ничего не прыгает */
-  .bar-row{
-    display:flex;align-items:center;gap:16px;
-    margin-top:16px;
-    text-shadow:0 2px 0 rgba(0,0,0,.75);
+  .banner-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-size:11px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    padding:4px 11px;
+    border-radius:20px;
+    background:rgba(255,255,255,.05);
+    border:1px solid rgba(255,255,255,.12);
+    color:var(--muted);
+    width:fit-content;
+    margin-bottom:12px;
+    transition:all .2s;
   }
-  .bar-row #barPct{
-    font-size:14px;
-    color:#9a9aa4;
+  .badge-dot{
+    width:7px;
+    height:7px;
+    border-radius:50%;
+    background:#777;
+    transition:background .2s, box-shadow .2s;
+  }
+  .banner-badge.installed{
+    color:#e0e0e0;
+    border-color:rgba(46,204,113,.35);
+    background:rgba(46,204,113,.08);
+  }
+  .banner-badge.installed .badge-dot{
+    background:#2ecc71;
+    box-shadow:0 0 8px rgba(46,204,113,.7);
+  }
+  .banner-badge.update{
+    color:#f5b041;
+    border-color:rgba(243,156,18,.4);
+    background:rgba(243,156,18,.08);
+  }
+  .banner-badge.update .badge-dot{
+    background:#f39c12;
+    box-shadow:0 0 8px rgba(243,156,18,.7);
+  }
+  .banner-badge.not-installed{
+    color:var(--dim);
+    border-color:var(--line);
+    background:rgba(255,255,255,.03);
+  }
+  .banner-badge.not-installed .badge-dot{
+    background:#666;
+  }
+
+  .banner-title{
+    font-family:'Minecraft Rus', monospace;
+    font-size:36px;
+    letter-spacing:2px;
+    color:#fff;
+    margin:0 0 8px;
+    text-shadow:0 3px 0 rgba(0,0,0,.85);
+    line-height:1.15;
+  }
+  .banner-sub{
+    font-size:13px;
+    color:var(--muted);
     letter-spacing:1px;
-    min-width:8px;
+    margin-bottom:22px;
+    text-shadow:0 2px 0 rgba(0,0,0,.7);
+  }
+
+  .banner-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .banner-main-btn{
+    min-width:145px;
+    height:42px;
+    font-size:13px;
+    letter-spacing:2px;
+  }
+  .more-wrap{
+    position:relative;
+    display:inline-block;
+  }
+  .more-btn{
+    width:42px;
+    height:42px;
+    padding:0;
+    font-size:18px;
+    font-weight:bold;
+    line-height:1;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    letter-spacing:0;
+  }
+  .more-menu{
+    position:absolute;
+    bottom:calc(100% + 8px);
+    left:0;
+    background:#161618;
+    border:1px solid var(--line-strong);
+    border-radius:var(--r);
+    padding:6px;
+    display:none;
+    flex-direction:column;
+    min-width:170px;
+    box-shadow:0 12px 30px rgba(0,0,0,.7);
+    z-index:100;
+  }
+  .more-menu.show{
+    display:flex;
+  }
+  .more-item{
+    background:transparent;
+    border:none;
+    color:var(--text);
+    padding:9px 12px;
+    font-size:12px;
+    letter-spacing:1px;
+    text-align:left;
+    cursor:pointer;
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition:background .15s, color .15s;
+    font-family:inherit;
+  }
+  .more-item:hover{
+    background:rgba(255,255,255,.07);
+    color:#fff;
+  }
+  .more-item.danger{
+    color:#e74c3c;
+  }
+  .more-item.danger:hover{
+    background:rgba(231,76,60,.15);
+    color:#ff6b6b;
+  }
+
+  /* Прогресс-бар баннера — виден ТОЛЬКО при установке/обновлении */
+  .banner-progress{
+    margin-top:18px;
+    max-width:520px;
+    width:100%;
+    display:none;
+  }
+  .banner-progress.show{
+    display:block;
+  }
+  .banner-progress-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:12px;
+    margin-bottom:8px;
+    letter-spacing:.5px;
+    text-shadow:0 2px 0 rgba(0,0,0,.8);
+  }
+  .banner-progress-row .meta{
+    color:#d0d0d8;
+  }
+  .banner-progress-row .pct{
+    color:#fff;
+    font-weight:bold;
+    letter-spacing:1px;
   }
   .bar{
-    flex:1;
-    height:10px;background:rgba(255,255,255,.09);
-    border-radius:5px;overflow:hidden;
+    height:8px;
+    background:rgba(255,255,255,.09);
+    border-radius:4px;
+    overflow:hidden;
   }
-  .bar i{display:block;height:100%;background:#f0f0f2;width:0%;transition:width .3s linear}
+  .bar i{
+    display:block;
+    height:100%;
+    background:#f0f0f2;
+    width:0%;
+    transition:width .3s linear;
+  }
+
+  /* Карточки под баннером */
+  .bottom-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:16px;
+    align-items:stretch;
+  }
+  .bottom-grid .card{
+    display:flex;
+    flex-direction:column;
+  }
+  @media (max-width: 860px){
+    .bottom-grid{
+      grid-template-columns:1fr;
+    }
+  }
+
+  .changelog-card{
+    justify-content:flex-start;
+  }
+  .changelog-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .changelog-head h3{
+    margin-bottom:0;
+  }
+  .changelog-ver{
+    font-size:10px;
+    letter-spacing:1.5px;
+    padding:2px 7px;
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    color:var(--dim);
+    background:rgba(255,255,255,.02);
+  }
+  .changelog-list{
+    display:flex;
+    flex-direction:column;
+    gap:9px;
+  }
+  .changelog-item{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.6;
+    display:flex;
+    gap:8px;
+  }
+  .changelog-item strong{
+    color:var(--text);
+  }
+  .changelog-item .bullet{
+    color:var(--dim);
+    user-select:none;
+    flex-shrink:0;
+  }
+  .changelog-latest{
+    font-size:13px;
+    color:var(--dim);
+    letter-spacing:1px;
+    padding:16px 0;
+  }
+
+  .path-card{
+    justify-content:space-between;
+  }
+  .path-actions{
+    display:flex;
+    gap:10px;
+    margin-top:auto;
+  }
+  .path-actions .btn{
+    flex:1;
+    height:42px;
+    font-size:13px;
+    justify-content:center;
+  }
 
   .actions{display:flex;gap:12px;flex-wrap:wrap}
   .btn{
@@ -746,60 +996,93 @@
 
     <!-- ЗАКРЕПЛЕННЫЙ ХЕДЕР ВСЕГДА СВЕРХУ -->
     <header class="top-bar">
-      <div class="top-title" id="pageTitle">MAIN</div>
+      <div class="top-title" id="pageTitle">ГЛАВНАЯ</div>
     </header>
 
     <div class="content" id="viewMain">
       <div class="inner">
 
-        <div class="card" id="statusCard">
-          <div class="big" id="bigStatus">НЕ УСТАНОВЛЕНО</div>
-          <div class="foot">
-            <div class="meta" id="statusMeta">нажми «Установить» — лаунчер скачает всё сам</div>
-            <div class="bar-row">
-              <span id="barPct">0%</span>
-              <div class="bar"><i id="barFill"></i></div>
+        <!-- БАННЕР -->
+        <div class="card" id="bannerCard">
+          <div class="banner-badge not-installed" id="bannerBadge">
+            <span class="badge-dot"></span>
+            <span id="badgeText">Не установлено</span>
+          </div>
+
+          <h1 class="banner-title">CIVILIZATION</h1>
+
+          <div class="banner-sub">Minecraft 1.21.8 · Forge · 13 модов</div>
+
+          <div class="banner-actions">
+            <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
+            <div class="more-wrap" id="moreWrap">
+              <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" title="Дополнительные действия">⋯</button>
+              <div class="more-menu" id="moreMenu">
+                <button class="more-item" onclick="openGameFolder(event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  Открыть папку
+                </button>
+                <button class="more-item danger" onclick="confirmUninstall(event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  Удалить
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ПРОГРЕСС-БАР: виден ТОЛЬКО во время установки или обновления -->
+          <div class="banner-progress" id="bannerProgress">
+            <div class="banner-progress-row">
+              <span class="meta" id="statusMeta">Подготовка к установке...</span>
+              <span class="pct" id="barPct">0%</span>
+            </div>
+            <div class="bar">
+              <i id="barFill" style="width:0%"></i>
             </div>
           </div>
         </div>
 
-        <div class="grid">
-          <div class="card">
-            <h3>ДЕЙСТВИЯ</h3>
-            <div class="actions">
-              <button class="btn primary" id="btnInstall" onclick="onInstallClick()">Установить</button>
-              <button class="btn ghost" id="btnUpdate" onclick="run('update')">Обновить</button>
-              <button class="btn line" id="btnRemove" onclick="run('uninstall')">Удалить</button>
+        <!-- НИЖЕ БАННЕРА: ДВЕ КАРТОЧКИ В РЯД -->
+        <div class="bottom-grid">
+          <!-- СЛЕВА: ЧТО НОВОГО -->
+          <div class="card changelog-card">
+            <div class="changelog-head">
+              <h3>ЧТО НОВОГО</h3>
+              <span class="changelog-ver">v1.21.8</span>
+            </div>
+            <div class="changelog-list" id="changelogList">
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div><strong>Система Наций и Границ</strong>: захват территорий, казна и команда <code>/nation claim</code></div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div><strong>Морские экспедиции</strong>: каравеллы, верфи, пушки и морские баталии</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div><strong>Дипломатия</strong>: альянсы, мирные договоры и торговые пакты</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div>Оптимизация рендера, расход оперативной памяти снижен на 25%</div>
+              </div>
+            </div>
+            <div class="changelog-latest" id="changelogLatest" style="display:none">
+              Вы на последней версии
             </div>
           </div>
 
-          <div class="card">
+          <!-- СПРАВА: ПАПКА MINECRAFT -->
+          <div class="card path-card">
             <h3>ПАПКА MINECRAFT</h3>
-            <div class="field">
+            <div class="field" style="margin-bottom:14px">
               <input id="mcPath" placeholder="C:\Users\You\AppData\Roaming\.minecraft" spellcheck="false">
             </div>
-            <div class="actions">
-              <button class="btn ghost" onclick="detectPath()">Найти</button>
-              <button class="btn line" onclick="pickFolder()">Выбрать</button>
+            <div class="path-actions">
+              <button class="btn ghost" onclick="detectPath()">Определить заново</button>
+              <button class="btn line" onclick="pickFolder()">Обзор…</button>
             </div>
-          </div>
-        </div>
-
-        <div class="grid" style="margin-top:16px">
-          <div class="card">
-            <h3>СБОРКА</h3>
-            <div class="info-line"><span>Версия</span><b>1.21.8</b></div>
-            <div class="info-line"><span>Загрузчик</span><b>Forge</b></div>
-            <div class="info-line"><span>Моды</span><b>13 шт.</b></div>
-            <div class="info-line"><span>Профиль</span><b>Civilization</b></div>
-          </div>
-
-          <div class="card">
-            <h3>ЧТО ДЕЛАЕТ ЛАУНЧЕР</h3>
-            <div class="info-line"><span>Находит .minecraft</span><b>авто</b></div>
-            <div class="info-line"><span>Тянет сборку с GitHub</span><b>git / zip</b></div>
-            <div class="info-line"><span>Ставит моды и ресурспаки</span><b>13 модов</b></div>
-            <div class="info-line"><span>Прописывает профиль</span><b>авто</b></div>
           </div>
         </div>
 
@@ -1011,44 +1294,100 @@
   }
 
   function setBar(pct, label){
-    document.getElementById('barFill').style.width = pct+'%';
-    document.getElementById('barPct').textContent = pct+'%';
-    if(label !== undefined) document.getElementById('statusMeta').textContent = label;
+    const bp = document.getElementById('bannerProgress');
+    if(bp) bp.classList.add('show');
+    const fill = document.getElementById('barFill');
+    if(fill) fill.style.width = pct+'%';
+    const pText = document.getElementById('barPct');
+    if(pText) pText.textContent = pct+'%';
+    const meta = document.getElementById('statusMeta');
+    if(meta && label !== undefined) meta.textContent = label;
   }
   function hideBar(){
-    document.getElementById('barFill').style.width = '0%';
-    document.getElementById('barPct').textContent = '0%';
+    const bp = document.getElementById('bannerProgress');
+    if(bp) bp.classList.remove('show');
+    const fill = document.getElementById('barFill');
+    if(fill) fill.style.width = '0%';
+    const pText = document.getElementById('barPct');
+    if(pText) pText.textContent = '0%';
+  }
+
+  function toggleMoreMenu(e){
+    if(e) e.stopPropagation();
+    const m = document.getElementById('moreMenu');
+    if(m) m.classList.toggle('show');
+  }
+
+  document.addEventListener('click', (e)=>{
+    const wrap = document.getElementById('moreWrap');
+    if(wrap && !wrap.contains(e.target)){
+      const m = document.getElementById('moreMenu');
+      if(m) m.classList.remove('show');
+    }
+  });
+
+  async function openGameFolder(e){
+    if(e) e.stopPropagation();
+    const m = document.getElementById('moreMenu');
+    if(m) m.classList.remove('show');
+    if(isBackend){
+      try {
+        await fetch('/api/open-folder', { method: 'POST' });
+        toast('Открыта папка сборки');
+        return;
+      } catch(err) {}
+    }
+    const path = document.getElementById('mcPath').value || 'папка Minecraft';
+    toast('Папка: ' + path);
+  }
+
+  function confirmUninstall(e){
+    if(e) e.stopPropagation();
+    const m = document.getElementById('moreMenu');
+    if(m) m.classList.remove('show');
+    if(!installed){
+      toast('Сборка ещё не установлена');
+      return;
+    }
+    if(confirm('Вы уверены, что хотите удалить сборку Civilization? Все файлы сборки будут очищены.')){
+      run('uninstall');
+    }
   }
 
   let installed = false, updateAvailable = false;
   let installing = false, stopRequested = false, simTimer = null;
 
   function setInstallBtn(mode){
-    const b = document.getElementById('btnInstall');
+    const b = document.getElementById('btnMainAction');
+    if(!b) return;
     if(mode === 'stop'){
       b.textContent = 'Остановить';
-      b.classList.remove('primary');
-      b.classList.add('ghost');
+      b.className = 'btn ghost banner-main-btn';
       b.disabled = false;
     } else {
-      b.textContent = 'Установить';
-      b.classList.remove('ghost');
-      b.classList.add('primary');
-      b.disabled = installed;
+      setStatus(installed);
     }
   }
 
-  function onInstallClick(){
-    if(installing) stopInstall();
-    else run('install');
+  function onMainActionClick(){
+    if(!installed){
+      if(installing) stopInstall();
+      else run('install');
+    } else if(updateAvailable){
+      run('update');
+    } else {
+      startGame();
+    }
   }
 
   async function stopInstall(){
     if(!installing || stopRequested) return;
     stopRequested = true;
-    const b = document.getElementById('btnInstall');
-    b.textContent = 'Останавливаю...';
-    b.disabled = true;
+    const b = document.getElementById('btnMainAction');
+    if(b){
+      b.textContent = 'Останавливаю...';
+      b.disabled = true;
+    }
 
     if(isBackend){
       try { await fetch('/api/cancel', { method: 'POST' }); } catch(e) {}
@@ -1066,7 +1405,7 @@
     stopRequested = false;
     if(pollingInterval){ clearInterval(pollingInterval); pollingInterval = null; }
     hideBar();
-    setInstallBtn('install');
+    setStatus(installed);
     if(toastMsg) toast(toastMsg);
   }
 
@@ -1074,17 +1413,45 @@
     installed = ok;
     if(!ok) updateAvailable = false;
 
-    document.getElementById('bigStatus').textContent = !ok
-      ? 'НЕ УСТАНОВЛЕНО'
-      : (updateAvailable ? 'ДОСТУПНО ОБНОВЛЕНИЕ' : 'УСТАНОВЛЕНО');
+    const badge = document.getElementById('bannerBadge');
+    const badgeText = document.getElementById('badgeText');
+    const mainBtn = document.getElementById('btnMainAction');
+    const playBtn = document.getElementById('playBtn');
 
-    document.getElementById('statusMeta').textContent = !ok
-      ? 'нажми «Установить» — лаунчер скачает всё сам'
-      : (updateAvailable ? 'вышла новая версия сборки — нажми «Обновить»' : 'версия Civilization готова к запуску');
-
-    if(!installing) setInstallBtn('install');
-    document.getElementById('btnUpdate').disabled = false;
-    document.getElementById('btnRemove').disabled = !ok;
+    if(!ok){
+      if(badge){
+        badge.className = 'banner-badge not-installed';
+        if(badgeText) badgeText.textContent = 'Не установлено';
+      }
+      if(!installing && mainBtn){
+        mainBtn.textContent = 'Установить';
+        mainBtn.className = 'btn primary banner-main-btn';
+        mainBtn.disabled = false;
+      }
+      if(playBtn) playBtn.disabled = true;
+    } else if(updateAvailable){
+      if(badge){
+        badge.className = 'banner-badge update';
+        if(badgeText) badgeText.textContent = 'Доступно обновление';
+      }
+      if(!installing && mainBtn){
+        mainBtn.textContent = 'Обновить';
+        mainBtn.className = 'btn primary banner-main-btn';
+        mainBtn.disabled = false;
+      }
+      if(playBtn) playBtn.disabled = false;
+    } else {
+      if(badge){
+        badge.className = 'banner-badge installed';
+        if(badgeText) badgeText.textContent = 'Установлено';
+      }
+      if(!installing && mainBtn){
+        mainBtn.textContent = 'ИГРАТЬ';
+        mainBtn.className = 'btn primary banner-main-btn';
+        mainBtn.disabled = false;
+      }
+      if(playBtn) playBtn.disabled = false;
+    }
   }
 
   const isBackend = window.location.protocol.startsWith('http');
@@ -1098,6 +1465,7 @@
         if(data.mcDir) document.getElementById('mcPath').value = data.mcDir;
         setStatus(data.installed);
         updateAvailable = !data.installed ? false : (data.updateAvailable || false);
+        setStatus(data.installed);
       }
     } catch(e) {}
   }
@@ -1110,27 +1478,24 @@
     }
 
     const isInstall = action === 'install';
-
-    const btns = ['btnInstall','btnUpdate','btnRemove'].map(id=>document.getElementById(id));
-    btns.forEach(b=>b.disabled = true);
+    const mainBtn = document.getElementById('btnMainAction');
+    const moreBtn = document.getElementById('btnMore');
+    if(moreBtn) moreBtn.disabled = true;
 
     if(isInstall){
       installing = true;
       stopRequested = false;
-      setInstallBtn('stop'); // кнопка остаётся активной как «Остановить»
-    } else {
-      const ib = document.getElementById('btnInstall');
-      ib.textContent = 'Установить';
-      ib.classList.remove('ghost');
-      ib.classList.add('primary');
-      ib.disabled = true;
-    }
-
-    if(action === 'update'){
-      setBar(10, 'Проверяем наличие обновлений...');
-    } else if(action === 'install'){
+      setInstallBtn('stop');
       setBar(5, 'Подготовка к установке...');
+    } else if(action === 'update'){
+      installing = true;
+      if(mainBtn){
+        mainBtn.textContent = 'Обновляю...';
+        mainBtn.disabled = true;
+      }
+      setBar(10, 'Проверяем наличие обновлений...');
     } else {
+      if(mainBtn) mainBtn.disabled = true;
       setBar(5, 'Подготовка к удалению...');
     }
 
@@ -1146,8 +1511,7 @@
         if(startData.error){
           toast(startData.error);
           finishInstallUI(null);
-          document.getElementById('btnUpdate').disabled = false;
-          document.getElementById('btnRemove').disabled = !installed;
+          if(moreBtn) moreBtn.disabled = false;
           return;
         }
 
@@ -1166,25 +1530,23 @@
                 installing = false;
                 stopRequested = false;
                 hideBar();
-                setInstallBtn('install');
+                setStatus(installed);
                 toast(action === 'install' ? 'Установка остановлена' : 'Операция остановлена');
               } else if(pData.error){
                 installing = false;
                 stopRequested = false;
                 toast('Ошибка: ' + pData.error);
                 hideBar();
-                setInstallBtn('install');
+                setStatus(installed);
               } else if(pData.done){
                 installing = false;
                 stopRequested = false;
-                setInstallBtn('install');
                 if(action === 'install'){ setStatus(true); toast('Установка успешно завершена!'); }
                 if(action === 'update'){ setStatus(true); toast('Обновление успешно завершено!'); }
                 if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
                 setTimeout(hideBar, 2000);
               }
-              document.getElementById('btnUpdate').disabled = false;
-              document.getElementById('btnRemove').disabled = !installed;
+              if(moreBtn) moreBtn.disabled = false;
               checkBackendStatus();
             }
           } catch(err) {}
@@ -1193,7 +1555,6 @@
       } catch(e) {
         // fallback to simulation below
         if(isInstall){ installing = true; stopRequested = false; setInstallBtn('stop'); }
-        else setInstallBtn('install');
       }
     }
 
@@ -1207,6 +1568,7 @@
     const step = ()=>{
       if(stopRequested){
         finishInstallUI('Установка остановлена');
+        if(moreBtn) moreBtn.disabled = false;
         return;
       }
       if(i >= steps.length){
@@ -1219,9 +1581,8 @@
         if(action === 'update'){ updateAvailable = false; setStatus(true); toast('Обновление успешно завершено!'); }
         if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
         setTimeout(hideBar, 1500);
-        setInstallBtn('install');
-        document.getElementById('btnUpdate').disabled = false;
-        document.getElementById('btnRemove').disabled = !installed;
+        setStatus(installed);
+        if(moreBtn) moreBtn.disabled = false;
         return;
       }
       setBar(steps[i][1], steps[i][0]);
@@ -1522,7 +1883,7 @@
     currentView = 'main';
     hideAllViews();
     document.getElementById('viewMain').style.display = 'flex';
-    document.getElementById('pageTitle').textContent = 'MAIN';
+    document.getElementById('pageTitle').textContent = 'ГЛАВНАЯ';
   }
 
   function showNews(){
