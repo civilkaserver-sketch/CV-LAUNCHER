@@ -329,17 +329,17 @@
 
   #bannerCard .banner-badge{
     position:absolute !important;
-    top:18px !important;
-    left:20px !important;
+    top:16px !important;
+    left:18px !important;
     display:inline-flex;
     align-items:center;
-    font-size:11px;
-    letter-spacing:1.5px;
+    font-size:9.5px;
+    letter-spacing:1.2px;
     text-transform:uppercase;
-    padding:5px 12px;
-    border-radius:4px;
-    background:rgba(16,16,18,0.92);
-    border:1px solid rgba(255,255,255,.12);
+    padding:3px 8px;
+    border-radius:3px;
+    background:rgba(14,14,16,0.92);
+    border:1px solid rgba(255,255,255,.1);
     color:var(--muted);
     width:fit-content;
     z-index:10;
@@ -367,7 +367,6 @@
     letter-spacing:2px;
     color:#fff;
     margin:0 0 8px;
-    text-shadow:0 3px 0 rgba(0,0,0,.85);
     line-height:1.15;
   }
   .banner-sub{
@@ -375,7 +374,6 @@
     color:var(--muted);
     letter-spacing:1px;
     margin-bottom:22px;
-    text-shadow:0 2px 0 rgba(0,0,0,.7);
   }
 
   .banner-actions{
@@ -467,7 +465,6 @@
     font-size:12px;
     margin-bottom:8px;
     letter-spacing:.5px;
-    text-shadow:0 2px 0 rgba(0,0,0,.8);
   }
   .banner-progress-row .meta{
     color:#d0d0d8;
@@ -952,11 +949,9 @@
       <div class="t">CIVILIZATION<small>LAUNCHER</small></div>
     </div>
 
-    <button class="play-btn" id="playBtn" onclick="startGame()">ИГРАТЬ</button>
-
-    <div class="side-section">
-      <div class="side-section-title">РАЗДЕЛЫ</div>
+    <div class="side-section" style="margin-top:20px">
       <nav class="side-nav">
+        <button class="side-nav-item active" id="btnMain" onclick="showMain()">Главная</button>
         <button class="side-nav-item" id="btnNews" onclick="showNews()">Новости</button>
         <button class="side-nav-item" id="btnGallery" onclick="showGallery()">Галерея</button>
         <button class="side-nav-item" id="btnRating" onclick="showRating()" style="display:none">Рейтинг</button>
@@ -999,7 +994,13 @@
           <div class="banner-actions">
             <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
             <div class="more-wrap" id="moreWrap">
-              <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" title="Дополнительные действия">⋯</button>
+              <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" title="Дополнительные действия">
+                <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor">
+                  <rect x="1" y="6.5" width="3" height="3" rx="0.5"/>
+                  <rect x="6.5" y="6.5" width="3" height="3" rx="0.5"/>
+                  <rect x="12" y="6.5" width="3" height="3" rx="0.5"/>
+                </svg>
+              </button>
               <div class="more-menu" id="moreMenu">
                 <button class="more-item" onclick="openGameFolder(event)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
@@ -1856,7 +1857,7 @@
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
-    ['btnNews', 'btnGallery', 'btnRating'].forEach(id => {
+    ['btnMain', 'btnNews', 'btnGallery', 'btnRating'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
@@ -1866,6 +1867,7 @@
     currentView = 'main';
     hideAllViews();
     document.getElementById('viewMain').style.display = 'flex';
+    document.getElementById('btnMain').classList.add('active');
     document.getElementById('pageTitle').textContent = 'ГЛАВНАЯ';
   }
 
