@@ -360,16 +360,6 @@
     border-color:rgba(46,204,113,.35);
     background:var(--card);
   }
-  #bannerCard .banner-badge.update{
-    color:#f5b041;
-    border-color:rgba(243,156,18,.35);
-    background:var(--card);
-  }
-  #bannerCard .banner-badge.installing{
-    color:var(--text);
-    border-color:var(--line-strong);
-    background:var(--card);
-  }
 
   .banner-title{
     font-family:'Minecraft Rus', monospace;
@@ -1580,6 +1570,12 @@
     const moreWrap = document.getElementById('moreWrap');
     const moreBtn = document.getElementById('btnMore');
 
+    // Бейдж: только два состояния — «Установлено» и «Не установлено»
+    if(badge){
+      badge.className = ok ? 'banner-badge installed' : 'banner-badge not-installed';
+      if(badgeText) badgeText.textContent = ok ? 'Установлено' : 'Не установлено';
+    }
+
     // Меню дополнительных действий (···) доступно ТОЛЬКО когда сборка установлена и нет активного процесса
     if(moreWrap){
       moreWrap.style.display = (ok && !installing) ? 'inline-block' : 'none';
@@ -1594,11 +1590,7 @@
     }
 
     if(!ok){
-      // Состояние 1: Не установлено
-      if(badge){
-        badge.className = 'banner-badge not-installed';
-        if(badgeText) badgeText.textContent = 'Не установлено';
-      }
+      // Состояние: Не установлено
       if(mainBtn){
         mainBtn.textContent = 'Установить';
         mainBtn.className = 'btn primary banner-main-btn';
@@ -1607,10 +1599,6 @@
       if(playBtn) playBtn.disabled = true;
     } else if(updateAvailable){
       // Доступно обновление
-      if(badge){
-        badge.className = 'banner-badge update';
-        if(badgeText) badgeText.textContent = 'Доступно обновление';
-      }
       if(mainBtn){
         mainBtn.textContent = 'Обновить';
         mainBtn.className = 'btn primary banner-main-btn';
@@ -1618,11 +1606,7 @@
       }
       if(playBtn) playBtn.disabled = false;
     } else {
-      // Состояние 3: Установлено (ИГРАТЬ)
-      if(badge){
-        badge.className = 'banner-badge installed';
-        if(badgeText) badgeText.textContent = 'Установлено';
-      }
+      // Состояние: Установлено (ИГРАТЬ)
       if(mainBtn){
         mainBtn.textContent = 'ИГРАТЬ';
         mainBtn.className = 'btn primary banner-main-btn';
@@ -1666,17 +1650,10 @@
     installing = true;
     stopRequested = false;
 
-    // Состояние 2: Установка (никогда не показываем троеточие и кнопку играть)
+    // Состояние 2: Установка (скрываем троеточие, бейдж не меняется)
     if(moreWrap) moreWrap.style.display = 'none';
     if(moreBtn) moreBtn.disabled = false;
     if(playBtn) playBtn.disabled = true;
-
-    if(badge){
-      badge.className = 'banner-badge installing';
-      if(badgeText){
-        badgeText.textContent = isInstall ? 'Установка...' : (action === 'update' ? 'Обновление...' : 'Удаление...');
-      }
-    }
 
     if(isInstall){
       setInstallBtn('stop');
