@@ -365,6 +365,11 @@
     border-color:rgba(243,156,18,.35);
     background:var(--card);
   }
+  #bannerCard .banner-badge.installing{
+    color:var(--text);
+    border-color:var(--line-strong);
+    background:var(--card);
+  }
 
   .banner-title{
     font-family:'Minecraft Rus', monospace;
@@ -400,13 +405,16 @@
     width:42px;
     height:42px;
     padding:0;
-    font-size:18px;
-    font-weight:bold;
     line-height:1;
     display:inline-flex;
     align-items:center;
     justify-content:center;
     letter-spacing:0;
+    color:var(--text);
+  }
+  .more-btn svg{
+    display:block;
+    color:inherit;
   }
   .more-menu,
   .folder-menu{
@@ -1091,10 +1099,10 @@
             <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
             <div class="more-wrap" id="moreWrap" style="display:none">
               <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" title="Дополнительные действия">
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                  <circle cx="3" cy="8" r="1.5"/>
-                  <circle cx="8" cy="8" r="1.5"/>
-                  <circle cx="13" cy="8" r="1.5"/>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <rect x="2" y="8" width="4" height="4" fill="#E2E2E2"/>
+                  <rect x="8" y="8" width="4" height="4" fill="#E2E2E2"/>
+                  <rect x="14" y="8" width="4" height="4" fill="#E2E2E2"/>
                 </svg>
               </button>
               <div class="more-menu" id="moreMenu">
@@ -1392,6 +1400,8 @@
     if(fill) fill.style.width = '0%';
     const pText = document.getElementById('barPct');
     if(pText) pText.textContent = '0%';
+    const meta = document.getElementById('statusMeta');
+    if(meta) meta.textContent = '';
   }
 
   function updatePathDisplay(path){
@@ -1553,6 +1563,7 @@
     installing = false;
     stopRequested = false;
     if(pollingInterval){ clearInterval(pollingInterval); pollingInterval = null; }
+    if(simTimer){ clearTimeout(simTimer); simTimer = null; }
     hideBar();
     setStatus(installed);
     if(toastMsg) toast(toastMsg);
@@ -1566,40 +1577,53 @@
     const badgeText = document.getElementById('badgeText');
     const mainBtn = document.getElementById('btnMainAction');
     const playBtn = document.getElementById('playBtn');
-
     const moreWrap = document.getElementById('moreWrap');
+    const moreBtn = document.getElementById('btnMore');
+
+    // Меню дополнительных действий (···) доступно ТОЛЬКО когда сборка установлена и нет активного процесса
     if(moreWrap){
-      moreWrap.style.display = ok ? 'inline-block' : 'none';
+      moreWrap.style.display = (ok && !installing) ? 'inline-block' : 'none';
+    }
+    if(moreBtn){
+      moreBtn.disabled = false;
+    }
+
+    if(installing){
+      // Во время процесса установки/обновления бейдж и кнопка контролируются процессом run()
+      return;
     }
 
     if(!ok){
+      // Состояние 1: Не установлено
       if(badge){
         badge.className = 'banner-badge not-installed';
         if(badgeText) badgeText.textContent = 'Не установлено';
       }
-      if(!installing && mainBtn){
+      if(mainBtn){
         mainBtn.textContent = 'Установить';
         mainBtn.className = 'btn primary banner-main-btn';
         mainBtn.disabled = false;
       }
       if(playBtn) playBtn.disabled = true;
     } else if(updateAvailable){
+      // Доступно обновление
       if(badge){
         badge.className = 'banner-badge update';
         if(badgeText) badgeText.textContent = 'Доступно обновление';
       }
-      if(!installing && mainBtn){
+      if(mainBtn){
         mainBtn.textContent = 'Обновить';
         mainBtn.className = 'btn primary banner-main-btn';
         mainBtn.disabled = false;
       }
       if(playBtn) playBtn.disabled = false;
     } else {
+      // Состояние 3: Установлено (ИГРАТЬ)
       if(badge){
         badge.className = 'banner-badge installed';
         if(badgeText) badgeText.textContent = 'Установлено';
       }
-      if(!installing && mainBtn){
+      if(mainBtn){
         mainBtn.textContent = 'ИГРАТЬ';
         mainBtn.className = 'btn primary banner-main-btn';
         mainBtn.disabled = false;
@@ -1633,23 +1657,43 @@
 
     const isInstall = action === 'install';
     const mainBtn = document.getElementById('btnMainAction');
+    const moreWrap = document.getElementById('moreWrap');
     const moreBtn = document.getElementById('btnMore');
-    if(moreBtn) moreBtn.disabled = true;
+    const badge = document.getElementById('bannerBadge');
+    const badgeText = document.getElementById('badgeText');
+    const playBtn = document.getElementById('playBtn');
+
+    installing = true;
+    stopRequested = false;
+
+    // Состояние 2: Установка (никогда не показываем троеточие и кнопку играть)
+    if(moreWrap) moreWrap.style.display = 'none';
+    if(moreBtn) moreBtn.disabled = false;
+    if(playBtn) playBtn.disabled = true;
+
+    if(badge){
+      badge.className = 'banner-badge installing';
+      if(badgeText){
+        badgeText.textContent = isInstall ? 'Установка...' : (action === 'update' ? 'Обновление...' : 'Удаление...');
+      }
+    }
 
     if(isInstall){
-      installing = true;
-      stopRequested = false;
       setInstallBtn('stop');
       setBar(5, 'Подготовка к установке...');
     } else if(action === 'update'){
-      installing = true;
       if(mainBtn){
         mainBtn.textContent = 'Обновляю...';
+        mainBtn.className = 'btn ghost banner-main-btn';
         mainBtn.disabled = true;
       }
       setBar(10, 'Проверяем наличие обновлений...');
     } else {
-      if(mainBtn) mainBtn.disabled = true;
+      if(mainBtn){
+        mainBtn.textContent = 'Удаляю...';
+        mainBtn.className = 'btn ghost banner-main-btn';
+        mainBtn.disabled = true;
+      }
       setBar(5, 'Подготовка к удалению...');
     }
 
@@ -1665,7 +1709,6 @@
         if(startData.error){
           toast(startData.error);
           finishInstallUI(null);
-          if(moreBtn) moreBtn.disabled = false;
           return;
         }
 
@@ -1680,27 +1723,20 @@
             if(!pData.active){
               clearInterval(pollingInterval);
               pollingInterval = null;
+              hideBar();
+              installing = false;
+              stopRequested = false;
               if(pData.cancelled){
-                installing = false;
-                stopRequested = false;
-                hideBar();
                 setStatus(installed);
                 toast(action === 'install' ? 'Установка остановлена' : 'Операция остановлена');
               } else if(pData.error){
-                installing = false;
-                stopRequested = false;
-                toast('Ошибка: ' + pData.error);
-                hideBar();
                 setStatus(installed);
+                toast('Ошибка: ' + pData.error);
               } else if(pData.done){
-                installing = false;
-                stopRequested = false;
                 if(action === 'install'){ setStatus(true); toast('Установка успешно завершена!'); }
-                if(action === 'update'){ setStatus(true); toast('Обновление успешно завершено!'); }
-                if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
-                setTimeout(hideBar, 2000);
+                else if(action === 'update'){ setStatus(true); toast('Обновление успешно завершено!'); }
+                else if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
               }
-              if(moreBtn) moreBtn.disabled = false;
               checkBackendStatus();
             }
           } catch(err) {}
@@ -1713,30 +1749,33 @@
     }
 
     const steps = {
-      install:  [['Поиск папки Minecraft...', 15], ['Загрузка сборки...', 55], ['Установка файлов...', 85], ['Установка успешно завершена!', 100]],
-      update:   [['Проверяем наличие обновлений...', 10], ['Обновление найдено, подготовка к загрузке...', 25], ['Загрузка обновления (65%)...', 65], ['Распаковка и установка файлов...', 85], ['Обновление профиля игры...', 95], ['Обновление успешно завершено!', 100]],
-      uninstall:[['Удаление файлов...', 60], ['Сборка успешно удалена.', 100]]
+      install:  [['Поиск папки Minecraft...', 20], ['Загрузка сборки...', 60], ['Установка файлов и модов...', 90], ['Завершение установки...', 100]],
+      update:   [['Проверяем обновления...', 20], ['Загрузка обновления...', 65], ['Установка файлов...', 90], ['Завершение...', 100]],
+      uninstall:[['Удаление файлов...', 60], ['Очистка профиля...', 100]]
     }[action];
 
     let i = 0;
     const step = ()=>{
       if(stopRequested){
         finishInstallUI('Установка остановлена');
-        if(moreBtn) moreBtn.disabled = false;
         return;
       }
       if(i >= steps.length){
         installing = false;
         stopRequested = false;
         simTimer = null;
+        hideBar();
         if(action === 'install'){
-          setStatus(true); toast('Установка успешно завершена!');
+          setStatus(true);
+          toast('Установка успешно завершена!');
+        } else if(action === 'update'){
+          updateAvailable = false;
+          setStatus(true);
+          toast('Обновление успешно завершено!');
+        } else if(action === 'uninstall'){
+          setStatus(false);
+          toast('Сборка удалена.');
         }
-        if(action === 'update'){ updateAvailable = false; setStatus(true); toast('Обновление успешно завершено!'); }
-        if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
-        setTimeout(hideBar, 1500);
-        setStatus(installed);
-        if(moreBtn) moreBtn.disabled = false;
         return;
       }
       setBar(steps[i][1], steps[i][0]);
