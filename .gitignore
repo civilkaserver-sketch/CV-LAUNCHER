@@ -1,0 +1,4 @@
+launcher.log
+bin/
+obj/
+*.tmp

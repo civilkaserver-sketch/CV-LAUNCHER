@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="theme-color" content="#0c0c0c">
+<meta name="theme-color" content="#0c0c0c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0c0c0c" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="manifest" href="manifest.json">
+<title>&#8203;</title>
+<style>
+  @font-face{
+    font-family:'Minecraft Rus';
+    src:url('assets/minecraft-rus.ttf') format('truetype');
+    font-display:swap;
+  }
+  :root{
+    --bg:#0e0e0e;
+    --side:#0c0c0c;
+    --card:#0c0c0c;
+    --card-hover:#161616;
+    --line:#242424;
+    --line-strong:#414040;
+    --text:#E2E2E2;
+    --text-hover:#FFFFFF;
+    --muted:#8E8E8E;
+    --dim:#5E5E5E;
+    --r:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Minecraft Rus','Courier New',monospace;
+    background:var(--bg);
+    color:var(--text);
+    font-size:15px;
+    letter-spacing:.3px;
+    line-height:1.65;
+    -webkit-font-smoothing:none;
+    overflow:hidden;
+  }
+  input{font-family:inherit}
+  ::selection{background:#fff;color:#000}
+
+  .app{display:flex;height:100vh}
+
+  /* ---------------- сайдбар ---------------- */
+  .side{
+    width: 258px;
+    flex: 0 0 258px;
+    background: var(--side);
+    display: flex;
+    flex-direction: column;
+    padding: 1px 18px 20px;
+    -webkit-app-region: drag;
+  }
+  button, input, a, .brand, .btn, .screenshot-card, .side-nav-item, .play-btn {
+    -webkit-app-region: no-drag;
+  }
+  .brand{
+    padding:4px 4px 0;line-height:1.3;
+    cursor:pointer;user-select:none;
+    transition:opacity .15s;
+  }
+  .brand:hover{opacity:.85}
+  .brand .t{font-size:17px;letter-spacing:3px}
+  .brand .t small{display:block;font-size:10px;letter-spacing:4px;color:var(--dim);margin-top:5px}
+
+  .play-btn{
+    margin-top:22px;
+    background:#f0f0f2;color:#0b0b0d;
+    border:none;border-radius:var(--r);cursor:pointer;
+    font-family:inherit;font-size:15px;letter-spacing:5px;
+    height:50px;width:100%;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s,opacity .15s;
+    font-weight:bold;
+  }
+  .play-btn:hover{background:#fff}
+  .play-btn:disabled{opacity:.35;cursor:not-allowed}
+
+  .side-section{
+    margin-top:28px;
+  }
+  .side-section-title{
+    font-size:11px;
+    letter-spacing:3px;
+    color:var(--dim);
+    padding:0 8px;
+    margin-bottom:8px;
+    text-transform:uppercase;
+  }
+  .side-nav{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .side-nav-item{
+    width:100%;
+    height:36px;
+    background:var(--card);
+    border: none;
+    border-radius:var(--r);
+    color:var(--text);
+    font-family:inherit;
+    font-size:13px;
+    letter-spacing:1.5px;
+    padding:0 12px;
+    display:flex;
+    align-items:center;
+    cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s;
+    text-align:left;
+  }
+  .side-nav-item:hover,
+  .side-nav-item.active{
+    background:var(--card-hover);
+    border-color:var(--line-strong);
+    color:var(--text-hover);
+  }
+
+  .side-footer{
+    margin-top:auto;
+    padding-top:16px;
+  }
+  .side-toggle{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    cursor:pointer;
+    user-select:none;
+    padding:4px 0;
+  }
+  .side-toggle:hover .toggle-label{
+    color:var(--text);
+  }
+  .toggle-label{
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:.5px;
+    transition:color .15s;
+  }
+  .switch{
+    position:relative;
+    display:inline-block;
+    width:42px;
+    height:24px;
+    flex-shrink:0;
+  }
+  .switch input{
+    opacity:0;
+    width:0;
+    height:0;
+    position:absolute;
+  }
+  .slider{
+    position:absolute;
+    cursor:pointer;
+    inset:0;
+    background:rgba(255,255,255,.08);
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    transition:background .2s,border-color .2s;
+  }
+  .slider::before{
+    position:absolute;
+    content:"";
+    height:16px;
+    width:16px;
+    left:3px;
+    bottom:3px;
+    background:#8c8c96;
+    border-radius:50%;
+    transition:transform .2s,background .2s;
+  }
+  .switch input:checked + .slider{
+    background:#f0f0f2;
+    border-color:#f0f0f2;
+  }
+  .switch input:checked + .slider::before{
+    transform:translateX(18px);
+    background:#0b0b0d;
+  }
+  .switch input:focus-visible + .slider{
+    outline:2px solid #fff;
+    outline-offset:2px;
+  }
+
+  /* ---------------- контент ---------------- */
+  .main{
+    flex:1;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    background:#0c0c0c;
+  }
+  .main::before{
+    content:'';
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:42px;
+    background:var(--side);
+    border-radius:0;
+    z-index:1;
+  }
+  .main::after{
+    content:'';
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    height:56px;
+    background:#0c0c0c;
+    border-radius:0;
+    z-index:1;
+    pointer-events:none;
+  }
+  .top-bar{
+    position:relative;
+    height:42px;
+    flex:0 0 42px;
+    background:var(--side);
+    border-radius: 10px 0px 0px 0px;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    border-left:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 40px;
+    z-index:10;
+    -webkit-app-region: drag;
+  }
+  .top-title{
+    font-size:13px;
+    letter-spacing:5px;
+    color:var(--dim);
+    text-transform:uppercase;
+  }
+  .top-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .content{
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    border-left:1px solid var(--line);
+    border-radius: 0px 0px 0px 10px;
+    padding:30px 40px;
+    zoom:1.2;
+    position:relative;
+    z-index:2;
+    background:var(--bg);
+  }
+  #viewMain{
+    justify-content:center;
+  }
+  #viewGallery, #viewNews{
+    height:100%;
+  }
+  #viewGallery .inner, #viewNews .inner{
+    display:flex;
+    flex-direction:column;
+    min-height:100%;
+    padding-bottom:50px;
+  }
+  .inner{width:100%;max-width:900px;margin:0 auto}
+
+  /* карточки */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    padding:26px 28px;
+    transition:background .15s, border-color .15s;
+  }
+  .card h3{font-size:12px;font-weight:normal;letter-spacing:3px;color:var(--dim);margin-bottom:18px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+  .grid .card{display:flex;flex-direction:column}
+
+  /* статус */
+  /* простая подпись страницы */
+  .page-tag{
+    font-size:13px;letter-spacing:5px;color:var(--dim);
+    margin-bottom:12px;
+  }
+
+  #statusCard{
+    position:relative;
+    overflow:hidden;
+    margin-bottom:16px;
+    min-height:230px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    padding:26px 30px 24px;
+  }
+  #statusCard::before{
+    content:'';position:absolute;inset:0;
+    background:url('assets/bg.png') center 42% / cover no-repeat;
+    image-rendering:pixelated;
+  }
+  #statusCard::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(180deg,rgba(6,6,7,.35) 0%,rgba(6,6,7,.78) 55%,rgba(6,6,7,.94) 100%),
+               linear-gradient(90deg,rgba(6,6,7,.75),rgba(6,6,7,.15));
+  }
+  #statusCard > *{position:relative;z-index:2}
+  #statusCard .big{font-size:27px;letter-spacing:3px;}
+  #statusCard .foot{margin-top:auto}
+  #statusCard .meta{font-size:13px;color:#c9c9d1;text-shadow:0 2px 0 rgba(0,0,0,.75)}
+
+  /* прогресс всегда на месте — ничего не прыгает */
+  .bar-row{
+    display:flex;align-items:center;gap:16px;
+    margin-top:16px;
+    text-shadow:0 2px 0 rgba(0,0,0,.75);
+  }
+  .bar-row #barPct{
+    font-size:14px;
+    color:#9a9aa4;
+    letter-spacing:1px;
+    min-width:8px;
+  }
+  .bar{
+    flex:1;
+    height:10px;background:rgba(255,255,255,.09);
+    border-radius:5px;overflow:hidden;
+  }
+  .bar i{display:block;height:100%;background:#f0f0f2;width:0%;transition:width .3s linear}
+
+  .actions{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{
+    font-family:inherit;font-size:15px;letter-spacing:1px;
+    padding:0 24px;height:48px;border-radius:var(--r);
+    border:1px solid transparent;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:background .15s,border-color .15s,opacity .15s,color .15s;
+    background:none;color:var(--text);
+  }
+  .btn.primary{background:#f0f0f2;color:#0b0b0d;font-weight:bold}
+  .btn.primary:hover{background:#fff}
+  .btn.ghost{border-color:var(--line);background:var(--card);color:var(--text)}
+  .btn.ghost:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
+  .btn.line{border-color:var(--line);background:var(--card);color:var(--text)}
+  .btn.line:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
+  .btn:disabled{opacity:.3;cursor:not-allowed}
+  .actions .btn{flex:1;min-width:130px}
+
+  /* поле пути */
+  .field input{
+    width:100%;height:48px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    color:var(--text);
+    padding:0 15px;font-size:14px;
+    outline:none;transition:border-color .15s,background .15s,color .15s;
+  }
+  .field input:focus{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
+  .field .actions,
+  .field + .actions{margin-top:14px}
+
+  /* инфо */
+  .info-line{
+    display:flex;justify-content:space-between;gap:10px;
+    font-size:14px;color:var(--muted);
+    padding:10px 0;border-bottom:1px solid var(--line);
+  }
+  .info-line:first-of-type{padding-top:0}
+  .info-line:last-child{border-bottom:none;padding-bottom:0}
+  .info-line b{font-weight:normal;color:var(--text)}
+
+  .toast{
+    position:fixed;right:26px;bottom:26px;
+    background:#f0f0f2;color:#0b0b0d;
+    padding:14px 20px;font-size:14px;letter-spacing:1px;
+    border-radius:var(--r);
+    opacity:0;transform:translateY(8px);
+    transition:opacity .2s,transform .2s;
+    pointer-events:none;z-index:10001;
+  }
+  .toast.show{opacity:1;transform:none}
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+  ::-webkit-scrollbar-thumb:active{background:var(--muted)}
+  .btn.sm{height:34px;padding:0 14px;font-size:12px;letter-spacing:1px;flex:none;min-width:auto}
+
+  /* ---------------- галерея игрока ---------------- */
+  .gallery-toolbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-bottom:14px;
+  }
+  .gallery-count{
+    font-size:13px;color:var(--muted);letter-spacing:1px;
+  }
+  .gallery-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:18px;
+    padding-bottom:40px;
+    margin-bottom:20px;
+  }
+  .screenshot-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    overflow:hidden;
+    cursor:pointer;
+    transition:border-color .15s,transform .15s,background .15s;
+    display:flex;flex-direction:column;
+  }
+  .screenshot-card:hover{
+    background:var(--card-hover);
+    border-color:var(--line-strong);
+  }
+  .screenshot-thumb{
+    width:100%;
+    aspect-ratio:16 / 9;
+    background:#08080a;
+    position:relative;
+    overflow:hidden;
+  }
+  .screenshot-thumb img{
+    width:100%;height:100%;
+    object-fit:cover;
+    display:block;
+    transition:transform .2s ease,opacity .2s ease;
+  }
+  .screenshot-card:hover .screenshot-thumb img{
+    opacity:.92;
+  }
+  .screenshot-meta{
+    padding:11px 15px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    font-size:12px;
+    border-top:1px solid var(--line);
+    background:inherit;
+    transition:background .15s;
+  }
+  .screenshot-name{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    color:var(--text);letter-spacing:.5px;
+    transition:color .15s;
+  }
+  .screenshot-card:hover .screenshot-name{
+    color:var(--text-hover);
+  }
+  .screenshot-date{
+    color:var(--dim);white-space:nowrap;font-size:11px;
+  }
+
+  /* empty state */
+  .empty-state{
+    flex:1;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;
+    padding:40px 20px 140px;
+  }
+  .empty-tag{
+    font-size:12px;
+    letter-spacing:4px;
+    color:var(--dim);
+    margin-bottom:10px;
+  }
+  .empty-title{
+    font-size:16px;
+    letter-spacing:3px;
+    color:var(--text);
+    margin-bottom:8px;
+    font-weight:normal;
+  }
+  .empty-desc{
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:.5px;
+    max-width:380px;
+    line-height:1.75;
+  }
+  kbd{
+    display:inline-block;
+    font-family:inherit;
+    font-size:12px;
+    color:#fff;
+    background:rgba(255,255,255,.08);
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    padding:1px 6px;
+    letter-spacing:1px;
+    vertical-align:baseline;
+  }
+
+  /* лайтбокс просмотрщика */
+  .lightbox{
+    position:fixed;inset:0;
+    background:rgba(6,6,8,.94);
+    backdrop-filter:blur(8px);
+    z-index:999;
+    display:none;flex-direction:column;
+    opacity:0;transition:opacity .2s;
+  }
+  .lightbox.show{display:flex;opacity:1}
+  .lightbox-header{
+    height:56px;flex:0 0 56px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 24px;
+  }
+  .lightbox-title{font-size:13px;letter-spacing:2px;color:var(--text)}
+  .lightbox-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .lightbox-actions .btn-delete{
+    color:#e06c75;
+    border-color:rgba(224,108,117,.3);
+  }
+  .lightbox-actions .btn-delete:hover{
+    background:rgba(224,108,117,.12);
+    border-color:#e06c75;
+    color:#ff7b85;
+  }
+  .lightbox-close{
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+    color:var(--text);width:34px;height:34px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:color .15s,border-color .15s,background .15s;
+    padding:0;
+  }
+  .lightbox-close:hover{
+    color:var(--text-hover);border-color:var(--line-strong);background:var(--card-hover);
+  }
+  .lightbox-close svg{display:block}
+  .lightbox-body{
+    flex:1;display:flex;align-items:center;justify-content:center;
+    position:relative;padding:20px 40px;overflow:hidden;
+  }
+  .lightbox-img-wrap{
+    max-width:85vw;max-height:76vh;
+    aspect-ratio:16 / 9;
+    border-radius:var(--r);overflow:hidden;
+    border:1px solid var(--line);
+    box-shadow:0 12px 40px rgba(0,0,0,.8);
+    background:#000;display:flex;align-items:center;justify-content:center;
+  }
+  .lightbox-img{
+    width:100%;height:100%;object-fit:contain;display:block;
+  }
+  .lightbox-nav{
+    position:absolute;top:50%;transform:translateY(-50%);
+    background:var(--card);border:1px solid var(--line);
+    color:var(--text);width:44px;height:44px;border-radius:var(--r);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:background .15s,border-color .15s,color .15s;
+    user-select:none;padding:0;
+  }
+  .lightbox-nav:hover{
+    background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover);
+  }
+  .lightbox-nav svg{display:block}
+  .lightbox-prev{left:24px}
+  .lightbox-next{right:24px}
+  .lightbox-footer{
+    height:50px;flex:0 0 50px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;
+  }
+  .btn.copied{
+    background:#f0f0f2 !important;
+    color:#0b0b0d !important;
+    border-color:#f0f0f2 !important;
+    font-weight:bold;
+  }
+
+  /* ---------------- новости ---------------- */
+  .news-list-wrap{width:100%;max-width:900px;margin:0 auto;padding-bottom:30px}
+  .news-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    overflow:hidden;
+    margin-bottom:48px;
+    transition:background .15s, border-color .15s;
+  }
+  .news-card:last-child{margin-bottom:0}
+  .news-card:hover{
+    background:var(--card-hover);
+    border-color:var(--line-strong);
+  }
+  .news-card:hover .news-card-title{
+    color:var(--text-hover) !important;
+  }
+  .ncard-banner{
+    display:block;
+    width:100%;
+    height:120px;
+    overflow:hidden;
+    background:#060608;
+  }
+  .ncard-banner img{
+    display:block;
+    width:100%;
+    height:120px;
+    object-fit:cover;
+    filter:brightness(.5);
+  }
+  .ncard-body{
+    display:block;
+    padding:16px 20px 18px;
+  }
+  .ncard-meta{
+    display:block;
+    margin-bottom:8px;
+    font-size:11px;
+    color:var(--dim);
+    letter-spacing:.5px;
+  }
+  .ncard-tag{
+    display:inline-block;
+    font-size:10px;
+    letter-spacing:1.5px;
+    padding:1px 7px;
+    border:1px solid var(--line-strong);
+    border-radius:var(--r);
+    color:var(--dim);
+    margin-right:6px;
+    vertical-align:middle;
+  }
+  .ncard-tag.hl{
+    color:#f0f0f2;
+    border-color:rgba(240,240,242,.3);
+  }
+  .ncard-title{
+    display:block;
+    font-size:14px;
+    letter-spacing:2px;
+    color:#fff;
+    margin-bottom:8px;
+  }
+  .ncard-desc{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.7;
+    margin-bottom:12px;
+  }
+  .ncard-changes{
+    display:block;
+    margin-bottom:14px;
+  }
+  .ncard-item{
+    display:block;
+    font-size:12px;
+    color:var(--dim);
+    padding:3px 0 3px 14px;
+    position:relative;
+    line-height:1.6;
+  }
+  .ncard-item::before{content:'—';position:absolute;left:0;color:var(--line-strong)}
+  .ncard-item strong{color:var(--text)}
+  .ncard-code{
+    font-family:inherit;font-size:11px;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);
+    color:#e0e0e2;padding:1px 5px;border-radius:4px;letter-spacing:.5px;
+  }
+  .ncard-note{
+    display:block;
+    border-left:2px solid var(--line-strong);
+    background:rgba(255,255,255,.025);
+    padding:9px 13px;
+    font-size:12px;
+    color:var(--muted);
+    border-radius:0 var(--r) var(--r) 0;
+  }
+  .ncard-note b{color:var(--text)}
+
+  /* рейтинг */
+  .rating-table{width:100%;border-collapse:collapse;font-size:13px}
+  .rating-table th{
+    text-align:left;font-size:11px;letter-spacing:2px;
+    color:var(--dim);padding:14px 18px;border-bottom:1px solid var(--line);
+    font-weight:normal;
+  }
+  .rating-table td{padding:16px 18px;border-bottom:1px solid var(--line);color:var(--muted)}
+  .rating-table tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
+  .rating-table tr:last-child td{border-bottom:none}
+  .rank-badge{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:24px;height:24px;border-radius:var(--r);
+    font-size:12px;background:rgba(255,255,255,.05);color:var(--text);
+  }
+  .rank-1{background:#f0f0f2;color:#0b0b0d;font-weight:bold}
+  .rank-2{background:rgba(255,255,255,.2);color:#fff}
+  .rank-3{background:rgba(255,255,255,.1);color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- САЙДБАР -->
+  <aside class="side">
+    <div class="brand" onclick="showMain()" title="На главную">
+      <div class="t">CIVILIZATION<small>LAUNCHER</small></div>
+    </div>
+
+    <button class="play-btn" id="playBtn" onclick="startGame()">ИГРАТЬ</button>
+
+    <div class="side-section">
+      <div class="side-section-title">РАЗДЕЛЫ</div>
+      <nav class="side-nav">
+        <button class="side-nav-item" id="btnNews" onclick="showNews()">Новости</button>
+        <button class="side-nav-item" id="btnGallery" onclick="showGallery()">Галерея</button>
+        <button class="side-nav-item" id="btnRating" onclick="showRating()" style="display:none">Рейтинг</button>
+      </nav>
+    </div>
+
+    <div class="side-footer">
+      <label class="side-toggle" for="autoUpdateToggle">
+        <span class="toggle-label">Автообновление</span>
+        <span class="switch">
+          <input type="checkbox" id="autoUpdateToggle" checked onchange="toggleAutoUpdate(this.checked)">
+          <span class="slider"></span>
+        </span>
+      </label>
+    </div>
+
+  </aside>
+
+  <!-- КОНТЕНТ -->
+  <div class="main">
+
+    <!-- ЗАКРЕПЛЕННЫЙ ХЕДЕР ВСЕГДА СВЕРХУ -->
+    <header class="top-bar">
+      <div class="top-title" id="pageTitle">MAIN</div>
+    </header>
+
+    <div class="content" id="viewMain">
+      <div class="inner">
+
+        <div class="card" id="statusCard">
+          <div class="big" id="bigStatus">НЕ УСТАНОВЛЕНО</div>
+          <div class="foot">
+            <div class="meta" id="statusMeta">нажми «Установить» — лаунчер скачает всё сам</div>
+            <div class="bar-row">
+              <span id="barPct">0%</span>
+              <div class="bar"><i id="barFill"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card">
+            <h3>ДЕЙСТВИЯ</h3>
+            <div class="actions">
+              <button class="btn primary" id="btnInstall" onclick="onInstallClick()">Установить</button>
+              <button class="btn ghost" id="btnUpdate" onclick="run('update')">Обновить</button>
+              <button class="btn line" id="btnRemove" onclick="run('uninstall')">Удалить</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>ПАПКА MINECRAFT</h3>
+            <div class="field">
+              <input id="mcPath" placeholder="C:\Users\You\AppData\Roaming\.minecraft" spellcheck="false">
+            </div>
+            <div class="actions">
+              <button class="btn ghost" onclick="detectPath()">Найти</button>
+              <button class="btn line" onclick="pickFolder()">Выбрать</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid" style="margin-top:16px">
+          <div class="card">
+            <h3>СБОРКА</h3>
+            <div class="info-line"><span>Версия</span><b>1.21.8</b></div>
+            <div class="info-line"><span>Загрузчик</span><b>Forge</b></div>
+            <div class="info-line"><span>Моды</span><b>13 шт.</b></div>
+            <div class="info-line"><span>Профиль</span><b>Civilization</b></div>
+          </div>
+
+          <div class="card">
+            <h3>ЧТО ДЕЛАЕТ ЛАУНЧЕР</h3>
+            <div class="info-line"><span>Находит .minecraft</span><b>авто</b></div>
+            <div class="info-line"><span>Тянет сборку с GitHub</span><b>git / zip</b></div>
+            <div class="info-line"><span>Ставит моды и ресурспаки</span><b>13 модов</b></div>
+            <div class="info-line"><span>Прописывает профиль</span><b>авто</b></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ЭКРАН: НОВОСТИ -->
+    <div class="content" id="viewNews" style="display:none">
+      <div class="inner">
+
+        <!-- EMPTY STATE (когда нет новостей) -->
+        <div class="empty-state" id="newsEmpty">
+          <div class="empty-title">НОВОСТИ ОТСУТСТВУЮТ</div>
+          <div class="empty-desc">Свежие события и обновления сборки появятся здесь автоматически</div>
+        </div>
+
+        <div id="newsContent" style="display:none">
+          <!-- карточка 1 -->
+        <div class="news-card">
+          <div style="height:200px;overflow:hidden;line-height:0;">
+            <img src="assets/bg.png" style="width:100%;height:200px;object-fit:cover;display:block;filter:brightness(.5);">
+          </div>
+          <div style="padding:16px 20px 18px;">
+            <div style="margin-bottom:10px;font-size:12px;color:var(--dim);letter-spacing:.5px;">
+              <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:1px 7px;border:1px solid var(--line);border-radius:6px;color:var(--text);background:var(--card);margin-right:6px;">Release</span>
+              <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:1px 7px;border:1px solid var(--line);border-radius:6px;color:var(--dim);margin-right:6px;">Minecraft 1.21.8</span>
+              <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:1px 7px;border:1px solid var(--line);border-radius:6px;color:var(--dim);margin-right:6px;">Forge</span>
+              30 сен 2026
+            </div>
+            <div class="news-card-title" style="font-size:17px;letter-spacing:2px;color:var(--text);margin-bottom:10px;transition:color .15s;">CIVILIZATION v1.21.8 — ЭПОХА ОТКРЫТИЙ</div>
+            <div style="font-size:14px;color:var(--muted);line-height:1.75;margin-bottom:14px;">Масштабное обновление сборки. Открыта новая эпоха мореплавания, переработана дипломатия наций и оптимизирован рендер.</div>
+            <div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Система Наций и Границ</strong>: команда <code style="font-family:inherit;font-size:11px;background:var(--card);border:1px solid var(--line);color:var(--text);padding:1px 5px;border-radius:4px;">/nation claim</code></div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Морские экспедиции</strong>: каравеллы, пушки и морские баталии</div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Дипломатия</strong>: альянсы, торговые договоры, объявление войны</div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Устранен вылет при открытии казны на границах чанков</div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Потребление оперативной памяти снижено на 25%</div>
+            </div>
+            <div style="border-left:2px solid var(--line-strong);background:rgba(255,255,255,.025);padding:11px 15px;font-size:13px;color:var(--muted);border-radius:0 6px 6px 0;margin-top:14px;">
+              Рекомендуемые аргументы Java: <b style="color:var(--text);">-Xms2G -Xmx4G -XX:+UseG1GC</b>
+            </div>
+          </div>
+        </div>
+
+        <!-- карточка 2 -->
+        <div class="news-card">
+          <div style="height:200px;overflow:hidden;line-height:0;">
+            <img src="assets/bg.png" style="width:100%;height:200px;object-fit:cover;display:block;filter:brightness(.5);">
+          </div>
+          <div style="padding:16px 20px 18px;">
+            <div style="margin-bottom:10px;font-size:12px;color:var(--dim);letter-spacing:.5px;">
+              <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:1px 7px;border:1px solid var(--line);border-radius:6px;color:var(--text);background:var(--card);margin-right:6px;">Announcement</span>
+              <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:1px 7px;border:1px solid var(--line);border-radius:6px;color:var(--dim);margin-right:6px;">Сезон 3</span>
+              26 сен 2026
+            </div>
+            <div class="news-card-title" style="font-size:17px;letter-spacing:2px;color:var(--text);margin-bottom:10px;transition:color .15s;">СТАРТ 3-ГО СЕЗОНА ЦИВИЛИЗАЦИЙ</div>
+            <div style="font-size:14px;color:var(--muted);line-height:1.75;margin-bottom:14px;">Открыт новый мир 10 000 × 10 000 блоков. Введена система эпох — от каменного века до индустриализации. Создавай нацию, строй столицу и веди свой народ к величию.</div>
+            <div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Новый мир без вайпа старых построек</div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Система эпох</strong>: каменный, бронзовый, железный, средневековый, индустриальный</div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Карта мира в реальном времени через Xaero's WorldMap</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- карточка 3 -->
+        <div class="news-card">
+          <div style="height:200px;overflow:hidden;line-height:0;">
+            <img src="assets/bg.png" style="width:100%;height:200px;object-fit:cover;display:block;filter:brightness(.5);">
+          </div>
+          <div style="padding:16px 20px 18px;">
+            <div style="margin-bottom:10px;font-size:12px;color:var(--dim);letter-spacing:.5px;">
+              <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:1px 7px;border:1px solid var(--line);border-radius:6px;color:var(--dim);margin-right:6px;">Технические</span>
+              21 сен 2026
+            </div>
+            <div class="news-card-title" style="font-size:17px;letter-spacing:2px;color:var(--text);margin-bottom:10px;transition:color .15s;">ТЕХНИЧЕСКИЕ РАБОТЫ ЗАВЕРШЕНЫ</div>
+            <div style="font-size:14px;color:var(--muted);line-height:1.75;margin-bottom:14px;">Оптимизирован серверный тик и сеть. Пинг для игроков из СНГ снижен на 30%. Добавлена автоматическая синхронизация сборки через лаунчер.</div>
+            <div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Серверный тик стабилизирован на <b style="color:var(--text);">20.0 TPS</b></div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Пинг для СНГ снижен на 30%</div>
+              <div style="font-size:13px;color:var(--dim);padding:4px 0 4px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Автосинхронизация сборки через лаунчер</div>
+            </div>
+          </div>
+        </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ЭКРАН: ГАЛЕРЕЯ -->
+    <div class="content" id="viewGallery" style="display:none">
+      <div class="inner">
+
+        <!-- EMPTY STATE (когда нет скриншотов) -->
+        <div class="empty-state" id="galleryEmpty" style="display:none">
+          <div class="empty-title">НЕТ СКРИНШОТОВ</div>
+          <div class="empty-desc">Нажми F2 во время игры — снимки появятся здесь автоматически</div>
+        </div>
+
+        <!-- СЕТКА СКРИНШОТОВ 16:9 -->
+        <div id="galleryContent">
+          <div class="gallery-toolbar">
+            <div class="gallery-count" id="galleryCount">Всего снимков: 3</div>
+            <button class="btn line sm" id="btnOpenFolder" onclick="openScreenshotsFolder()">Открыть папку</button>
+          </div>
+          <div class="gallery-grid" id="galleryGrid"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ЭКРАН: РЕЙТИНГ -->
+    <div class="content" id="viewRating" style="display:none">
+      <div class="inner">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="rating-table">
+            <thead>
+              <tr>
+                <th style="width:50px">#</th>
+                <th>Цивилизация / Лидер</th>
+                <th>Города</th>
+                <th>Сила</th>
+                <th>Эпоха</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="rank-badge rank-1">1</span></td>
+                <td><b style="color:var(--text)">Imperium Romanum</b> <small style="color:var(--dim)">[Caesar]</small></td>
+                <td>6</td>
+                <td>48,920</td>
+                <td>Античность</td>
+              </tr>
+              <tr>
+                <td><span class="rank-badge rank-2">2</span></td>
+                <td><b style="color:var(--text)">Nordheim</b> <small style="color:var(--dim)">[Ragnar]</small></td>
+                <td>4</td>
+                <td>37,410</td>
+                <td>Средневековье</td>
+              </tr>
+              <tr>
+                <td><span class="rank-badge rank-3">3</span></td>
+                <td><b style="color:var(--text)">Sparta</b> <small style="color:var(--dim)">[Leonidas]</small></td>
+                <td>3</td>
+                <td>31,180</td>
+                <td>Античность</td>
+              </tr>
+              <tr>
+                <td><span class="rank-badge">4</span></td>
+                <td><b style="color:var(--text)">Kyiv Rus</b> <small style="color:var(--dim)">[Yaroslav]</small></td>
+                <td>4</td>
+                <td>28,450</td>
+                <td>Средневековье</td>
+              </tr>
+              <tr>
+                <td><span class="rank-badge">5</span></td>
+                <td><b style="color:var(--text)">Yamato</b> <small style="color:var(--dim)">[Oda]</small></td>
+                <td>3</td>
+                <td>24,900</td>
+                <td>Феодализм</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ЛАЙТБОКС ПРОСМОТРА СКРИНШОТОВ -->
+<div class="lightbox" id="lightbox" onclick="handleLightboxBackdrop(event)">
+  <div class="lightbox-header">
+    <div class="lightbox-title" id="lightboxTitle">Скриншот</div>
+    <div class="lightbox-actions">
+      <button class="btn ghost sm" id="btnCopyScreenshot" onclick="copyScreenshot()">Копировать</button>
+      <button class="btn ghost sm btn-delete" onclick="deleteCurrentScreenshot()">Удалить</button>
+      <button class="lightbox-close" onclick="closeLightbox()" title="Закрыть (Esc)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+  <div class="lightbox-body">
+    <button class="lightbox-nav lightbox-prev" onclick="prevScreenshot(event)" title="Предыдущий (←)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <div class="lightbox-img-wrap">
+      <img src="" id="lightboxImg" class="lightbox-img" alt="Скриншот">
+    </div>
+    <button class="lightbox-nav lightbox-next" onclick="nextScreenshot(event)" title="Следующий (→)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+  </div>
+  <div class="lightbox-footer">
+    <div id="lightboxMeta">1920x1080 • 2.4 MB</div>
+    <div id="lightboxCounter">1 / 3</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let toastTimer;
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+  }
+
+  function setBar(pct, label){
+    document.getElementById('barFill').style.width = pct+'%';
+    document.getElementById('barPct').textContent = pct+'%';
+    if(label !== undefined) document.getElementById('statusMeta').textContent = label;
+  }
+  function hideBar(){
+    document.getElementById('barFill').style.width = '0%';
+    document.getElementById('barPct').textContent = '0%';
+  }
+
+  let installed = false, updateAvailable = false;
+  let installing = false, stopRequested = false, simTimer = null;
+
+  function setInstallBtn(mode){
+    const b = document.getElementById('btnInstall');
+    if(mode === 'stop'){
+      b.textContent = 'Остановить';
+      b.classList.remove('primary');
+      b.classList.add('ghost');
+      b.disabled = false;
+    } else {
+      b.textContent = 'Установить';
+      b.classList.remove('ghost');
+      b.classList.add('primary');
+      b.disabled = installed;
+    }
+  }
+
+  function onInstallClick(){
+    if(installing) stopInstall();
+    else run('install');
+  }
+
+  async function stopInstall(){
+    if(!installing || stopRequested) return;
+    stopRequested = true;
+    const b = document.getElementById('btnInstall');
+    b.textContent = 'Останавливаю...';
+    b.disabled = true;
+
+    if(isBackend){
+      try { await fetch('/api/cancel', { method: 'POST' }); } catch(e) {}
+      // дальше polling сам увидит cancelled и завершит
+      return;
+    }
+
+    // режим симуляции (без бэкенда)
+    if(simTimer){ clearTimeout(simTimer); simTimer = null; }
+    finishInstallUI('Установка остановлена');
+  }
+
+  function finishInstallUI(toastMsg){
+    installing = false;
+    stopRequested = false;
+    if(pollingInterval){ clearInterval(pollingInterval); pollingInterval = null; }
+    hideBar();
+    setInstallBtn('install');
+    if(toastMsg) toast(toastMsg);
+  }
+
+  function setStatus(ok){
+    installed = ok;
+    if(!ok) updateAvailable = false;
+
+    document.getElementById('bigStatus').textContent = !ok
+      ? 'НЕ УСТАНОВЛЕНО'
+      : (updateAvailable ? 'ДОСТУПНО ОБНОВЛЕНИЕ' : 'УСТАНОВЛЕНО');
+
+    document.getElementById('statusMeta').textContent = !ok
+      ? 'нажми «Установить» — лаунчер скачает всё сам'
+      : (updateAvailable ? 'вышла новая версия сборки — нажми «Обновить»' : 'версия Civilization готова к запуску');
+
+    if(!installing) setInstallBtn('install');
+    document.getElementById('btnUpdate').disabled = false;
+    document.getElementById('btnRemove').disabled = !ok;
+  }
+
+  const isBackend = window.location.protocol.startsWith('http');
+
+  async function checkBackendStatus(){
+    if(!isBackend) return;
+    try {
+      const res = await fetch('/api/status');
+      if(res.ok){
+        const data = await res.json();
+        if(data.mcDir) document.getElementById('mcPath').value = data.mcDir;
+        setStatus(data.installed);
+        updateAvailable = !data.installed ? false : (data.updateAvailable || false);
+      }
+    } catch(e) {}
+  }
+
+  let pollingInterval = null;
+  async function run(action){
+    if(action === 'install' && installed){
+      toast('Сборка уже установлена');
+      return;
+    }
+
+    const isInstall = action === 'install';
+
+    const btns = ['btnInstall','btnUpdate','btnRemove'].map(id=>document.getElementById(id));
+    btns.forEach(b=>b.disabled = true);
+
+    if(isInstall){
+      installing = true;
+      stopRequested = false;
+      setInstallBtn('stop'); // кнопка остаётся активной как «Остановить»
+    } else {
+      const ib = document.getElementById('btnInstall');
+      ib.textContent = 'Установить';
+      ib.classList.remove('ghost');
+      ib.classList.add('primary');
+      ib.disabled = true;
+    }
+
+    if(action === 'update'){
+      setBar(10, 'Проверяем наличие обновлений...');
+    } else if(action === 'install'){
+      setBar(5, 'Подготовка к установке...');
+    } else {
+      setBar(5, 'Подготовка к удалению...');
+    }
+
+    if(isBackend){
+      try {
+        const mcDir = document.getElementById('mcPath').value.trim();
+        const res = await fetch('/api/' + action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mcDir: mcDir })
+        });
+        const startData = await res.json();
+        if(startData.error){
+          toast(startData.error);
+          finishInstallUI(null);
+          document.getElementById('btnUpdate').disabled = false;
+          document.getElementById('btnRemove').disabled = !installed;
+          return;
+        }
+
+        if(pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(async ()=>{
+          try {
+            const pRes = await fetch('/api/progress');
+            if(!pRes.ok) return;
+            const pData = await pRes.json();
+            setBar(pData.percent, pData.step);
+
+            if(!pData.active){
+              clearInterval(pollingInterval);
+              pollingInterval = null;
+              if(pData.cancelled){
+                installing = false;
+                stopRequested = false;
+                hideBar();
+                setInstallBtn('install');
+                toast(action === 'install' ? 'Установка остановлена' : 'Операция остановлена');
+              } else if(pData.error){
+                installing = false;
+                stopRequested = false;
+                toast('Ошибка: ' + pData.error);
+                hideBar();
+                setInstallBtn('install');
+              } else if(pData.done){
+                installing = false;
+                stopRequested = false;
+                setInstallBtn('install');
+                if(action === 'install'){ setStatus(true); toast('Установка успешно завершена!'); }
+                if(action === 'update'){ setStatus(true); toast('Обновление успешно завершено!'); }
+                if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
+                setTimeout(hideBar, 2000);
+              }
+              document.getElementById('btnUpdate').disabled = false;
+              document.getElementById('btnRemove').disabled = !installed;
+              checkBackendStatus();
+            }
+          } catch(err) {}
+        }, 300);
+        return;
+      } catch(e) {
+        // fallback to simulation below
+        if(isInstall){ installing = true; stopRequested = false; setInstallBtn('stop'); }
+        else setInstallBtn('install');
+      }
+    }
+
+    const steps = {
+      install:  [['Поиск папки Minecraft...', 15], ['Загрузка сборки...', 55], ['Установка файлов...', 85], ['Установка успешно завершена!', 100]],
+      update:   [['Проверяем наличие обновлений...', 10], ['Обновление найдено, подготовка к загрузке...', 25], ['Загрузка обновления (65%)...', 65], ['Распаковка и установка файлов...', 85], ['Обновление профиля игры...', 95], ['Обновление успешно завершено!', 100]],
+      uninstall:[['Удаление файлов...', 60], ['Сборка успешно удалена.', 100]]
+    }[action];
+
+    let i = 0;
+    const step = ()=>{
+      if(stopRequested){
+        finishInstallUI('Установка остановлена');
+        return;
+      }
+      if(i >= steps.length){
+        installing = false;
+        stopRequested = false;
+        simTimer = null;
+        if(action === 'install'){
+          setStatus(true); toast('Установка успешно завершена!');
+        }
+        if(action === 'update'){ updateAvailable = false; setStatus(true); toast('Обновление успешно завершено!'); }
+        if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
+        setTimeout(hideBar, 1500);
+        setInstallBtn('install');
+        document.getElementById('btnUpdate').disabled = false;
+        document.getElementById('btnRemove').disabled = !installed;
+        return;
+      }
+      setBar(steps[i][1], steps[i][0]);
+      i++;
+      simTimer = setTimeout(step, 800);
+    };
+    step();
+  }
+
+  async function startGame(){
+    if(currentView !== 'main') showMain();
+    if(!installed){ toast('Сначала установи сборку'); return; }
+    if(isBackend){
+      try {
+        const res = await fetch('/api/start-game', { method: 'POST' });
+        const data = await res.json();
+        if(data.ok){
+          toast('Запуск лаунчера...');
+        } else {
+          toast(data.msg || 'Запустите TLauncher: выберите версию Civilization');
+        }
+        return;
+      } catch(e) {}
+    }
+    toast('Запуск Civilization...');
+  }
+
+  async function detectPath(){
+    if(isBackend){
+      try {
+        const res = await fetch('/api/detect-mc', { method: 'POST' });
+        const data = await res.json();
+        if(data.path){
+          document.getElementById('mcPath').value = data.path;
+          toast('Папка Minecraft найдена');
+          return;
+        }
+      } catch(e) {}
+    }
+    document.getElementById('mcPath').value = 'C:\\Users\\You\\AppData\\Roaming\\.minecraft';
+    toast('Папка найдена');
+  }
+
+  async function pickFolder(){
+    if(isBackend){
+      try {
+        const res = await fetch('/api/pick-folder', { method: 'POST' });
+        const data = await res.json();
+        if(data.path){
+          document.getElementById('mcPath').value = data.path;
+          toast('Папка выбрана');
+          return;
+        }
+      } catch(e) {}
+    }
+    toast('Выбор папки отменён');
+  }
+
+  // --- Данные скриншотов игрока (16:9) ---
+  const defaultScreenshots = [
+    {
+      src: 'assets/bg.png',
+      name: '2026-09-30_21.15.02.png',
+      date: '30 сен 2026, 21:15',
+      meta: '1920x1080 • 2.4 MB'
+    },
+    {
+      src: 'assets/bg.png',
+      name: '2026-09-28_18.40.23.png',
+      date: '28 сен 2026, 18:40',
+      meta: '1920x1080 • 2.1 MB'
+    },
+    {
+      src: 'assets/bg.png',
+      name: '2026-09-24_14.05.50.png',
+      date: '24 сен 2026, 14:05',
+      meta: '1920x1080 • 2.3 MB'
+    }
+  ];
+
+  let playerScreenshots = [...defaultScreenshots];
+  let currentScreenshotIdx = 0;
+
+  function renderGallery(){
+    const empty = document.getElementById('galleryEmpty');
+    const content = document.getElementById('galleryContent');
+    const grid = document.getElementById('galleryGrid');
+    const count = document.getElementById('galleryCount');
+    const btnToggle = document.getElementById('btnEmptyToggle');
+
+    if (!playerScreenshots.length) {
+      empty.style.display = 'flex';
+      content.style.display = 'none';
+      return;
+    }
+
+    empty.style.display = 'none';
+    content.style.display = 'block';
+    if (btnToggle) btnToggle.textContent = 'Скрыть снимки';
+    count.textContent = 'Всего снимков: ' + playerScreenshots.length;
+
+    grid.innerHTML = playerScreenshots.map((item, idx) => `
+      <div class="screenshot-card" onclick="openLightbox(${idx})">
+        <div class="screenshot-thumb">
+          <img src="${item.src}" alt="${item.name}">
+        </div>
+        <div class="screenshot-meta">
+          <span class="screenshot-name" title="${item.name}">${item.name}</span>
+          <small class="screenshot-date">${item.date}</small>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function toggleEmptyStateDemo(){
+    if (playerScreenshots.length) {
+      playerScreenshots = [];
+    } else {
+      playerScreenshots = [...defaultScreenshots];
+    }
+    renderGallery();
+  }
+
+  async function openScreenshotsFolder(){
+    if(isBackend){
+      try { await fetch('/api/open-screenshots', { method: 'POST' }); return; } catch(e) {}
+    }
+    toast('Открытие папки со снимками...');
+  }
+
+  async function loadRealScreenshots(){
+    if(!isBackend) return;
+    try {
+      const res = await fetch('/api/screenshots');
+      if(res.ok){
+        const list = await res.json();
+        if(list && list.length){
+          playerScreenshots = list;
+          renderGallery();
+        }
+      }
+    } catch(e) {}
+  }
+
+  function setNewsEmpty(empty){
+    const emptyEl = document.getElementById('newsEmpty');
+    const contentEl = document.getElementById('newsContent');
+    if(emptyEl) emptyEl.style.display = empty ? 'flex' : 'none';
+    if(contentEl) contentEl.style.display = empty ? 'none' : 'block';
+  }
+  function toggleNewsEmptyDemo(){
+    const emptyEl = document.getElementById('newsEmpty');
+    const isCurrentlyEmpty = emptyEl && emptyEl.style.display !== 'none';
+    setNewsEmpty(!isCurrentlyEmpty);
+  }
+  function getImageBlob(src) {
+    return new Promise((resolve, reject) => {
+      // Способ 1: XHR для локального протокола file://
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', src, true);
+      xhr.responseType = 'blob';
+      xhr.onload = () => {
+        if ((xhr.status === 200 || xhr.status === 0) && xhr.response && xhr.response.size > 0) {
+          resolve(new Blob([xhr.response], { type: 'image/png' }));
+        } else {
+          tryCanvas();
+        }
+      };
+      xhr.onerror = () => tryCanvas();
+      xhr.send();
+
+      // Способ 2: Отрисовка в Canvas и экспорт PNG Blob
+      function tryCanvas() {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob(blob => {
+              if (blob) resolve(blob);
+              else reject(new Error('Не удалось сформировать изображение'));
+            }, 'image/png');
+          } catch(err) {
+            reject(err);
+          }
+        };
+        img.onerror = () => reject(new Error('Не удалось загрузить изображение'));
+        img.src = src;
+      }
+    });
+  }
+
+  let copyResetTimer;
+  async function copyScreenshot(){
+    if (!playerScreenshots.length) return;
+    const item = playerScreenshots[currentScreenshotIdx];
+    const btn = document.getElementById('btnCopyScreenshot');
+
+    try {
+      const blob = await getImageBlob(item.src);
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+
+      if (btn) {
+        btn.textContent = 'Скопировано';
+        btn.classList.add('copied');
+        clearTimeout(copyResetTimer);
+        copyResetTimer = setTimeout(()=>{
+          btn.textContent = 'Копировать';
+          btn.classList.remove('copied');
+        }, 1600);
+      }
+      toast('Картинка скопирована в буфер');
+    } catch(err) {
+      console.error('Ошибка копирования картинки:', err);
+      toast('Не удалось скопировать картинку');
+    }
+  }
+
+  function deleteCurrentScreenshot(){
+    if (!playerScreenshots.length) return;
+    playerScreenshots.splice(currentScreenshotIdx, 1);
+    toast('Скриншот удален');
+    if (!playerScreenshots.length) {
+      closeLightbox();
+      renderGallery();
+      return;
+    }
+    if (currentScreenshotIdx >= playerScreenshots.length) {
+      currentScreenshotIdx = playerScreenshots.length - 1;
+    }
+    openLightbox(currentScreenshotIdx);
+    renderGallery();
+  }
+
+  // --- Лайтбокс просмотрщика скриншотов ---
+  function openLightbox(idx){
+    if (idx < 0 || idx >= playerScreenshots.length) return;
+    currentScreenshotIdx = idx;
+    const item = playerScreenshots[idx];
+    document.getElementById('lightboxTitle').textContent = item.name;
+    document.getElementById('lightboxImg').src = item.src;
+    document.getElementById('lightboxMeta').textContent = item.meta;
+    document.getElementById('lightboxCounter').textContent = (idx + 1) + ' / ' + playerScreenshots.length;
+    document.getElementById('lightbox').classList.add('show');
+  }
+
+  function closeLightbox(){
+    document.getElementById('lightbox').classList.remove('show');
+  }
+
+  function prevScreenshot(e){
+    if (e) e.stopPropagation();
+    if (!playerScreenshots.length) return;
+    currentScreenshotIdx = (currentScreenshotIdx - 1 + playerScreenshots.length) % playerScreenshots.length;
+    openLightbox(currentScreenshotIdx);
+  }
+
+  function nextScreenshot(e){
+    if (e) e.stopPropagation();
+    if (!playerScreenshots.length) return;
+    currentScreenshotIdx = (currentScreenshotIdx + 1) % playerScreenshots.length;
+    openLightbox(currentScreenshotIdx);
+  }
+
+  function handleLightboxBackdrop(e){
+    if (e.target.id === 'lightbox' || e.target.classList.contains('lightbox-body')) {
+      closeLightbox();
+    }
+  }
+
+  window.addEventListener('keydown', (e)=>{
+    const lb = document.getElementById('lightbox');
+    if (!lb || !lb.classList.contains('show')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') prevScreenshot();
+    if (e.key === 'ArrowRight') nextScreenshot();
+  });
+
+  let currentView = 'main';
+  function hideAllViews(){
+    ['viewMain', 'viewNews', 'viewGallery', 'viewRating'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    ['btnNews', 'btnGallery', 'btnRating'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    });
+  }
+
+  function showMain(){
+    currentView = 'main';
+    hideAllViews();
+    document.getElementById('viewMain').style.display = 'flex';
+    document.getElementById('pageTitle').textContent = 'MAIN';
+  }
+
+  function showNews(){
+    currentView = 'news';
+    hideAllViews();
+    document.getElementById('viewNews').style.display = 'flex';
+    document.getElementById('btnNews').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'НОВОСТИ';
+  }
+
+  function showGallery(){
+    currentView = 'gallery';
+    hideAllViews();
+    document.getElementById('viewGallery').style.display = 'flex';
+    document.getElementById('btnGallery').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'ГАЛЕРЕЯ';
+    renderGallery();
+  }
+
+  function showRating(){
+    currentView = 'rating';
+    hideAllViews();
+    document.getElementById('viewRating').style.display = 'flex';
+    document.getElementById('btnRating').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'РЕЙТИНГ';
+  }
+
+  let autoUpdate = true;
+  function toggleAutoUpdate(enabled){
+    autoUpdate = enabled;
+    toast(enabled ? 'Автообновление включено' : 'Автообновление выключено');
+  }
+
+  showMain();
+  setStatus(false);
+  checkBackendStatus();
+  loadRealScreenshots();
+</script>
+</body>
+</html>
+

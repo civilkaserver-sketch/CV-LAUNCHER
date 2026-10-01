@@ -1,0 +1,16 @@
+{
+  "name": "Civilization Launcher",
+  "short_name": "Civilization",
+  "start_url": "/ui.html",
+  "scope": "/",
+  "display": "standalone",
+  "theme_color": "#0c0c0c",
+  "background_color": "#0c0c0c",
+  "icons": [
+    {
+      "src": "assets/icon.png",
+      "sizes": "264x264",
+      "type": "image/png"
+    }
+  ]
+}
