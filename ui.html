@@ -597,24 +597,41 @@
   .folder-bar-path{
     flex:1;
     min-width:0;
-    font-size:13px;
+    font-size:11px;
     color:var(--muted);
-    font-family:monospace;
+    font-family:'Minecraft Rus', monospace;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
-    letter-spacing:.3px;
+    letter-spacing:.5px;
+    cursor:pointer;
+    transition:color .15s;
+    user-select:none;
+  }
+  .folder-bar-path:hover{
+    color:var(--text);
   }
   .folder-change-wrap{
     position:relative;
     flex-shrink:0;
   }
   .folder-change-btn{
-    height:34px;
-    padding:0 14px;
+    background:none;
+    border:none;
+    color:var(--dim);
+    font-family:inherit;
     font-size:12px;
     letter-spacing:1px;
+    cursor:pointer;
+    padding:6px 8px;
+    transition:color .15s;
     white-space:nowrap;
+    display:inline-flex;
+    align-items:center;
+    user-select:none;
+  }
+  .folder-change-btn:hover{
+    color:var(--text);
   }
   .folder-menu{
     position:absolute;
@@ -1124,10 +1141,10 @@
         <!-- СТРОКА «ПАПКА» (ТОНКАЯ, ~52px) -->
         <div class="folder-bar">
           <div class="folder-bar-label">ПАПКА</div>
-          <div class="folder-bar-path" id="mcPathDisplay" title="C:\Users\You\AppData\Roaming\.minecraft">C:\Users\You\AppData\Roaming\.minecraft</div>
+          <div class="folder-bar-path" id="mcPathDisplay" onclick="copyPathToClipboard()" title="Нажмите, чтобы скопировать путь">C:\Users\You\AppData\Roaming\.minecraft</div>
           <input type="hidden" id="mcPath" value="C:\Users\You\AppData\Roaming\.minecraft">
           <div class="folder-change-wrap" id="folderChangeWrap">
-            <button class="btn line folder-change-btn" id="btnChangeFolder" onclick="toggleFolderMenu(event)">Изменить</button>
+            <button class="folder-change-btn" id="btnChangeFolder" onclick="toggleFolderMenu(event)">Изменить</button>
             <div class="folder-menu" id="folderMenu">
               <button class="more-item" onclick="onFolderMenuAction('detect', event)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
@@ -1374,7 +1391,40 @@
     if(input) input.value = val;
     if(disp){
       disp.textContent = val;
-      disp.title = val;
+      disp.title = val + ' (нажмите, чтобы скопировать)';
+    }
+  }
+
+  function copyPathToClipboard(){
+    const input = document.getElementById('mcPath');
+    const disp = document.getElementById('mcPathDisplay');
+    const val = (input && input.value) ? input.value : (disp ? disp.textContent : '');
+    if(!val) return;
+
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(val).then(()=>{
+        toast('Путь скопирован в буфер');
+      }).catch(()=>{
+        fallbackCopy(val);
+      });
+    } else {
+      fallbackCopy(val);
+    }
+  }
+
+  function fallbackCopy(text){
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('Путь скопирован в буфер');
+    } catch(e){
+      toast('Не удалось скопировать');
     }
   }
 
