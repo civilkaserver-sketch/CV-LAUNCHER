@@ -391,27 +391,50 @@
     position:relative;
     display:inline-block;
   }
+  .btn.more-btn,
   .more-btn,
   .menu-btn{
-    width:42px;
-    height:42px;
-    padding:0;
-    line-height:1;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    letter-spacing:0;
-    cursor:pointer;
-    color:var(--text);
+    width:42px !important;
+    min-width:42px !important;
+    max-width:42px !important;
+    height:42px !important;
+    min-height:42px !important;
+    max-height:42px !important;
+    padding:0 !important;
+    line-height:1 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    letter-spacing:0 !important;
+    cursor:pointer !important;
+    color:var(--text) !important;
+    background:var(--card) !important;
+    border:1px solid var(--line) !important;
+    border-radius:var(--r) !important;
+    flex-shrink:0 !important;
   }
+  .btn.more-btn svg,
   .more-btn svg,
   .menu-btn svg{
-    display:block;
-    color:inherit;
+    width:20px !important;
+    height:20px !important;
+    display:block !important;
+    stroke:currentColor !important;
+    color:inherit !important;
+    flex-shrink:0 !important;
   }
+  .btn.more-btn:hover,
   .more-btn:hover,
   .menu-btn:hover{
-    color:var(--text-hover);
+    background:var(--card-hover) !important;
+    border-color:var(--line-strong) !important;
+    color:var(--text-hover) !important;
+  }
+  .btn.more-btn:hover svg,
+  .more-btn:hover svg,
+  .menu-btn:hover svg{
+    stroke:var(--text-hover) !important;
+    color:var(--text-hover) !important;
   }
   .more-menu,
   .folder-menu{
@@ -1094,9 +1117,9 @@
 
           <div class="banner-actions">
             <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
-            <div class="more-wrap" id="moreWrap" style="display:none">
+            <div class="more-wrap" id="moreWrap">
               <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" aria-label="Настройки" title="Настройки">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <circle cx="12" cy="12" r="3"></circle>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                 </svg>
@@ -1582,9 +1605,9 @@
       if(badgeText) badgeText.textContent = ok ? 'Установлено' : 'Не установлено';
     }
 
-    // Меню дополнительных действий (···) доступно ТОЛЬКО когда сборка установлена и нет активного процесса
+    // Кнопка настроек (шестерёнка) доступна всегда, кроме активного процесса установки/обновления
     if(moreWrap){
-      moreWrap.style.display = (ok && !installing) ? 'inline-block' : 'none';
+      moreWrap.style.display = installing ? 'none' : 'inline-block';
     }
     if(moreBtn){
       moreBtn.disabled = false;
