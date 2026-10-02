@@ -994,25 +994,30 @@
   }
   .lightbox-img-wrap{
     max-width:85vw;max-height:76vh;
-    aspect-ratio:16 / 9;
-    border-radius:var(--r);overflow:hidden;
-    border:1px solid var(--line);
-    box-shadow:0 12px 40px rgba(0,0,0,.8);
-    background:#000;display:flex;align-items:center;justify-content:center;
+    display:flex;align-items:center;justify-content:center;
+    background:transparent;border:none;box-shadow:none;
   }
   .lightbox-img{
-    width:100%;height:100%;object-fit:contain;display:block;
+    max-width:85vw;max-height:76vh;
+    width:auto;height:auto;
+    object-fit:contain;display:block;
+    border:none;box-shadow:none;
   }
   .lightbox-nav{
     position:absolute;top:50%;transform:translateY(-50%);
-    background:var(--card);border:1px solid var(--line);
-    color:var(--text);width:44px;height:44px;border-radius:var(--r);
+    background:transparent;border:none;
+    color:var(--dim);width:44px;height:44px;border-radius:var(--r);
     cursor:pointer;display:flex;align-items:center;justify-content:center;
-    transition:background .15s,border-color .15s,color .15s;
+    transition:color .15s;
     user-select:none;padding:0;
   }
   .lightbox-nav:hover{
-    background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover);
+    background:transparent;border:none;color:var(--text);
+  }
+  .lightbox-nav:disabled{
+    opacity:.15;
+    cursor:default;
+    pointer-events:none;
   }
   .lightbox-nav svg{display:block}
   .lightbox-prev{left:24px}
@@ -1084,7 +1089,7 @@
     max-height:88vh;
     display:flex;
     flex-direction:column;
-    box-shadow:0 24px 60px rgba(0,0,0,.7);
+    box-shadow:none;
     overflow:hidden;
     transform:scale(.97);
     transition:transform .2s ease;
@@ -3008,6 +3013,12 @@
     document.getElementById('lightboxImg').src = item.src;
     document.getElementById('lightboxMeta').textContent = item.meta;
     document.getElementById('lightboxCounter').textContent = (idx + 1) + ' / ' + playerScreenshots.length;
+
+    const prevBtn = document.querySelector('.lightbox-prev');
+    const nextBtn = document.querySelector('.lightbox-next');
+    if (prevBtn) prevBtn.disabled = (idx <= 0);
+    if (nextBtn) nextBtn.disabled = (idx >= playerScreenshots.length - 1);
+
     document.getElementById('lightbox').classList.add('show');
   }
 
@@ -3018,19 +3029,21 @@
   function prevScreenshot(e){
     if (e) e.stopPropagation();
     if (!playerScreenshots.length) return;
-    currentScreenshotIdx = (currentScreenshotIdx - 1 + playerScreenshots.length) % playerScreenshots.length;
+    if (currentScreenshotIdx <= 0) return;
+    currentScreenshotIdx--;
     openLightbox(currentScreenshotIdx);
   }
 
   function nextScreenshot(e){
     if (e) e.stopPropagation();
     if (!playerScreenshots.length) return;
-    currentScreenshotIdx = (currentScreenshotIdx + 1) % playerScreenshots.length;
+    if (currentScreenshotIdx >= playerScreenshots.length - 1) return;
+    currentScreenshotIdx++;
     openLightbox(currentScreenshotIdx);
   }
 
   function handleLightboxBackdrop(e){
-    if (e.target.id === 'lightbox' || e.target.classList.contains('lightbox-body')) {
+    if (e.target.id === 'lightbox' || e.target.classList.contains('lightbox-body') || e.target.classList.contains('lightbox-img-wrap')) {
       closeLightbox();
     }
   }
