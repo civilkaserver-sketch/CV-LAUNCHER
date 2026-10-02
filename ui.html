@@ -313,16 +313,6 @@
     border:1px solid var(--line);
     border-radius:var(--r);
   }
-  .banner-bg-layer{
-    position:absolute;
-    inset:0;
-    background-position:center right;
-    background-size:cover;
-    background-repeat:no-repeat;
-    transition:opacity 1.5s ease-in-out;
-    pointer-events:none;
-    z-index:0;
-  }
   #bannerCard::before{
     content:'';
     position:absolute;
@@ -331,8 +321,20 @@
     background-position:center right;
     background-size:cover;
     background-repeat:no-repeat;
+    pointer-events:none;
     z-index:0;
-    display:none;
+  }
+  #bannerCard .banner-bg-layer{
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    height:100% !important;
+    background-position:center right !important;
+    background-size:cover !important;
+    background-repeat:no-repeat !important;
+    transition:opacity 1.5s ease-in-out !important;
+    pointer-events:none !important;
+    z-index:0 !important;
   }
   #bannerCard::after{
     content:'';
@@ -343,12 +345,9 @@
     pointer-events:none;
     z-index:1;
   }
-  #bannerCard > *{
+  #bannerCard > *:not(.banner-bg-layer){
     position:relative;
     z-index:2;
-  }
-  #bannerCard > .banner-bg-layer{
-    z-index:0;
   }
 
   #bannerCard .banner-badge{
@@ -1697,8 +1696,8 @@
         <div id="newsContent">
           <!-- карточка 1 -->
           <div class="news-card">
-            <div style="height:200px;overflow:hidden;line-height:0;background:#ffffff;">
-              <img src="assets/news_banner_1.svg" alt="CIVILIZATION REBORN" style="width:100%;height:200px;object-fit:cover;display:block;">
+            <div style="height:200px;overflow:hidden;line-height:0;background:var(--card);">
+              <img src="assets/news_banner_1.png" onerror="this.src='assets/news_banner_1.svg'" alt="CIVILIZATION REBORN" style="width:100%;height:200px;object-fit:cover;display:block;">
             </div>
             <div class="news-content-collapse" id="newsCollapseWrap">
               <div style="padding:22px 24px 24px;">
@@ -1724,7 +1723,7 @@
 
                 <!-- Скриншот 1: Меню -->
                 <div class="news-shot-plate">
-                  <img src="assets/news/menu.png" alt="Главное меню" loading="lazy">
+                  <img src="assets/news/menu.png" alt="Главное меню">
                 </div>
               </div>
 
@@ -1741,7 +1740,7 @@
 
                 <!-- Скриншот 2: Трейды -->
                 <div class="news-shot-plate">
-                  <img src="assets/news/trades.png" alt="Трейды" loading="lazy">
+                  <img src="assets/news/trades.png" alt="Трейды">
                 </div>
               </div>
 
@@ -1769,7 +1768,7 @@
 
                 <!-- Скриншот 3: Банк -->
                 <div class="news-shot-plate">
-                  <img src="assets/news/bank.png" alt="Банк" loading="lazy">
+                  <img src="assets/news/bank.png" alt="Банк">
                 </div>
 
                 <!-- Подраздел: Рынок -->
@@ -1788,7 +1787,7 @@
 
                 <!-- Скриншот 4: Рынок -->
                 <div class="news-shot-plate">
-                  <img src="assets/news/market.png" alt="Рынок" loading="lazy">
+                  <img src="assets/news/market.png" alt="Рынок">
                 </div>
 
                 <!-- Подраздел: Хранилище -->
@@ -1814,7 +1813,7 @@
 
                 <!-- Скриншот 5: Хранилище -->
                 <div class="news-shot-plate">
-                  <img src="assets/news/storage.png" alt="Хранилище" loading="lazy">
+                  <img src="assets/news/storage.png" alt="Хранилище">
                 </div>
               </div>
 
@@ -1832,7 +1831,7 @@
 
                 <!-- Скриншот 6: Продажа -->
                 <div class="news-shot-plate">
-                  <img src="assets/news/sell.png" alt="Продажа предметов" loading="lazy">
+                  <img src="assets/news/sell.png" alt="Продажа предметов">
                 </div>
               </div>
 
@@ -1847,7 +1846,7 @@
 
                 <!-- Скриншот 7: Восьмёрка -->
                 <div class="news-shot-plate">
-                  <img src="assets/news/eight.png" alt="NPC и Восьмёрка" loading="lazy">
+                  <img src="assets/news/eight.png" alt="NPC и Восьмёрка">
                 </div>
               </div>
 
@@ -1864,7 +1863,7 @@
 
                 <!-- Скриншот 8: Таверна -->
                 <div class="news-shot-plate">
-                  <img src="assets/news/tavern.png" alt="Таверна в Аду" loading="lazy">
+                  <img src="assets/news/tavern.png" alt="Таверна в Аду">
                 </div>
               </div>
 
@@ -1881,7 +1880,7 @@
 
                 <!-- Скриншот 9: Союзы -->
                 <div class="news-shot-plate">
-                  <img src="assets/news/allies.png" alt="Союзы" loading="lazy">
+                  <img src="assets/news/allies.png" alt="Союзы">
                 </div>
               </div>
 
