@@ -749,33 +749,432 @@ namespace CivilizationLauncher
                 return;
             }
 
+            if (endpoint == "game-status")
+            {
+                bool running = IsGameRunning();
+                int pid = 0;
+                try { if (activeGameProcess != null && !activeGameProcess.HasExited) pid = activeGameProcess.Id; } catch { }
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "running", running },
+                    { "pid", pid }
+                });
+                return;
+            }
+
             if (endpoint == "start-game")
             {
-                string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
-                string[] launcherExes = new string[] {
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".tlauncher\TLauncher.exe"),
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Minecraft Launcher\MinecraftLauncher.exe"),
-                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), @"Minecraft Launcher\MinecraftLauncher.exe")
-                };
-                string foundLauncher = null;
-                foreach (string lex in launcherExes)
+                string mcDir = GetTargetMcDir();
+                if (!TestIsInstalled(mcDir))
                 {
-                    if (File.Exists(lex)) { foundLauncher = lex; break; }
+                    SendJson(ctx, new Dictionary<string, object> {
+                        { "ok", false },
+                        { "msg", "Сборка ещё не установлена" }
+                    });
+                    return;
                 }
-                if (foundLauncher != null)
+
+                if (IsGameRunning())
                 {
-                    try { Process.Start(foundLauncher); } catch { }
-                    SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "launcher", foundLauncher } });
+                    SendJson(ctx, new Dictionary<string, object> {
+                        { "ok", true },
+                        { "alreadyRunning", true },
+                        { "msg", "Игра уже запущена!" }
+                    });
+                    return;
                 }
-                else
-                {
-                    SendJson(ctx, new Dictionary<string, object> { { "ok", false }, { "msg", "Лаунчер не найден, запустите TLauncher вручную" } });
-                }
+
+                string err;
+                bool started = LaunchCivilizationGame(mcDir, out err);
+                int pid = 0;
+                try { if (activeGameProcess != null && !activeGameProcess.HasExited) pid = activeGameProcess.Id; } catch { }
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "ok", started },
+                    { "pid", pid },
+                    { "msg", started ? "Игра запускается..." : (err ?? "Не удалось запустить игру") }
+                });
                 return;
             }
 
             ctx.Response.StatusCode = 404;
             ctx.Response.Close();
+        }
+
+        private static Process activeGameProcess = null;
+
+        static bool IsGameRunning()
+        {
+            try
+            {
+                if (activeGameProcess != null && !activeGameProcess.HasExited)
+                    return true;
+            }
+            catch { }
+
+            try
+            {
+                var procs = Process.GetProcessesByName("javaw");
+                foreach (var p in procs)
+                {
+                    try
+                    {
+                        if (!p.HasExited && (p.MainWindowTitle.IndexOf("Civilization", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                             p.MainWindowTitle.IndexOf("Minecraft", StringComparison.OrdinalIgnoreCase) >= 0))
+                        {
+                            activeGameProcess = p;
+                            return true;
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
+            return false;
+        }
+
+        static string FindTLauncherExe(string mcDir)
+        {
+            var candidates = new List<string>();
+            if (!string.IsNullOrEmpty(mcDir))
+            {
+                candidates.Add(Path.Combine(mcDir, "TLauncher.exe"));
+            }
+            candidates.Add(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".tlauncher\TLauncher.exe"));
+            candidates.Add(@"E:\Games\.minecraft\TLauncher.exe");
+            candidates.Add(@"D:\Games\.minecraft\TLauncher.exe");
+            candidates.Add(@"C:\Games\.minecraft\TLauncher.exe");
+
+            try
+            {
+                string lnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs\TLauncher.lnk");
+                if (File.Exists(lnk))
+                {
+                    Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                    if (shellType != null)
+                    {
+                        dynamic shell = Activator.CreateInstance(shellType);
+                        dynamic shortcut = shell.CreateShortcut(lnk);
+                        string target = shortcut.TargetPath;
+                        if (!string.IsNullOrEmpty(target) && File.Exists(target)) candidates.Insert(0, target);
+                    }
+                }
+            }
+            catch { }
+
+            foreach (string c in candidates)
+            {
+                if (File.Exists(c)) return c;
+            }
+            return null;
+        }
+
+        static string FindJavaExe(string mcDir)
+        {
+            string[] candidateRuntimes = new string[] {
+                "java-runtime-delta",
+                "java-runtime-gamma",
+                "java-runtime-beta",
+                "java-runtime-alpha",
+                "jre-x64",
+                "java"
+            };
+            foreach (string r in candidateRuntimes)
+            {
+                string p1 = Path.Combine(mcDir, string.Format(@"runtime\{0}\windows\{0}\bin\javaw.exe", r));
+                if (File.Exists(p1)) return p1;
+                string p2 = Path.Combine(mcDir, string.Format(@"runtime\{0}\bin\javaw.exe", r));
+                if (File.Exists(p2)) return p2;
+            }
+
+            string tlJvms = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".tlauncher\jvms");
+            if (Directory.Exists(tlJvms))
+            {
+                foreach (var d in Directory.GetDirectories(tlJvms))
+                {
+                    string jw = Path.Combine(d, @"bin\javaw.exe");
+                    if (File.Exists(jw) && GetJavaMajor(jw) >= 21) return jw;
+                }
+            }
+
+            string[] pfDirs = new string[] {
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles),
+                Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)
+            };
+            foreach (string pf in pfDirs)
+            {
+                string jDir = Path.Combine(pf, "Java");
+                if (Directory.Exists(jDir))
+                {
+                    foreach (var d in Directory.GetDirectories(jDir))
+                    {
+                        string jw = Path.Combine(d, @"bin\javaw.exe");
+                        if (File.Exists(jw) && GetJavaMajor(jw) >= 21) return jw;
+                    }
+                }
+                string msDir = Path.Combine(pf, @"Microsoft\jdk");
+                if (Directory.Exists(msDir))
+                {
+                    foreach (var d in Directory.GetDirectories(msDir))
+                    {
+                        string jw = Path.Combine(d, @"bin\javaw.exe");
+                        if (File.Exists(jw) && GetJavaMajor(jw) >= 21) return jw;
+                    }
+                }
+            }
+
+            string jh = Environment.GetEnvironmentVariable("JAVA_HOME");
+            if (!string.IsNullOrEmpty(jh))
+            {
+                string jw = Path.Combine(jh, @"bin\javaw.exe");
+                if (File.Exists(jw)) return jw;
+            }
+
+            return "javaw.exe";
+        }
+
+        static bool LaunchCivilizationGame(string mcDir, out string error)
+        {
+            error = null;
+            try
+            {
+                string civDir = Path.Combine(mcDir, @"versions\Civilization");
+                string jsonPath = Path.Combine(civDir, "Civilization.json");
+                if (!File.Exists(jsonPath))
+                {
+                    error = "Файл версии Civilization.json не найден";
+                    return false;
+                }
+
+                // 1. Считываем аккаунт из TlauncherProfiles.json
+                string username = "gugomot";
+                string uuid = "ee8cd5dee7bb400ba8e50e60210c3926";
+                try
+                {
+                    string tpPath = Path.Combine(mcDir, "TlauncherProfiles.json");
+                    if (!File.Exists(tpPath)) tpPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".minecraft\TlauncherProfiles.json");
+                    if (File.Exists(tpPath))
+                    {
+                        var tp = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(File.ReadAllText(tpPath, Encoding.UTF8));
+                        string selUuid = tp.ContainsKey("selectedAccountUUID") ? (string)tp["selectedAccountUUID"] : null;
+                        if (string.IsNullOrEmpty(selUuid) && tp.ContainsKey("freeAccountUUID")) selUuid = (string)tp["freeAccountUUID"];
+                        if (tp.ContainsKey("accounts") && tp["accounts"] is Dictionary<string, object>)
+                        {
+                            var accs = (Dictionary<string, object>)tp["accounts"];
+                            Dictionary<string, object> chosen = null;
+                            if (!string.IsNullOrEmpty(selUuid) && accs.ContainsKey(selUuid))
+                                chosen = accs[selUuid] as Dictionary<string, object>;
+                            else
+                            {
+                                foreach (var v in accs.Values)
+                                {
+                                    chosen = v as Dictionary<string, object>;
+                                    if (chosen != null) break;
+                                }
+                            }
+                            if (chosen != null)
+                            {
+                                if (chosen.ContainsKey("username")) username = (string)chosen["username"];
+                                else if (chosen.ContainsKey("displayName")) username = (string)chosen["displayName"];
+                                if (chosen.ContainsKey("uuid")) uuid = ((string)chosen["uuid"]).Replace("-", "");
+                            }
+                        }
+                    }
+                }
+                catch { }
+
+                // 2. RAM из tlauncher-2.0.properties и синхронизация свойств
+                int ramMb = 3000;
+                try
+                {
+                    string tlProps = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".tlauncher\tlauncher-2.0.properties");
+                    if (File.Exists(tlProps))
+                    {
+                        var lines = new List<string>(File.ReadAllLines(tlProps, Encoding.UTF8));
+                        bool hasVer = false;
+                        for (int i = 0; i < lines.Count; i++)
+                        {
+                            var m = Regex.Match(lines[i], @"^minecraft\.memory\.ram2=(\d+)");
+                            if (m.Success) ramMb = int.Parse(m.Groups[1].Value);
+
+                            if (lines[i].StartsWith("login.version.game="))
+                            {
+                                lines[i] = "login.version.game=Civilization";
+                                hasVer = true;
+                            }
+                            if (lines[i].StartsWith("minecraft.onlaunch="))
+                            {
+                                lines[i] = "minecraft.onlaunch=hide";
+                            }
+                        }
+                        if (!hasVer) lines.Add("login.version.game=Civilization");
+                        File.WriteAllLines(tlProps, lines.ToArray(), Encoding.UTF8);
+                    }
+                }
+                catch { }
+                if (ramMb < 1500) ramMb = 3000;
+
+                // 3. Сборка classpath из библиотек Civilization.json
+                var cpList = new List<string>();
+                string jsonTxt = File.ReadAllText(jsonPath, Encoding.UTF8);
+                var jss = new JavaScriptSerializer();
+                jss.MaxJsonLength = int.MaxValue;
+                var root = jss.Deserialize<Dictionary<string, object>>(jsonTxt);
+
+                if (root.ContainsKey("libraries") && root["libraries"] is ArrayList)
+                {
+                    var libs = (ArrayList)root["libraries"];
+                    foreach (object item in libs)
+                    {
+                        var lib = item as Dictionary<string, object>;
+                        if (lib == null) continue;
+
+                        if (lib.ContainsKey("rules") && lib["rules"] is ArrayList)
+                        {
+                            var rules = (ArrayList)lib["rules"];
+                            bool allowed = false;
+                            foreach (object rObj in rules)
+                            {
+                                var rule = rObj as Dictionary<string, object>;
+                                if (rule == null) continue;
+                                string action = (string)rule["action"];
+                                if (rule.ContainsKey("os") && rule["os"] is Dictionary<string, object>)
+                                {
+                                    var osDict = (Dictionary<string, object>)rule["os"];
+                                    string osName = (string)osDict["name"];
+                                    if (osName == "windows") allowed = (action == "allow");
+                                }
+                                else
+                                {
+                                    allowed = (action == "allow");
+                                }
+                            }
+                            if (!allowed) continue;
+                        }
+
+                        if (lib.ContainsKey("name"))
+                        {
+                            string coord = (string)lib["name"];
+                            string[] parts = coord.Split(':');
+                            if (parts.Length >= 3)
+                            {
+                                string group = parts[0].Replace('.', '\\');
+                                string artifact = parts[1];
+                                string version = parts[2];
+                                string classifier = parts.Length > 3 ? ("-" + parts[3]) : "";
+                                string jarName = string.Format("{0}-{1}{2}.jar", artifact, version, classifier);
+                                string jarPath = Path.Combine(mcDir, "libraries", group, artifact, version, jarName);
+                                if (File.Exists(jarPath) && !cpList.Contains(jarPath))
+                                {
+                                    cpList.Add(jarPath);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                string civJar = Path.Combine(civDir, "Civilization.jar");
+                if (File.Exists(civJar) && !cpList.Contains(civJar)) cpList.Add(civJar);
+
+                string natives = Path.Combine(civDir, "natives");
+                if (!Directory.Exists(natives)) Directory.CreateDirectory(natives);
+
+                string javaExe = FindJavaExe(mcDir);
+
+                // Если javaw не найден или classpath пуст, запасной вариант — TLauncher в фоне / свернуто
+                if (string.IsNullOrEmpty(javaExe) || !File.Exists(javaExe) || cpList.Count == 0)
+                {
+                    string tlExe = FindTLauncherExe(mcDir);
+                    if (!string.IsNullOrEmpty(tlExe) && File.Exists(tlExe))
+                    {
+                        var psiTl = new ProcessStartInfo(tlExe);
+                        psiTl.WorkingDirectory = Path.GetDirectoryName(tlExe);
+                        psiTl.WindowStyle = ProcessWindowStyle.Minimized;
+                        activeGameProcess = Process.Start(psiTl);
+                        return true;
+                    }
+                    error = "Не найден Java 21 и TLauncher.exe для запуска игры";
+                    return false;
+                }
+
+                // 4. Построение аргументов команды
+                var args = new StringBuilder();
+                args.Append("-Dos.name=\"Windows 10\" ");
+                args.Append("-Dos.version=10.0 ");
+                args.Append("-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump ");
+                args.Append("-Xss1M ");
+                args.Append(string.Format("-Djava.library.path=\"{0}\" ", natives));
+                args.Append(string.Format("-Djna.tmpdir=\"{0}\" ", natives));
+                args.Append(string.Format("-Dorg.lwjgl.system.SharedLibraryExtractPath=\"{0}\" ", natives));
+                args.Append(string.Format("-Dio.netty.native.workdir=\"{0}\" ", natives));
+                args.Append("-Dminecraft.launcher.brand=minecraft-launcher ");
+                args.Append("-Dminecraft.launcher.version=2.3.173 ");
+                args.Append("-Djava.net.preferIPv6Addresses=system ");
+                args.Append("-Djava.net.preferIPv4Stack=true ");
+                args.Append(string.Format("-Xmx{0}M ", ramMb));
+                args.Append("-XX:+UnlockExperimentalVMOptions ");
+                args.Append("-XX:+UseG1GC ");
+                args.Append("-XX:G1NewSizePercent=20 ");
+                args.Append("-XX:G1ReservePercent=20 ");
+                args.Append("-XX:MaxGCPauseMillis=50 ");
+                args.Append("-XX:G1HeapRegionSize=32M ");
+                args.Append("-Dfml.ignoreInvalidMinecraftCertificates=true ");
+                args.Append("-Dfml.ignorePatchDiscrepancies=true ");
+                args.Append(string.Format("-Dminecraft.applet.TargetDirectory=\"{0}\" ", civDir));
+                args.Append(string.Format("-DlibraryDirectory=\"{0}\" ", Path.Combine(mcDir, "libraries")));
+                args.Append(string.Format("-DLibLoader.modsFolder=\"{0}\" ", Path.Combine(civDir, "mods")));
+
+                string log4j = Path.Combine(mcDir, @"assets\log_configs\client-1.12.xml");
+                if (File.Exists(log4j))
+                {
+                    args.Append(string.Format("-Dlog4j.configurationFile=\"{0}\" ", log4j));
+                }
+
+                args.Append(string.Format("-cp \"{0}\" ", string.Join(";", cpList.ToArray())));
+                args.Append("net.minecraftforge.bootstrap.ForgeBootstrap ");
+
+                args.Append(string.Format("--username \"{0}\" ", username));
+                args.Append("--version \"Civilization\" ");
+                args.Append(string.Format("--gameDir \"{0}\" ", civDir));
+                args.Append(string.Format("--assetsDir \"{0}\" ", Path.Combine(mcDir, "assets")));
+                args.Append("--assetIndex \"26\" ");
+                args.Append(string.Format("--uuid \"{0}\" ", uuid));
+                args.Append("--accessToken \"null\" ");
+                args.Append("--clientId \"null\" ");
+                args.Append("--xuid \"null\" ");
+                args.Append("--userType \"mojang\" ");
+                args.Append("--versionType \"release\" ");
+                args.Append("--width 925 ");
+                args.Append("--height 530 ");
+                args.Append("--launchTarget \"forge_client\"");
+
+                var psi = new ProcessStartInfo();
+                psi.FileName = javaExe;
+                psi.Arguments = args.ToString();
+                psi.WorkingDirectory = civDir;
+                psi.UseShellExecute = false;
+
+                activeGameProcess = Process.Start(psi);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log("Launch error: " + ex.Message);
+                try
+                {
+                    string tlExe = FindTLauncherExe(mcDir);
+                    if (!string.IsNullOrEmpty(tlExe) && File.Exists(tlExe))
+                    {
+                        var psiTl = new ProcessStartInfo(tlExe);
+                        psiTl.WorkingDirectory = Path.GetDirectoryName(tlExe);
+                        psiTl.WindowStyle = ProcessWindowStyle.Minimized;
+                        activeGameProcess = Process.Start(psiTl);
+                        return true;
+                    }
+                }
+                catch { }
+                error = ex.Message;
+                return false;
+            }
         }
 
         // ====================== ЛОГИКА УСТАНОВКИ (из Setup CV.bat) ======================

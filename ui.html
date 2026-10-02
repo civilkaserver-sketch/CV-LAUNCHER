@@ -1489,6 +1489,7 @@
 
   let installed = false, updateAvailable = false;
   let installing = false, stopRequested = false, simTimer = null;
+  let gameRunning = false, gamePollTimer = null;
 
   function setInstallBtn(mode){
     const b = document.getElementById('btnMainAction');
@@ -1503,6 +1504,7 @@
   }
 
   function onMainActionClick(){
+    if(gameRunning) return;
     if(!installed){
       if(installing) stopInstall();
       else run('install');
@@ -1589,6 +1591,14 @@
         mainBtn.disabled = false;
       }
       if(playBtn) playBtn.disabled = false;
+    } else if(gameRunning){
+      // Состояние: Игра запущена (В ИГРЕ)
+      if(mainBtn){
+        mainBtn.textContent = 'В ИГРЕ';
+        mainBtn.className = 'btn ghost banner-main-btn';
+        mainBtn.disabled = true;
+      }
+      if(playBtn) playBtn.disabled = true;
     } else {
       // Состояние: Установлено (ИГРАТЬ)
       if(mainBtn){
@@ -1602,6 +1612,44 @@
 
   const isBackend = window.location.protocol.startsWith('http');
 
+  function setGameRunningState(running, text){
+    gameRunning = running;
+    const mainBtn = document.getElementById('btnMainAction');
+    const playBtn = document.getElementById('playBtn');
+    if(running){
+      if(mainBtn){
+        mainBtn.textContent = text || 'В ИГРЕ';
+        mainBtn.className = 'btn ghost banner-main-btn';
+        mainBtn.disabled = true;
+      }
+      if(playBtn) playBtn.disabled = true;
+    } else {
+      if(!installing){
+        setStatus(installed);
+      }
+    }
+  }
+
+  async function checkGameStatus(){
+    if(!isBackend) return;
+    try {
+      const res = await fetch('/api/game-status');
+      if(res.ok){
+        const data = await res.json();
+        if(data.running){
+          if(!gameRunning){
+            setGameRunningState(true, 'В ИГРЕ');
+          }
+        } else {
+          if(gameRunning){
+            setGameRunningState(false);
+            toast('Игра завершена');
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
   async function checkBackendStatus(){
     if(!isBackend) return;
     try {
@@ -1609,9 +1657,12 @@
       if(res.ok){
         const data = await res.json();
         if(data.mcDir) updatePathDisplay(data.mcDir);
-        setStatus(data.installed);
         updateAvailable = !data.installed ? false : (data.updateAvailable || false);
         setStatus(data.installed);
+      }
+      await checkGameStatus();
+      if(!gamePollTimer){
+        gamePollTimer = setInterval(checkGameStatus, 3000);
       }
     } catch(e) {}
   }
@@ -1749,19 +1800,33 @@
   async function startGame(){
     if(currentView !== 'main') showMain();
     if(!installed){ toast('Сначала установи сборку'); return; }
+    if(gameRunning){ toast('Игра уже запущена'); return; }
+
+    setGameRunningState(true, 'ЗАПУСК...');
+
     if(isBackend){
       try {
         const res = await fetch('/api/start-game', { method: 'POST' });
         const data = await res.json();
         if(data.ok){
-          toast('Запуск лаунчера...');
+          toast(data.msg || 'Запуск игры...');
+          setGameRunningState(true, 'В ИГРЕ');
+          if(!gamePollTimer){
+            gamePollTimer = setInterval(checkGameStatus, 2500);
+          }
         } else {
-          toast(data.msg || 'Запустите TLauncher: выберите версию Civilization');
+          setGameRunningState(false);
+          toast(data.msg || 'Ошибка запуска игры');
         }
         return;
-      } catch(e) {}
+      } catch(e) {
+        setGameRunningState(false);
+        toast('Ошибка связи с сервером');
+        return;
+      }
     }
     toast('Запуск Civilization...');
+    setTimeout(()=>{ setGameRunningState(false); }, 3000);
   }
 
   async function detectPath(){
