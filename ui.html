@@ -1105,14 +1105,14 @@
     animation: none !important;
   }
 
-  /* Пресеты фона (сетка мини-превьюшек) */
+  /* Пресеты фона (мини-превьюшки) */
   .bg-presets-grid{
     display:grid;
-    grid-template-columns:repeat(4, 1fr);
-    gap:10px;
+    grid-template-columns:repeat(2, 1fr);
+    gap:12px;
   }
   .bg-preset-item{
-    height:74px;
+    height:80px;
     border-radius:6px;
     border:1px solid var(--line);
     cursor:pointer;
@@ -1121,12 +1121,13 @@
     display:flex;
     flex-direction:column;
     justify-content:flex-end;
-    padding:6px;
+    padding:8px 10px;
     transition:border-color .15s, transform .15s, box-shadow .15s;
     user-select:none;
     background-size:cover;
     background-position:center;
     background-repeat:no-repeat;
+    background-color:rgba(255,255,255,.02);
   }
   .bg-preset-item:hover{
     border-color:var(--line-strong);
@@ -1135,6 +1136,17 @@
   .bg-preset-item.active{
     border-color:var(--accent, #f0f0f2);
     box-shadow:0 0 0 1px var(--accent, #f0f0f2);
+  }
+  .bg-preset-item.upload-btn{
+    align-items:center;
+    justify-content:center;
+    border-style:dashed;
+    gap:6px;
+  }
+  .bg-preset-item.upload-btn.has-image{
+    border-style:solid;
+    align-items:flex-start;
+    justify-content:flex-end;
   }
   .bg-preset-label{
     font-size:10px;
@@ -1150,72 +1162,18 @@
     max-width:100%;
     backdrop-filter:blur(4px);
     -webkit-backdrop-filter:blur(4px);
+    z-index:2;
   }
   .bg-preset-custom-icon{
-    position:absolute;
-    top:50%;
-    left:50%;
-    transform:translate(-50%, -65%);
-    color:rgba(255,255,255,.6);
-    pointer-events:none;
-  }
-  .custom-bg-preview-row{
-    display:flex;
-    align-items:center;
-    gap:14px;
-    background:rgba(0,0,0,.35);
-    border:1px solid var(--line);
-    border-radius:8px;
-    padding:10px 14px;
-  }
-  .custom-bg-thumb{
-    width:56px;
-    height:38px;
-    border-radius:4px;
-    border:1px solid var(--line);
-    overflow:hidden;
-    background-size:cover;
-    background-position:center;
+    color:var(--dim);
+    transition:color .15s, transform .15s;
     display:flex;
     align-items:center;
     justify-content:center;
-    flex-shrink:0;
   }
-  .custom-bg-meta{
-    flex:1;
-    display:flex;
-    flex-direction:column;
-    min-width:0;
-  }
-  .custom-bg-name{
-    font-size:12px;
+  .bg-preset-item:hover .bg-preset-custom-icon{
     color:var(--text);
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-  .custom-bg-hint{
-    font-size:11px;
-    color:var(--dim);
-  }
-  .settings-slider-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:14px;
-    font-size:12px;
-    color:var(--dim);
-  }
-  .settings-slider-row input[type="range"]{
-    flex:1;
-    accent-color:var(--accent,#f0f0f2);
-    cursor:pointer;
-  }
-  .settings-slider-val{
-    min-width:38px;
-    text-align:right;
-    color:var(--text);
-    font-weight:600;
+    transform:scale(1.08);
   }
   .color-swatches{
     display:flex;
@@ -1300,26 +1258,14 @@
     color:var(--dim);
   }
   .modal-footer{
-    position: relative;
     height: 60px;
     flex: 0 0 60px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0px 24px 24px 24px;
-    margin-top: 14px;
-    background: var(--card, #0c0c0c);
-    z-index: 5;
-  }
-  .modal-footer::before{
-    content: '';
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    right: 0;
-    height: 42px;
-    background: linear-gradient(to top, var(--card, #0c0c0c) 15%, transparent 100%);
-    pointer-events: none;
+    margin-top: 24px;
+    background: linear-gradient(to top, var(--card, #0c0c0c) 75%, transparent 100%);
   }
 
   /* ---------------- новости ---------------- */
@@ -2092,60 +2038,25 @@
         </div>
 
         <div class="settings-card-box">
+          <input type="file" id="bgFileInput" accept="image/*" style="display:none;" onchange="onBgFileSelected(this)">
+
           <!-- Пресеты фонов (мини-превьюшки) -->
           <div class="bg-presets-grid">
             <!-- 1. По умолчанию -->
             <div class="bg-preset-item active" id="bgPresetDefault" onclick="selectBgPreset('default')" style="background-image:url('assets/bg.png');" title="По умолчанию">
               <span class="bg-preset-label">По умолчанию</span>
             </div>
-            <!-- 2. Тёмный -->
-            <div class="bg-preset-item" id="bgPresetDark" onclick="selectBgPreset('dark')" style="background-image:radial-gradient(circle at 75% 30%, #1e2430 0%, #0e1117 60%, #08090c 100%);" title="Тёмный">
-              <span class="bg-preset-label">Тёмный</span>
-            </div>
-            <!-- 3. Незер -->
-            <div class="bg-preset-item" id="bgPresetNether" onclick="selectBgPreset('nether')" style="background-image:radial-gradient(circle at 75% 30%, #3f1515 0%, #1a0808 60%, #080303 100%);" title="Незер">
-              <span class="bg-preset-label">Незер</span>
-            </div>
-            <!-- 4. Свой файл -->
-            <div class="bg-preset-item" id="bgPresetCustom" onclick="selectBgPreset('custom')" style="background-image:linear-gradient(135deg, #1e293b, #0f172a);" title="Свой файл">
+
+            <!-- 2. Свой фон (кнопка аплоад) -->
+            <div class="bg-preset-item upload-btn" id="bgPresetCustom" onclick="onCustomCardClick()" title="Загрузить свой фон">
               <div class="bg-preset-custom-icon" id="bgPresetCustomIcon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
               </div>
-              <span class="bg-preset-label" id="bgPresetCustomLabel">Свой файл…</span>
-            </div>
-          </div>
-
-          <!-- Блок выбора своего файла (виден при режиме 'custom') -->
-          <div id="customBgControls" style="display:none;flex-direction:column;gap:14px;margin-top:14px;">
-            <input type="file" id="bgFileInput" accept="image/*" style="display:none;" onchange="onBgFileSelected(this)">
-
-            <!-- Карточка превью выбранного изображения -->
-            <div class="custom-bg-preview-row">
-              <div class="custom-bg-thumb" id="customBgThumb">
-                <svg id="customBgThumbIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" opacity="0.4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-              </div>
-              <div class="custom-bg-meta">
-                <span class="custom-bg-name" id="customBgFileName">Файл не выбран</span>
-                <span class="custom-bg-hint" id="customBgFileHint">PNG, JPG, WebP</span>
-              </div>
-              <div style="display:flex;gap:8px;">
-                <button type="button" class="btn ghost sm" onclick="triggerBgFilePick()" style="font-size:11px;padding:6px 12px;white-space:nowrap;">Выбрать файл…</button>
-                <button type="button" class="btn line sm" id="btnRemoveCustomBg" onclick="removeCustomBg()" style="display:none;font-size:11px;padding:6px 10px;">Сбросить</button>
-              </div>
-            </div>
-
-            <!-- Слайдер затемнения -->
-            <div class="settings-slider-row">
-              <span>Дополнительное затемнение</span>
-              <input type="range" id="bgDimRange" min="0" max="80" value="0" oninput="onBgDimInput(this.value)">
-              <span class="settings-slider-val" id="bgDimVal">0%</span>
-            </div>
-
-            <!-- Слайдер размытия -->
-            <div class="settings-slider-row">
-              <span>Размытие (Blur)</span>
-              <input type="range" id="bgBlurRange" min="0" max="20" value="0" oninput="onBgBlurInput(this.value)">
-              <span class="settings-slider-val" id="bgBlurVal">0px</span>
+              <span class="bg-preset-label" id="bgPresetCustomLabel">Загрузить свой…</span>
             </div>
           </div>
         </div>
@@ -3102,8 +3013,6 @@
     bgPreset: 'default',
     bgCustomData: '',
     bgCustomFileName: '',
-    bgDim: 0,
-    bgBlur: 0,
     accentColor: '#f0f0f2',
     smoothAnim: true,
     gpuAccel: true
@@ -3131,24 +3040,13 @@
     document.documentElement.style.setProperty('--accent', accent);
     document.documentElement.style.setProperty('--accent-text', getContrastColor(accent));
 
-    // 2. Фон баннера (#bannerCard::before и ::after)
+    // 2. Фон баннера (#bannerCard::before)
     const preset = settings.bgPreset || 'default';
-    if (preset === 'dark') {
-      document.documentElement.style.setProperty('--banner-bg', 'radial-gradient(circle at 75% 30%, #1e2430 0%, #0e1117 60%, #08090c 100%)');
-    } else if (preset === 'nether') {
-      document.documentElement.style.setProperty('--banner-bg', 'radial-gradient(circle at 75% 30%, #3f1515 0%, #1a0808 60%, #080303 100%)');
-    } else if (preset === 'custom' && settings.bgCustomData) {
+    if (preset === 'custom' && settings.bgCustomData) {
       document.documentElement.style.setProperty('--banner-bg', 'url("' + settings.bgCustomData + '")');
     } else {
-      // Режим «По умолчанию» — оригинальный assets/bg.png
       document.documentElement.style.setProperty('--banner-bg', 'url("assets/bg.png")');
     }
-
-    const blur = settings.bgBlur !== undefined ? settings.bgBlur : 0;
-    document.documentElement.style.setProperty('--banner-blur', blur + 'px');
-    document.documentElement.style.setProperty('--banner-scale', blur > 0 ? '1.04' : '1');
-    const dim = (settings.bgDim !== undefined ? settings.bgDim : 0) / 100;
-    document.documentElement.style.setProperty('--banner-dim', dim);
 
     // 3. Анимации
     if (settings.smoothAnim === false) {
@@ -3166,56 +3064,31 @@
   function syncSettingsUI(settings) {
     if (!settings) settings = launcherSettings;
 
-    // Пресеты фонов (мини-превьюшки)
+    // Пресеты фонов (мини-превьюшки: default, custom)
     const preset = settings.bgPreset || 'default';
-    ['Default', 'Dark', 'Nether', 'Custom'].forEach(name => {
-      const el = document.getElementById('bgPreset' + name);
-      if (el) el.classList.remove('active');
-    });
-    const activePresetEl = document.getElementById('bgPreset' + preset.charAt(0).toUpperCase() + preset.slice(1));
-    if (activePresetEl) activePresetEl.classList.add('active');
-
-    const customControls = document.getElementById('customBgControls');
-    if (customControls) {
-      customControls.style.display = (preset === 'custom') ? 'flex' : 'none';
-    }
-
-    // Превью пользовательской карточки
+    const defEl = document.getElementById('bgPresetDefault');
     const customCard = document.getElementById('bgPresetCustom');
     const customIcon = document.getElementById('bgPresetCustomIcon');
     const customLabel = document.getElementById('bgPresetCustomLabel');
-    const thumb = document.getElementById('customBgThumb');
-    const fileName = document.getElementById('customBgFileName');
-    const btnRemove = document.getElementById('btnRemoveCustomBg');
 
-    if (settings.bgCustomData) {
-      if (customCard) customCard.style.backgroundImage = 'url("' + settings.bgCustomData + '")';
-      if (customIcon) customIcon.style.display = 'none';
-      if (customLabel) customLabel.textContent = 'Свой файл';
-      if (thumb) thumb.style.backgroundImage = 'url("' + settings.bgCustomData + '")';
-      if (fileName) fileName.textContent = settings.bgCustomFileName || 'Пользовательский баннер';
-      if (btnRemove) btnRemove.style.display = 'inline-block';
-    } else {
-      if (customCard) customCard.style.backgroundImage = 'linear-gradient(135deg, #1e293b, #0f172a)';
-      if (customIcon) customIcon.style.display = 'block';
-      if (customLabel) customLabel.textContent = 'Свой файл…';
-      if (thumb) thumb.style.backgroundImage = 'none';
-      if (fileName) fileName.textContent = 'Файл не выбран';
-      if (btnRemove) btnRemove.style.display = 'none';
+    if (defEl) defEl.classList.toggle('active', preset === 'default');
+
+    if (customCard) {
+      customCard.classList.toggle('active', preset === 'custom');
+      if (settings.bgCustomData) {
+        customCard.classList.add('has-image');
+        customCard.style.backgroundImage = 'url("' + settings.bgCustomData + '")';
+        if (customIcon) customIcon.style.display = 'none';
+        if (customLabel) customLabel.textContent = 'Свой фон';
+        customCard.setAttribute('title', 'Свой фон: ' + (settings.bgCustomFileName || 'пользовательский') + ' (нажмите для смены)');
+      } else {
+        customCard.classList.remove('has-image');
+        customCard.style.backgroundImage = '';
+        if (customIcon) customIcon.style.display = 'flex';
+        if (customLabel) customLabel.textContent = 'Загрузить свой…';
+        customCard.setAttribute('title', 'Загрузить свой фон');
+      }
     }
-
-    // Слайдеры затемнения и размытия
-    const dimRange = document.getElementById('bgDimRange');
-    const dimVal = document.getElementById('bgDimVal');
-    const currentDim = settings.bgDim !== undefined ? settings.bgDim : 0;
-    if (dimRange) dimRange.value = currentDim;
-    if (dimVal) dimVal.textContent = currentDim + '%';
-
-    const blurRange = document.getElementById('bgBlurRange');
-    const blurVal = document.getElementById('bgBlurVal');
-    const currentBlur = settings.bgBlur !== undefined ? settings.bgBlur : 0;
-    if (blurRange) blurRange.value = currentBlur;
-    if (blurVal) blurVal.textContent = currentBlur + 'px';
 
     // Акцентный цвет
     const currentAccent = (settings.accentColor || '#f0f0f2').toLowerCase();
@@ -3257,11 +3130,16 @@
 
   function selectBgPreset(preset) {
     launcherSettings.bgPreset = preset;
-    if (preset === 'custom' && !launcherSettings.bgCustomData) {
-      triggerBgFilePick();
-    }
     applyLauncherSettings(launcherSettings, true);
     saveLauncherSettingsToStorage();
+  }
+
+  function onCustomCardClick() {
+    if (launcherSettings.bgCustomData && launcherSettings.bgPreset !== 'custom') {
+      selectBgPreset('custom');
+    } else {
+      triggerBgFilePick();
+    }
   }
 
   function triggerBgFilePick() {
@@ -3313,36 +3191,6 @@
     };
     reader.readAsDataURL(file);
     input.value = '';
-  }
-
-  function removeCustomBg() {
-    launcherSettings.bgCustomData = '';
-    launcherSettings.bgCustomFileName = '';
-    launcherSettings.bgPreset = 'default';
-    launcherSettings.bgDim = 0;
-    launcherSettings.bgBlur = 0;
-    applyLauncherSettings(launcherSettings, true);
-    saveLauncherSettingsToStorage();
-    toast('Кастомный баннер удален');
-  }
-
-  function onBgDimInput(val) {
-    const num = Number(val);
-    launcherSettings.bgDim = num;
-    const dimVal = document.getElementById('bgDimVal');
-    if (dimVal) dimVal.textContent = num + '%';
-    document.documentElement.style.setProperty('--banner-dim', (num / 100));
-    saveLauncherSettingsToStorage();
-  }
-
-  function onBgBlurInput(val) {
-    const num = Number(val);
-    launcherSettings.bgBlur = num;
-    const blurVal = document.getElementById('bgBlurVal');
-    if (blurVal) blurVal.textContent = num + 'px';
-    document.documentElement.style.setProperty('--banner-blur', num + 'px');
-    document.documentElement.style.setProperty('--banner-scale', num > 0 ? '1.04' : '1');
-    saveLauncherSettingsToStorage();
   }
 
   function selectAccentColor(color, el) {
