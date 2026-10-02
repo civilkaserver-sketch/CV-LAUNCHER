@@ -1279,14 +1279,15 @@
     color:var(--dim);
   }
   .modal-footer{
-    height:60px;
-    flex:0 0 60px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    padding:0 24px;
-    border-top:1px solid var(--line);
-    background:rgba(255,255,255,.015);
+    height: 60px;
+    flex: 0 0 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0px 24px 24px 24px;
+    /* border-top: 1px solid var(--line); */
+    /* background: rgba(255, 255, 255, .015); */
+    margin-top: 24px;
   }
 
   /* ---------------- новости ---------------- */
@@ -2124,37 +2125,82 @@
 
         <div class="settings-card-box">
           <div class="color-swatches">
-            <!-- 1. White / Silver (Default) -->
+            <!-- 1. Серебро (По умолчанию) -->
             <button class="color-swatch active" id="swatchDefault" onclick="selectAccentColor('#f0f0f2', this)" style="background:#f0f0f2;" title="Серебро (По умолчанию)">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 2. Amber / Gold -->
-            <button class="color-swatch" onclick="selectAccentColor('#f59e0b', this)" style="background:#f59e0b;" title="Золото Цивилизаций">
+            <!-- 2. Белый -->
+            <button class="color-swatch" onclick="selectAccentColor('#ffffff', this)" style="background:#ffffff;" title="Чистый белый">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 3. Emerald Green -->
-            <button class="color-swatch" onclick="selectAccentColor('#10b981', this)" style="background:#10b981;" title="Изумрудный">
+            <!-- 3. Сталь -->
+            <button class="color-swatch" onclick="selectAccentColor('#94a3b8', this)" style="background:#94a3b8;" title="Стальной">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 4. Diamond Cyan -->
-            <button class="color-swatch" onclick="selectAccentColor('#06b6d4', this)" style="background:#06b6d4;" title="Алмазный циан">
+            <!-- 4. Золото -->
+            <button class="color-swatch" onclick="selectAccentColor('#f59e0b', this)" style="background:#f59e0b;" title="Золото">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 5. Amethyst Purple -->
+            <!-- 5. Медь -->
+            <button class="color-swatch" onclick="selectAccentColor('#fb923c', this)" style="background:#fb923c;" title="Медь">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 6. Жёлтый -->
+            <button class="color-swatch" onclick="selectAccentColor('#eab308', this)" style="background:#eab308;" title="Жёлтый">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 7. Лайм -->
+            <button class="color-swatch" onclick="selectAccentColor('#84cc16', this)" style="background:#84cc16;" title="Лаймовый">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 8. Изумруд -->
+            <button class="color-swatch" onclick="selectAccentColor('#10b981', this)" style="background:#10b981;" title="Изумруд">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 9. Мята -->
+            <button class="color-swatch" onclick="selectAccentColor('#14b8a6', this)" style="background:#14b8a6;" title="Мятный">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 10. Алмаз -->
+            <button class="color-swatch" onclick="selectAccentColor('#06b6d4', this)" style="background:#06b6d4;" title="Алмаз">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 11. Небесный -->
+            <button class="color-swatch" onclick="selectAccentColor('#0ea5e9', this)" style="background:#0ea5e9;" title="Небесно-голубой">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 12. Лазурит -->
+            <button class="color-swatch" onclick="selectAccentColor('#3b82f6', this)" style="background:#3b82f6;" title="Лазурит">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 13. Индиго -->
+            <button class="color-swatch" onclick="selectAccentColor('#6366f1', this)" style="background:#6366f1;" title="Индиго">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 14. Аметист -->
             <button class="color-swatch" onclick="selectAccentColor('#8b5cf6', this)" style="background:#8b5cf6;" title="Аметист">
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 6. Redstone Crimson -->
+            <!-- 15. Пурпур -->
+            <button class="color-swatch" onclick="selectAccentColor('#a855f7', this)" style="background:#a855f7;" title="Пурпур">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 16. Незерит -->
+            <button class="color-swatch" onclick="selectAccentColor('#d946ef', this)" style="background:#d946ef;" title="Незеритовый">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 17. Розовый -->
+            <button class="color-swatch" onclick="selectAccentColor('#ec4899', this)" style="background:#ec4899;" title="Розовый">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 18. Редстоун -->
             <button class="color-swatch" onclick="selectAccentColor('#ef4444', this)" style="background:#ef4444;" title="Редстоун">
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-
-            <!-- Custom Color Picker -->
-            <div class="color-custom-btn" title="Выбрать произвольный цвет">
-              <div id="customColorPreview" style="width:16px;height:16px;border-radius:4px;background:#f0f0f2;border:1px solid var(--line);"></div>
-              <span id="customColorHex">#F0F0F2</span>
-              <input type="color" id="customColorInput" value="#f0f0f2" class="color-custom-input" oninput="onCustomColorChange(this.value)" onchange="onCustomColorChange(this.value)">
-            </div>
+            <!-- 19. Рубин -->
+            <button class="color-swatch" onclick="selectAccentColor('#f43f5e', this)" style="background:#f43f5e;" title="Рубиновый">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -3170,13 +3216,6 @@
       }
     });
 
-    const preview = document.getElementById('customColorPreview');
-    const hex = document.getElementById('customColorHex');
-    const input = document.getElementById('customColorInput');
-    if (preview) preview.style.background = currentAccent;
-    if (hex) hex.textContent = currentAccent.toUpperCase();
-    if (input) input.value = currentAccent;
-
     // Чекбоксы
     const toggleAnim = document.getElementById('toggleAnimSetting');
     if (toggleAnim) toggleAnim.checked = settings.smoothAnim !== false;
@@ -3299,26 +3338,6 @@
     launcherSettings.accentColor = color;
     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
     if (el) el.classList.add('active');
-
-    const preview = document.getElementById('customColorPreview');
-    const hex = document.getElementById('customColorHex');
-    const input = document.getElementById('customColorInput');
-    if (preview) preview.style.background = color;
-    if (hex) hex.textContent = color.toUpperCase();
-    if (input) input.value = color;
-
-    document.documentElement.style.setProperty('--accent', color);
-    document.documentElement.style.setProperty('--accent-text', getContrastColor(color));
-    saveLauncherSettingsToStorage();
-  }
-
-  function onCustomColorChange(color) {
-    launcherSettings.accentColor = color;
-    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
-    const preview = document.getElementById('customColorPreview');
-    const hex = document.getElementById('customColorHex');
-    if (preview) preview.style.background = color;
-    if (hex) hex.textContent = color.toUpperCase();
 
     document.documentElement.style.setProperty('--accent', color);
     document.documentElement.style.setProperty('--accent-text', getContrastColor(color));
