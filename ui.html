@@ -1105,38 +1105,59 @@
     animation: none !important;
   }
 
-  /* Переключатель режимов фона */
-  .bg-mode-tabs{
+  /* Пресеты фона (сетка мини-превьюшек) */
+  .bg-presets-grid{
     display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:8px;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
   }
-  .bg-mode-btn{
-    background:rgba(255,255,255,.02);
-    border:1px solid var(--line);
+  .bg-preset-item{
+    height:74px;
     border-radius:6px;
-    padding:10px 14px;
-    color:var(--dim);
-    font-family:inherit;
-    font-size:12px;
-    letter-spacing:.8px;
+    border:1px solid var(--line);
     cursor:pointer;
+    position:relative;
+    overflow:hidden;
     display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    transition:background .15s, border-color .15s, color .15s;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding:6px;
+    transition:border-color .15s, transform .15s, box-shadow .15s;
     user-select:none;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
   }
-  .bg-mode-btn:hover{
+  .bg-preset-item:hover{
     border-color:var(--line-strong);
-    color:var(--text);
+    transform:translateY(-1px);
   }
-  .bg-mode-btn.active{
-    background:rgba(255,255,255,.05);
+  .bg-preset-item.active{
     border-color:var(--accent, #f0f0f2);
-    color:var(--text);
-    font-weight:bold;
+    box-shadow:0 0 0 1px var(--accent, #f0f0f2);
+  }
+  .bg-preset-label{
+    font-size:10px;
+    letter-spacing:.6px;
+    color:#fff;
+    background:rgba(0,0,0,.75);
+    padding:2px 6px;
+    border-radius:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    width:fit-content;
+    max-width:100%;
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+  }
+  .bg-preset-custom-icon{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%, -65%);
+    color:rgba(255,255,255,.6);
+    pointer-events:none;
   }
   .custom-bg-preview-row{
     display:flex;
@@ -1279,15 +1300,26 @@
     color:var(--dim);
   }
   .modal-footer{
+    position: relative;
     height: 60px;
     flex: 0 0 60px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0px 24px 24px 24px;
-    /* border-top: 1px solid var(--line); */
-    /* background: rgba(255, 255, 255, .015); */
-    margin-top: 24px;
+    margin-top: 14px;
+    background: var(--card, #0c0c0c);
+    z-index: 5;
+  }
+  .modal-footer::before{
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    height: 42px;
+    background: linear-gradient(to top, var(--card, #0c0c0c) 15%, transparent 100%);
+    pointer-events: none;
   }
 
   /* ---------------- новости ---------------- */
@@ -2060,28 +2092,31 @@
         </div>
 
         <div class="settings-card-box">
-          <!-- Режимы: По умолчанию / Свой баннер -->
-          <div class="bg-mode-tabs">
-            <button type="button" class="bg-mode-btn active" id="btnBgModeDefault" onclick="setBgMode('default')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <line x1="3" y1="9" x2="21" y2="9"/>
-                <line x1="9" y1="21" x2="9" y2="9"/>
-              </svg>
-              <span>По умолчанию</span>
-            </button>
-            <button type="button" class="bg-mode-btn" id="btnBgModeCustom" onclick="setBgMode('custom')">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <circle cx="8.5" cy="8.5" r="1.5"/>
-                <polyline points="21 15 16 10 5 21"/>
-              </svg>
-              <span>Свой баннер</span>
-            </button>
+          <!-- Пресеты фонов (мини-превьюшки) -->
+          <div class="bg-presets-grid">
+            <!-- 1. По умолчанию -->
+            <div class="bg-preset-item active" id="bgPresetDefault" onclick="selectBgPreset('default')" style="background-image:url('assets/bg.png');" title="По умолчанию">
+              <span class="bg-preset-label">По умолчанию</span>
+            </div>
+            <!-- 2. Тёмный -->
+            <div class="bg-preset-item" id="bgPresetDark" onclick="selectBgPreset('dark')" style="background-image:radial-gradient(circle at 75% 30%, #1e2430 0%, #0e1117 60%, #08090c 100%);" title="Тёмный">
+              <span class="bg-preset-label">Тёмный</span>
+            </div>
+            <!-- 3. Незер -->
+            <div class="bg-preset-item" id="bgPresetNether" onclick="selectBgPreset('nether')" style="background-image:radial-gradient(circle at 75% 30%, #3f1515 0%, #1a0808 60%, #080303 100%);" title="Незер">
+              <span class="bg-preset-label">Незер</span>
+            </div>
+            <!-- 4. Свой файл -->
+            <div class="bg-preset-item" id="bgPresetCustom" onclick="selectBgPreset('custom')" style="background-image:linear-gradient(135deg, #1e293b, #0f172a);" title="Свой файл">
+              <div class="bg-preset-custom-icon" id="bgPresetCustomIcon">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              </div>
+              <span class="bg-preset-label" id="bgPresetCustomLabel">Свой файл…</span>
+            </div>
           </div>
 
           <!-- Блок выбора своего файла (виден при режиме 'custom') -->
-          <div id="customBgControls" style="display:none;flex-direction:column;gap:14px;">
+          <div id="customBgControls" style="display:none;flex-direction:column;gap:14px;margin-top:14px;">
             <input type="file" id="bgFileInput" accept="image/*" style="display:none;" onchange="onBgFileSelected(this)">
 
             <!-- Карточка превью выбранного изображения -->
@@ -2133,72 +2168,40 @@
             <button class="color-swatch" onclick="selectAccentColor('#ffffff', this)" style="background:#ffffff;" title="Чистый белый">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 3. Сталь -->
-            <button class="color-swatch" onclick="selectAccentColor('#94a3b8', this)" style="background:#94a3b8;" title="Стальной">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-            <!-- 4. Золото -->
+            <!-- 3. Золото -->
             <button class="color-swatch" onclick="selectAccentColor('#f59e0b', this)" style="background:#f59e0b;" title="Золото">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 5. Медь -->
+            <!-- 4. Медь -->
             <button class="color-swatch" onclick="selectAccentColor('#fb923c', this)" style="background:#fb923c;" title="Медь">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 6. Жёлтый -->
-            <button class="color-swatch" onclick="selectAccentColor('#eab308', this)" style="background:#eab308;" title="Жёлтый">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-            <!-- 7. Лайм -->
+            <!-- 5. Лайм -->
             <button class="color-swatch" onclick="selectAccentColor('#84cc16', this)" style="background:#84cc16;" title="Лаймовый">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 8. Изумруд -->
+            <!-- 6. Изумруд -->
             <button class="color-swatch" onclick="selectAccentColor('#10b981', this)" style="background:#10b981;" title="Изумруд">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 9. Мята -->
-            <button class="color-swatch" onclick="selectAccentColor('#14b8a6', this)" style="background:#14b8a6;" title="Мятный">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-            <!-- 10. Алмаз -->
+            <!-- 7. Алмаз -->
             <button class="color-swatch" onclick="selectAccentColor('#06b6d4', this)" style="background:#06b6d4;" title="Алмаз">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 11. Небесный -->
-            <button class="color-swatch" onclick="selectAccentColor('#0ea5e9', this)" style="background:#0ea5e9;" title="Небесно-голубой">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-            <!-- 12. Лазурит -->
+            <!-- 8. Лазурит -->
             <button class="color-swatch" onclick="selectAccentColor('#3b82f6', this)" style="background:#3b82f6;" title="Лазурит">
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 13. Индиго -->
-            <button class="color-swatch" onclick="selectAccentColor('#6366f1', this)" style="background:#6366f1;" title="Индиго">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-            <!-- 14. Аметист -->
+            <!-- 9. Аметист -->
             <button class="color-swatch" onclick="selectAccentColor('#8b5cf6', this)" style="background:#8b5cf6;" title="Аметист">
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 15. Пурпур -->
-            <button class="color-swatch" onclick="selectAccentColor('#a855f7', this)" style="background:#a855f7;" title="Пурпур">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-            <!-- 16. Незерит -->
-            <button class="color-swatch" onclick="selectAccentColor('#d946ef', this)" style="background:#d946ef;" title="Незеритовый">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-            <!-- 17. Розовый -->
+            <!-- 10. Розовый -->
             <button class="color-swatch" onclick="selectAccentColor('#ec4899', this)" style="background:#ec4899;" title="Розовый">
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 18. Редстоун -->
+            <!-- 11. Редстоун -->
             <button class="color-swatch" onclick="selectAccentColor('#ef4444', this)" style="background:#ef4444;" title="Редстоун">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
-            <!-- 19. Рубин -->
-            <button class="color-swatch" onclick="selectAccentColor('#f43f5e', this)" style="background:#f43f5e;" title="Рубиновый">
               <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
           </div>
@@ -3096,7 +3099,7 @@
   const LAUNCHER_SETTINGS_KEY = 'cv_launcher_settings';
 
   const defaultLauncherSettings = {
-    bgMode: 'default',
+    bgPreset: 'default',
     bgCustomData: '',
     bgCustomFileName: '',
     bgDim: 0,
@@ -3129,20 +3132,23 @@
     document.documentElement.style.setProperty('--accent-text', getContrastColor(accent));
 
     // 2. Фон баннера (#bannerCard::before и ::after)
-    if (settings.bgMode === 'custom' && settings.bgCustomData) {
+    const preset = settings.bgPreset || 'default';
+    if (preset === 'dark') {
+      document.documentElement.style.setProperty('--banner-bg', 'radial-gradient(circle at 75% 30%, #1e2430 0%, #0e1117 60%, #08090c 100%)');
+    } else if (preset === 'nether') {
+      document.documentElement.style.setProperty('--banner-bg', 'radial-gradient(circle at 75% 30%, #3f1515 0%, #1a0808 60%, #080303 100%)');
+    } else if (preset === 'custom' && settings.bgCustomData) {
       document.documentElement.style.setProperty('--banner-bg', 'url("' + settings.bgCustomData + '")');
-      const blur = settings.bgBlur !== undefined ? settings.bgBlur : 0;
-      document.documentElement.style.setProperty('--banner-blur', blur + 'px');
-      document.documentElement.style.setProperty('--banner-scale', blur > 0 ? '1.04' : '1');
-      const dim = (settings.bgDim !== undefined ? settings.bgDim : 0) / 100;
-      document.documentElement.style.setProperty('--banner-dim', dim);
     } else {
       // Режим «По умолчанию» — оригинальный assets/bg.png
       document.documentElement.style.setProperty('--banner-bg', 'url("assets/bg.png")');
-      document.documentElement.style.setProperty('--banner-blur', '0px');
-      document.documentElement.style.setProperty('--banner-scale', '1');
-      document.documentElement.style.setProperty('--banner-dim', '0');
     }
+
+    const blur = settings.bgBlur !== undefined ? settings.bgBlur : 0;
+    document.documentElement.style.setProperty('--banner-blur', blur + 'px');
+    document.documentElement.style.setProperty('--banner-scale', blur > 0 ? '1.04' : '1');
+    const dim = (settings.bgDim !== undefined ? settings.bgDim : 0) / 100;
+    document.documentElement.style.setProperty('--banner-dim', dim);
 
     // 3. Анимации
     if (settings.smoothAnim === false) {
@@ -3160,36 +3166,41 @@
   function syncSettingsUI(settings) {
     if (!settings) settings = launcherSettings;
 
-    // Режим фона (кнопки-табы)
-    const btnDefault = document.getElementById('btnBgModeDefault');
-    const btnCustom = document.getElementById('btnBgModeCustom');
-    const customControls = document.getElementById('customBgControls');
+    // Пресеты фонов (мини-превьюшки)
+    const preset = settings.bgPreset || 'default';
+    ['Default', 'Dark', 'Nether', 'Custom'].forEach(name => {
+      const el = document.getElementById('bgPreset' + name);
+      if (el) el.classList.remove('active');
+    });
+    const activePresetEl = document.getElementById('bgPreset' + preset.charAt(0).toUpperCase() + preset.slice(1));
+    if (activePresetEl) activePresetEl.classList.add('active');
 
-    if (settings.bgMode === 'custom') {
-      if (btnDefault) btnDefault.classList.remove('active');
-      if (btnCustom) btnCustom.classList.add('active');
-      if (customControls) customControls.style.display = 'flex';
-    } else {
-      if (btnDefault) btnDefault.classList.add('active');
-      if (btnCustom) btnCustom.classList.remove('active');
-      if (customControls) customControls.style.display = 'none';
+    const customControls = document.getElementById('customBgControls');
+    if (customControls) {
+      customControls.style.display = (preset === 'custom') ? 'flex' : 'none';
     }
 
-    // Превью баннера
+    // Превью пользовательской карточки
+    const customCard = document.getElementById('bgPresetCustom');
+    const customIcon = document.getElementById('bgPresetCustomIcon');
+    const customLabel = document.getElementById('bgPresetCustomLabel');
     const thumb = document.getElementById('customBgThumb');
-    const thumbIcon = document.getElementById('customBgThumbIcon');
     const fileName = document.getElementById('customBgFileName');
     const btnRemove = document.getElementById('btnRemoveCustomBg');
 
     if (settings.bgCustomData) {
+      if (customCard) customCard.style.backgroundImage = 'url("' + settings.bgCustomData + '")';
+      if (customIcon) customIcon.style.display = 'none';
+      if (customLabel) customLabel.textContent = 'Свой файл';
       if (thumb) thumb.style.backgroundImage = 'url("' + settings.bgCustomData + '")';
-      if (thumbIcon) thumbIcon.style.display = 'none';
       if (fileName) fileName.textContent = settings.bgCustomFileName || 'Пользовательский баннер';
       if (btnRemove) btnRemove.style.display = 'inline-block';
     } else {
-      if (thumb) thumb.style.backgroundImage = 'url("assets/bg.png")';
-      if (thumbIcon) thumbIcon.style.display = 'none';
-      if (fileName) fileName.textContent = 'assets/bg.png (По умолчанию)';
+      if (customCard) customCard.style.backgroundImage = 'linear-gradient(135deg, #1e293b, #0f172a)';
+      if (customIcon) customIcon.style.display = 'block';
+      if (customLabel) customLabel.textContent = 'Свой файл…';
+      if (thumb) thumb.style.backgroundImage = 'none';
+      if (fileName) fileName.textContent = 'Файл не выбран';
       if (btnRemove) btnRemove.style.display = 'none';
     }
 
@@ -3244,9 +3255,9 @@
     }
   }
 
-  function setBgMode(mode) {
-    launcherSettings.bgMode = mode;
-    if (mode === 'custom' && !launcherSettings.bgCustomData) {
+  function selectBgPreset(preset) {
+    launcherSettings.bgPreset = preset;
+    if (preset === 'custom' && !launcherSettings.bgCustomData) {
       triggerBgFilePick();
     }
     applyLauncherSettings(launcherSettings, true);
@@ -3284,7 +3295,7 @@
         ctx.drawImage(img, 0, 0, w, h);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
 
-        launcherSettings.bgMode = 'custom';
+        launcherSettings.bgPreset = 'custom';
         launcherSettings.bgCustomData = dataUrl;
         launcherSettings.bgCustomFileName = file.name;
 
@@ -3307,7 +3318,7 @@
   function removeCustomBg() {
     launcherSettings.bgCustomData = '';
     launcherSettings.bgCustomFileName = '';
-    launcherSettings.bgMode = 'default';
+    launcherSettings.bgPreset = 'default';
     launcherSettings.bgDim = 0;
     launcherSettings.bgBlur = 0;
     applyLauncherSettings(launcherSettings, true);
