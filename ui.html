@@ -1203,15 +1203,8 @@
   .color-swatch.active{
     border-color:#fff;
     box-shadow:0 0 0 2px rgba(255,255,255,.3);
-  }
-  .color-swatch svg{
-    display:none;
-    width:13px;
-    height:13px;
-    stroke:#000;
-  }
-  .color-swatch.active svg{
-    display:block;
+    outline:2px solid rgba(255,255,255,.15);
+    outline-offset:2px;
   }
   .color-custom-btn{
     display:inline-flex;
@@ -1493,19 +1486,12 @@
         <button class="side-nav-item active" id="btnMain" onclick="showMain()">Главная</button>
         <button class="side-nav-item" id="btnNews" onclick="showNews()">Новости</button>
         <button class="side-nav-item" id="btnGallery" onclick="showGallery()">Галерея</button>
-        <button class="side-nav-item" id="btnSettings" onclick="openSettingsModal()">Настройки</button>
         <button class="side-nav-item" id="btnRating" onclick="showRating()" style="display:none">Рейтинг</button>
       </nav>
     </div>
 
     <div class="side-footer">
-      <label class="side-toggle" for="autoUpdateToggle">
-        <span class="toggle-label">Автообновление</span>
-        <span class="switch">
-          <input type="checkbox" id="autoUpdateToggle" checked onchange="toggleAutoUpdate(this.checked)">
-          <span class="slider"></span>
-        </span>
-      </label>
+      <button class="side-nav-item" onclick="openSettingsModal()" style="width:100%;text-align:left;">Настройки</button>
     </div>
 
   </aside>
@@ -1513,18 +1499,8 @@
   <!-- КОНТЕНТ -->
   <div class="main">
 
-    <!-- ЗАКРЕПЛЕННЫЙ ХЕДЕР ВСЕГДА СВЕРХУ -->
     <header class="top-bar">
       <div class="top-title" id="pageTitle">ГЛАВНАЯ</div>
-      <div class="top-actions">
-        <button class="top-settings-btn" onclick="openSettingsModal()" title="Настройки лаунчера">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="3"></circle>
-            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-          </svg>
-          <span>Настройки</span>
-        </button>
-      </div>
     </header>
 
     <div class="content" id="viewMain">
@@ -1551,10 +1527,6 @@
                 <button class="more-item" onclick="openGameFolder(event)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                   Открыть папку игры
-                </button>
-                <button class="more-item" onclick="openSettingsFromMenu(event)">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                  Настройки лаунчера…
                 </button>
                 <button class="more-item danger" onclick="confirmUninstall(event)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -1616,7 +1588,7 @@
           <div class="changelog-latest" id="changelogLatest" style="display:none">
             Вы на последней версии v1.21.8 · проверено сегодня
           </div>
-          <button class="changelog-more-link" onclick="showNews(true)">Узнать больше →</button>
+          <button class="changelog-more-link" onclick="showNews(true)">Узнать больше</button>
         </div>
 
         <!-- СТРОКА «ПАПКА» (ТОНКАЯ, ~52px) -->
@@ -1928,7 +1900,7 @@
           </div>
           <!-- Футер карточки с кнопкой разворачивания/сворачивания -->
           <div class="news-card-footer">
-            <button class="changelog-more-link" id="btnToggleNews" onclick="toggleNewsCard()">Узнать больше →</button>
+            <button class="changelog-more-link" id="btnToggleNews" onclick="toggleNewsCard()">Развернуть</button>
           </div>
         </div>
         </div>
@@ -2074,49 +2046,27 @@
         <div class="settings-card-box">
           <div class="color-swatches">
             <!-- 1. Базовый (По умолчанию) -->
-            <button class="color-swatch active" id="swatchDefault" onclick="selectAccentColor('#f0f0f2', this)" style="background:#f0f0f2;" title="Базовый (По умолчанию)">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch active" id="swatchDefault" onclick="selectAccentColor('#f0f0f2', this)" style="background:#f0f0f2;" title="Базовый (По умолчанию)"></button>
             <!-- 2. Жёлтый -->
-            <button class="color-swatch" onclick="selectAccentColor('#eab308', this)" style="background:#eab308;" title="Жёлтый">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#eab308', this)" style="background:#eab308;" title="Жёлтый"></button>
             <!-- 3. Золото -->
-            <button class="color-swatch" onclick="selectAccentColor('#f59e0b', this)" style="background:#f59e0b;" title="Золото">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#f59e0b', this)" style="background:#f59e0b;" title="Золото"></button>
             <!-- 4. Медь -->
-            <button class="color-swatch" onclick="selectAccentColor('#fb923c', this)" style="background:#fb923c;" title="Медь">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#fb923c', this)" style="background:#fb923c;" title="Медь"></button>
             <!-- 5. Лайм -->
-            <button class="color-swatch" onclick="selectAccentColor('#84cc16', this)" style="background:#84cc16;" title="Лаймовый">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#84cc16', this)" style="background:#84cc16;" title="Лаймовый"></button>
             <!-- 6. Изумруд -->
-            <button class="color-swatch" onclick="selectAccentColor('#10b981', this)" style="background:#10b981;" title="Изумруд">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#10b981', this)" style="background:#10b981;" title="Изумруд"></button>
             <!-- 7. Алмаз -->
-            <button class="color-swatch" onclick="selectAccentColor('#06b6d4', this)" style="background:#06b6d4;" title="Алмаз">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#06b6d4', this)" style="background:#06b6d4;" title="Алмаз"></button>
             <!-- 8. Лазурит -->
-            <button class="color-swatch" onclick="selectAccentColor('#3b82f6', this)" style="background:#3b82f6;" title="Лазурит">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#3b82f6', this)" style="background:#3b82f6;" title="Лазурит"></button>
             <!-- 9. Аметист -->
-            <button class="color-swatch" onclick="selectAccentColor('#8b5cf6', this)" style="background:#8b5cf6;" title="Аметист">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#8b5cf6', this)" style="background:#8b5cf6;" title="Аметист"></button>
             <!-- 10. Розовый -->
-            <button class="color-swatch" onclick="selectAccentColor('#ec4899', this)" style="background:#ec4899;" title="Розовый">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#ec4899', this)" style="background:#ec4899;" title="Розовый"></button>
             <!-- 11. Редстоун -->
-            <button class="color-swatch" onclick="selectAccentColor('#ef4444', this)" style="background:#ef4444;" title="Редстоун">
-              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            </button>
+            <button class="color-swatch" onclick="selectAccentColor('#ef4444', this)" style="background:#ef4444;" title="Редстоун"></button>
           </div>
         </div>
       </div>
@@ -2130,6 +2080,17 @@
 
         <div class="settings-card-box">
           <div class="settings-toggle-row">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Автообновление лаунчера</div>
+              <div class="settings-toggle-desc">Автоматически проверять и устанавливать обновления</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="autoUpdateToggle" onchange="toggleAutoUpdate(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
             <div class="settings-toggle-info">
               <div class="settings-toggle-title">Плавные анимации и переходы</div>
               <div class="settings-toggle-desc">Плавное раскрытие новостей и переключение разделов</div>
@@ -3297,7 +3258,7 @@
     const btn = document.getElementById('btnToggleNews');
     if(!wrap || !btn) return;
     const isExpanded = wrap.classList.toggle('expanded');
-    btn.textContent = isExpanded ? 'Свернуть ↑' : 'Узнать больше →';
+    btn.textContent = isExpanded ? 'Свернуть' : 'Узнать больше';
     if(!isExpanded){
       const view = document.getElementById('viewNews');
       if(view) view.scrollTo({ top: 0, behavior: 'smooth' });
