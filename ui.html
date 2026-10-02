@@ -1639,12 +1639,18 @@
     }
   }
 
+  let lastBackendScreenshotsSig = '';
+
   async function checkGameStatus(){
     if(!isBackend) return;
     try {
       const res = await fetch('/api/game-status');
       if(res.ok){
         const data = await res.json();
+        if(data.screenshotsSig && data.screenshotsSig !== lastBackendScreenshotsSig){
+          lastBackendScreenshotsSig = data.screenshotsSig;
+          loadRealScreenshots();
+        }
         if(data.running){
           if(!gameRunning){
             setGameRunningState(true, 'ЗАКРЫТЬ');
@@ -1963,15 +1969,38 @@
     toast('Открытие папки со снимками...');
   }
 
+  let lastScreenshotsSig = '';
+  let isLoadingScreenshots = false;
+
   async function loadRealScreenshots(){
-    if(!isBackend) return;
+    if(!isBackend || isLoadingScreenshots) return;
+    isLoadingScreenshots = true;
     try {
       const res = await fetch('/api/screenshots');
       if(res.ok){
         const list = await res.json();
-        if(list && list.length){
-          playerScreenshots = list;
+        const newSig = JSON.stringify((list || []).map(x => x.name + x.meta));
+        if(newSig !== lastScreenshotsSig){
+          lastScreenshotsSig = newSig;
+          playerScreenshots = list || [];
           renderGallery();
+        }
+      }
+    } catch(e) {
+    } finally {
+      isLoadingScreenshots = false;
+    }
+  }
+
+  async function checkScreenshotsUpdate(){
+    if(!isBackend) return;
+    try {
+      const res = await fetch('/api/screenshots-status');
+      if(res.ok){
+        const data = await res.json();
+        if(data && data.sig && data.sig !== lastBackendScreenshotsSig){
+          lastBackendScreenshotsSig = data.sig;
+          loadRealScreenshots();
         }
       }
     } catch(e) {}
@@ -2057,20 +2086,31 @@
     }
   }
 
-  function deleteCurrentScreenshot(){
+  async function deleteCurrentScreenshot(){
     if (!playerScreenshots.length) return;
+    const item = playerScreenshots[currentScreenshotIdx];
     playerScreenshots.splice(currentScreenshotIdx, 1);
     toast('Скриншот удален');
     if (!playerScreenshots.length) {
       closeLightbox();
       renderGallery();
-      return;
+    } else {
+      if (currentScreenshotIdx >= playerScreenshots.length) {
+        currentScreenshotIdx = playerScreenshots.length - 1;
+      }
+      openLightbox(currentScreenshotIdx);
+      renderGallery();
     }
-    if (currentScreenshotIdx >= playerScreenshots.length) {
-      currentScreenshotIdx = playerScreenshots.length - 1;
+
+    if(isBackend && item && item.name){
+      try {
+        await fetch('/api/delete-screenshot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: item.name })
+        });
+      } catch(e) {}
     }
-    openLightbox(currentScreenshotIdx);
-    renderGallery();
   }
 
   // --- Лайтбокс просмотрщика скриншотов ---
@@ -2152,6 +2192,7 @@
     document.getElementById('btnGallery').classList.add('active');
     document.getElementById('pageTitle').textContent = 'ГАЛЕРЕЯ';
     renderGallery();
+    loadRealScreenshots();
   }
 
   function showRating(){
@@ -2172,6 +2213,7 @@
   setStatus(false);
   checkBackendStatus();
   loadRealScreenshots();
+  setInterval(checkScreenshotsUpdate, 1500);
 </script>
 </body>
 </html>

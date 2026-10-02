@@ -124,6 +124,8 @@ namespace CivilizationLauncher
             serverThread.Start();
             Log("Server started");
 
+            try { SetupScreenshotWatchers(); } catch { }
+
             // Запуск окна приложения
             LaunchBrowser();
             Log("LaunchBrowser completed");
@@ -688,7 +690,14 @@ namespace CivilizationLauncher
                     };
                     foreach (string c in candidates)
                     {
-                        if (Directory.Exists(c)) { sDir = c; break; }
+                        if (Directory.Exists(c) && Directory.GetFiles(c, "*.png").Length > 0) { sDir = c; break; }
+                    }
+                    if (string.IsNullOrEmpty(sDir))
+                    {
+                        foreach (string c in candidates)
+                        {
+                            if (Directory.Exists(c)) { sDir = c; break; }
+                        }
                     }
                 }
                 if (string.IsNullOrEmpty(sDir))
@@ -703,6 +712,7 @@ namespace CivilizationLauncher
 
             if (endpoint == "screenshots")
             {
+                SetupScreenshotWatchers();
                 string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
                 var list = new List<Dictionary<string, object>>();
                 if (!string.IsNullOrEmpty(mcDir))
@@ -711,28 +721,83 @@ namespace CivilizationLauncher
                         Path.Combine(mcDir, @"versions\Civilization\screenshots"),
                         Path.Combine(mcDir, "screenshots")
                     };
-                    string sDir = null;
-                    foreach (string c in candidates)
+                    var foundFiles = new Dictionary<string, FileInfo>(StringComparer.OrdinalIgnoreCase);
+                    foreach (string sDir in candidates)
                     {
-                        if (Directory.Exists(c)) { sDir = c; break; }
-                    }
-                    if (sDir != null && Directory.Exists(sDir))
-                    {
-                        var files = Directory.GetFiles(sDir, "*.png");
-                        Array.Sort(files, (a, b) => File.GetLastWriteTime(b).CompareTo(File.GetLastWriteTime(a)));
-                        foreach (string f in files)
+                        if (Directory.Exists(sDir))
                         {
-                            var fi = new FileInfo(f);
-                            list.Add(new Dictionary<string, object> {
-                                { "name", fi.Name },
-                                { "date", fi.LastWriteTime.ToString("dd MMM yyyy, HH:mm") },
-                                { "meta", string.Format("{0:0.#} MB", fi.Length / (1024.0 * 1024.0)) },
-                                { "src", "/api/screenshot-file?path=" + Uri.EscapeDataString(fi.FullName) }
-                            });
+                            try
+                            {
+                                foreach (string f in Directory.GetFiles(sDir, "*.png"))
+                                {
+                                    var fi = new FileInfo(f);
+                                    if (!foundFiles.ContainsKey(fi.Name))
+                                    {
+                                        foundFiles[fi.Name] = fi;
+                                    }
+                                }
+                            }
+                            catch { }
                         }
+                    }
+
+                    var sorted = new List<FileInfo>(foundFiles.Values);
+                    sorted.Sort((a, b) => b.LastWriteTime.CompareTo(a.LastWriteTime));
+
+                    foreach (var fi in sorted)
+                    {
+                        list.Add(new Dictionary<string, object> {
+                            { "name", fi.Name },
+                            { "date", fi.LastWriteTime.ToString("dd MMM yyyy, HH:mm") },
+                            { "meta", string.Format("{0:0.#} MB", fi.Length / (1024.0 * 1024.0)) },
+                            { "src", "/api/screenshot-file?path=" + Uri.EscapeDataString(fi.FullName) }
+                        });
                     }
                 }
                 SendJson(ctx, list);
+                return;
+            }
+
+            if (endpoint == "screenshots-status")
+            {
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "sig", GetScreenshotsSignature() }
+                });
+                return;
+            }
+
+            if (endpoint == "delete-screenshot")
+            {
+                string body = ReadBody(ctx);
+                Dictionary<string, object> data = null;
+                try { data = jss.Deserialize<Dictionary<string, object>>(body); } catch { }
+                string name = null;
+                if (data != null && data.ContainsKey("name")) name = (string)data["name"];
+                if (!string.IsNullOrEmpty(name))
+                {
+                    string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
+                    if (!string.IsNullOrEmpty(mcDir))
+                    {
+                        string[] candidates = new string[] {
+                            Path.Combine(mcDir, @"versions\Civilization\screenshots"),
+                            Path.Combine(mcDir, "screenshots")
+                        };
+                        foreach (string c in candidates)
+                        {
+                            string target = Path.Combine(c, name);
+                            if (File.Exists(target))
+                            {
+                                try
+                                {
+                                    File.Delete(target);
+                                    Interlocked.Increment(ref screenshotsRevision);
+                                }
+                                catch { }
+                            }
+                        }
+                    }
+                }
+                SendJson(ctx, new Dictionary<string, object> { { "ok", true } });
                 return;
             }
 
@@ -756,7 +821,8 @@ namespace CivilizationLauncher
                 try { if (activeGameProcess != null && !activeGameProcess.HasExited) pid = activeGameProcess.Id; } catch { }
                 SendJson(ctx, new Dictionary<string, object> {
                     { "running", running },
-                    { "pid", pid }
+                    { "pid", pid },
+                    { "screenshotsSig", GetScreenshotsSignature() }
                 });
                 return;
             }
@@ -917,6 +983,105 @@ namespace CivilizationLauncher
             catch { }
 
             return false;
+        }
+
+        private static List<FileSystemWatcher> screenshotWatchers = new List<FileSystemWatcher>();
+        private static long screenshotsRevision = 1;
+        private static string lastWatchedMcDir = null;
+
+        static void SetupScreenshotWatchers()
+        {
+            try
+            {
+                string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
+                if (string.IsNullOrEmpty(mcDir) || mcDir == lastWatchedMcDir) return;
+                lastWatchedMcDir = mcDir;
+
+                foreach (var w in screenshotWatchers)
+                {
+                    try { w.EnableRaisingEvents = false; w.Dispose(); } catch { }
+                }
+                screenshotWatchers.Clear();
+
+                var dirs = new List<string> {
+                    Path.Combine(mcDir, "screenshots"),
+                    Path.Combine(mcDir, @"versions\Civilization\screenshots")
+                };
+
+                foreach (var dir in dirs)
+                {
+                    try
+                    {
+                        if (!Directory.Exists(dir))
+                        {
+                            Directory.CreateDirectory(dir);
+                        }
+
+                        var fsw = new FileSystemWatcher(dir, "*.png");
+                        fsw.IncludeSubdirectories = false;
+                        fsw.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.CreationTime;
+                        FileSystemEventHandler onChange = (s, e) => {
+                            Interlocked.Increment(ref screenshotsRevision);
+                        };
+                        RenamedEventHandler onRename = (s, e) => {
+                            Interlocked.Increment(ref screenshotsRevision);
+                        };
+                        fsw.Created += onChange;
+                        fsw.Changed += onChange;
+                        fsw.Deleted += onChange;
+                        fsw.Renamed += onRename;
+                        fsw.EnableRaisingEvents = true;
+                        screenshotWatchers.Add(fsw);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("SetupScreenshotWatcher error for " + dir + ": " + ex.Message);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("SetupScreenshotWatchers general error: " + ex.Message);
+            }
+        }
+
+        static string GetScreenshotsSignature()
+        {
+            try
+            {
+                string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
+                if (string.IsNullOrEmpty(mcDir)) return screenshotsRevision.ToString();
+
+                var candidates = new string[] {
+                    Path.Combine(mcDir, @"versions\Civilization\screenshots"),
+                    Path.Combine(mcDir, "screenshots")
+                };
+
+                int totalCount = 0;
+                long maxTicks = 0;
+                foreach (var d in candidates)
+                {
+                    if (Directory.Exists(d))
+                    {
+                        try
+                        {
+                            var files = Directory.GetFiles(d, "*.png");
+                            totalCount += files.Length;
+                            foreach (var f in files)
+                            {
+                                long ticks = File.GetLastWriteTimeUtc(f).Ticks;
+                                if (ticks > maxTicks) maxTicks = ticks;
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                return string.Format("{0}_{1}_{2}", screenshotsRevision, totalCount, maxTicks);
+            }
+            catch
+            {
+                return screenshotsRevision.ToString();
+            }
         }
 
         static string FindTLauncherExe(string mcDir)
