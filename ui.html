@@ -26,6 +26,7 @@
     --text-hover:#FFFFFF;
     --muted:#8E8E8E;
     --dim:#5E5E5E;
+    --accent:#f0f0f2;
     --r:6px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -718,8 +719,8 @@
     user-select:none;
   }
   .btn:focus-visible{outline:2px solid rgba(255,255,255,.4);outline-offset:2px}
-  .btn.primary{background:#f0f0f2;color:#0b0b0d;font-weight:bold}
-  .btn.primary:hover{background:#fff}
+  .btn.primary{background:var(--accent,#f0f0f2);color:#0b0b0d;font-weight:bold}
+  .btn.primary:hover{filter:brightness(1.12)}
   .btn.ghost{border-color:var(--line);background:var(--card);color:var(--text)}
   .btn.ghost:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
   .btn.line{border-color:var(--line);background:var(--card);color:var(--text)}
@@ -961,6 +962,287 @@
     font-weight:bold;
   }
 
+  /* Кнопка настроек в хедере */
+  .top-settings-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    border-radius:6px;
+    color:var(--dim);
+    font-family:inherit;
+    font-size:11px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    padding:5px 12px;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    transition:background .15s, border-color .15s, color .15s;
+  }
+  .top-settings-btn:hover{
+    border-color:var(--line-strong);
+    color:var(--text);
+    background:rgba(255,255,255,.04);
+  }
+  .top-settings-btn svg{
+    display:block;
+    opacity:.7;
+    transition:opacity .15s, transform .3s;
+  }
+  .top-settings-btn:hover svg{
+    opacity:1;
+    transform:rotate(45deg);
+  }
+
+  /* ---------------- МОДАЛЬНОЕ ОКНО НАСТРОЕК ---------------- */
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(6,6,8,.86);
+    backdrop-filter:blur(8px);
+    z-index:1000;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    transition:opacity .2s ease;
+    padding:20px;
+    box-sizing:border-box;
+  }
+  .modal-backdrop.show{
+    display:flex;
+    opacity:1;
+  }
+  .modal-dialog{
+    background:var(--card);
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    width:100%;
+    max-width:580px;
+    max-height:88vh;
+    display:flex;
+    flex-direction:column;
+    box-shadow:0 24px 60px rgba(0,0,0,.7);
+    overflow:hidden;
+    transform:scale(.97);
+    transition:transform .2s ease;
+    box-sizing:border-box;
+  }
+  .modal-backdrop.show .modal-dialog{
+    transform:scale(1);
+  }
+  .modal-header{
+    height:64px;
+    flex:0 0 64px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 24px;
+    border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.015);
+  }
+  .modal-title{
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:2px;
+    color:var(--text);
+  }
+  .modal-sub{
+    font-size:11px;
+    color:var(--dim);
+    letter-spacing:.5px;
+    margin-top:2px;
+  }
+  .modal-body{
+    flex:1;
+    overflow-y:auto;
+    padding:22px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .settings-group{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .settings-group-header{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .settings-title{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:2px;
+    color:var(--text);
+    text-transform:uppercase;
+  }
+  .settings-desc{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+  .settings-card-box{
+    background:rgba(255,255,255,.02);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:16px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .bg-presets-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
+  }
+  .bg-preset-item{
+    height:70px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    align-items:flex-end;
+    padding:6px 8px;
+    transition:border-color .15s, transform .15s;
+    user-select:none;
+    background-size:cover;
+    background-position:center;
+  }
+  .bg-preset-item:hover{
+    border-color:var(--line-strong);
+    transform:translateY(-1px);
+  }
+  .bg-preset-item.active{
+    border-color:var(--text);
+    box-shadow:0 0 0 1px var(--text);
+  }
+  .bg-preset-label{
+    font-size:10px;
+    letter-spacing:.8px;
+    color:#fff;
+    background:rgba(0,0,0,.7);
+    padding:2px 6px;
+    border-radius:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .settings-slider-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+    font-size:12px;
+    color:var(--dim);
+  }
+  .settings-slider-row input[type="range"]{
+    flex:1;
+    accent-color:var(--text);
+    cursor:pointer;
+  }
+  .settings-slider-val{
+    min-width:38px;
+    text-align:right;
+    color:var(--text);
+    font-weight:600;
+  }
+  .color-swatches{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .color-swatch{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    cursor:pointer;
+    border:2px solid transparent;
+    transition:transform .15s, border-color .15s, box-shadow .15s;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    box-sizing:border-box;
+  }
+  .color-swatch:hover{
+    transform:scale(1.1);
+  }
+  .color-swatch.active{
+    border-color:#fff;
+    box-shadow:0 0 0 2px rgba(255,255,255,.3);
+  }
+  .color-swatch svg{
+    display:none;
+    width:13px;
+    height:13px;
+    stroke:#000;
+  }
+  .color-swatch.active svg{
+    display:block;
+  }
+  .color-custom-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:5px 10px;
+    font-size:11px;
+    letter-spacing:.5px;
+    color:var(--dim);
+    cursor:pointer;
+    transition:border-color .15s, color .15s;
+    position:relative;
+  }
+  .color-custom-btn:hover{
+    border-color:var(--line-strong);
+    color:var(--text);
+  }
+  .color-custom-input{
+    opacity:0;
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    cursor:pointer;
+  }
+  .settings-toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:4px 0;
+  }
+  .settings-toggle-info{
+    display:flex;
+    flex-direction:column;
+  }
+  .settings-toggle-title{
+    font-size:12px;
+    color:var(--text);
+  }
+  .settings-toggle-desc{
+    font-size:11px;
+    color:var(--dim);
+  }
+  .modal-footer{
+    height:60px;
+    flex:0 0 60px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 24px;
+    border-top:1px solid var(--line);
+    background:rgba(255,255,255,.015);
+  }
+
   /* ---------------- новости ---------------- */
   .news-list-wrap{width:100%;max-width:900px;margin:0 auto;padding-bottom:30px}
   .news-card{
@@ -1184,6 +1466,7 @@
         <button class="side-nav-item active" id="btnMain" onclick="showMain()">Главная</button>
         <button class="side-nav-item" id="btnNews" onclick="showNews()">Новости</button>
         <button class="side-nav-item" id="btnGallery" onclick="showGallery()">Галерея</button>
+        <button class="side-nav-item" id="btnSettings" onclick="openSettingsModal()">Настройки</button>
         <button class="side-nav-item" id="btnRating" onclick="showRating()" style="display:none">Рейтинг</button>
       </nav>
     </div>
@@ -1206,6 +1489,15 @@
     <!-- ЗАКРЕПЛЕННЫЙ ХЕДЕР ВСЕГДА СВЕРХУ -->
     <header class="top-bar">
       <div class="top-title" id="pageTitle">ГЛАВНАЯ</div>
+      <div class="top-actions">
+        <button class="top-settings-btn" onclick="openSettingsModal()" title="Настройки лаунчера">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span>Настройки</span>
+        </button>
+      </div>
     </header>
 
     <div class="content" id="viewMain">
@@ -1232,6 +1524,10 @@
                 <button class="more-item" onclick="openGameFolder(event)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                   Открыть папку игры
+                </button>
+                <button class="more-item" onclick="openSettingsFromMenu(event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                  Настройки лаунчера…
                 </button>
                 <button class="more-item danger" onclick="confirmUninstall(event)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
@@ -1687,6 +1983,156 @@
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ ЛАУНЧЕРА -->
+<div class="modal-backdrop" id="settingsModal" onclick="handleSettingsBackdrop(event)">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">НАСТРОЙКИ ЛАУНЧЕРА</div>
+        <div class="modal-sub">Персонализация внешнего вида и параметров интерфейса</div>
+      </div>
+      <button class="lightbox-close" onclick="closeSettingsModal()" title="Закрыть (Esc)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- 1. КАСТОМНЫЙ ФОН -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Фоновое изображение</div>
+          <div class="settings-desc">Выберите встроенный пресет или укажите собственный файл фона</div>
+        </div>
+
+        <div class="settings-card-box">
+          <!-- Пресеты фонов -->
+          <div class="bg-presets-grid">
+            <div class="bg-preset-item active" id="bgPresetDefault" onclick="selectBgPreset('default')" style="background:#0c0c0e;border:1px solid var(--line-strong);" title="По умолчанию">
+              <span class="bg-preset-label">По умолчанию</span>
+            </div>
+            <div class="bg-preset-item" id="bgPresetCiv" onclick="selectBgPreset('civ')" style="background:url('assets/bg.png') center/cover;" title="Civilization">
+              <span class="bg-preset-label">Civilization</span>
+            </div>
+            <div class="bg-preset-item" id="bgPresetDark" onclick="selectBgPreset('dark')" style="background:#000000;border:1px solid var(--line);" title="Глубокий чёрный">
+              <span class="bg-preset-label">Тёмный</span>
+            </div>
+            <div class="bg-preset-item" id="bgPresetCustom" onclick="selectBgPreset('custom')" style="background:linear-gradient(135deg, #1e293b, #0f172a);" title="Свой файл">
+              <span class="bg-preset-label">Свой файл…</span>
+            </div>
+          </div>
+
+          <!-- Выбор файла фона -->
+          <div style="display:flex;gap:10px;align-items:center;">
+            <input type="text" id="customBgPathInput" placeholder="Путь к изображению (PNG, JPG, WebP)..." value="assets/bg.png" readonly style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--text);font-family:inherit;">
+            <button class="btn ghost" onclick="browseCustomBackground()" style="font-size:12px;padding:7px 14px;white-space:nowrap;">Обзор…</button>
+          </div>
+
+          <!-- Слайдер затемнения фона -->
+          <div class="settings-slider-row">
+            <span>Затемнение фона</span>
+            <input type="range" id="bgDimRange" min="10" max="95" value="65" oninput="updateBgDimValue(this.value)">
+            <span class="settings-slider-val" id="bgDimVal">65%</span>
+          </div>
+
+          <!-- Слайдер размытия фона -->
+          <div class="settings-slider-row">
+            <span>Размытие (Blur)</span>
+            <input type="range" id="bgBlurRange" min="0" max="25" value="6" oninput="updateBgBlurValue(this.value)">
+            <span class="settings-slider-val" id="bgBlurVal">6px</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. ВЫБОР АКЦЕНТНОГО ЦВЕТА -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Акцентный цвет интерфейса</div>
+          <div class="settings-desc">Цветовая палитра кнопок действий, индикаторов, рамок и бейджей</div>
+        </div>
+
+        <div class="settings-card-box">
+          <div class="color-swatches">
+            <!-- 1. White / Silver (Default) -->
+            <button class="color-swatch active" id="swatchDefault" onclick="selectAccentColor('#f0f0f2', this)" style="background:#f0f0f2;" title="Серебро (По умолчанию)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 2. Amber / Gold -->
+            <button class="color-swatch" onclick="selectAccentColor('#f59e0b', this)" style="background:#f59e0b;" title="Золото Цивилизаций">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 3. Emerald Green -->
+            <button class="color-swatch" onclick="selectAccentColor('#10b981', this)" style="background:#10b981;" title="Изумрудный">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 4. Diamond Cyan -->
+            <button class="color-swatch" onclick="selectAccentColor('#06b6d4', this)" style="background:#06b6d4;" title="Алмазный циан">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 5. Amethyst Purple -->
+            <button class="color-swatch" onclick="selectAccentColor('#8b5cf6', this)" style="background:#8b5cf6;" title="Аметист">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+            <!-- 6. Redstone Crimson -->
+            <button class="color-swatch" onclick="selectAccentColor('#ef4444', this)" style="background:#ef4444;" title="Редстоун">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </button>
+
+            <!-- Custom Color Picker -->
+            <div class="color-custom-btn" title="Выбрать произвольный цвет">
+              <div id="customColorPreview" style="width:16px;height:16px;border-radius:4px;background:#f0f0f2;border:1px solid var(--line);"></div>
+              <span id="customColorHex">#F0F0F2</span>
+              <input type="color" id="customColorInput" value="#f0f0f2" class="color-custom-input" onchange="onCustomColorChange(this.value)">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. ДОПОЛНИТЕЛЬНО -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Интерфейс и эффекты</div>
+          <div class="settings-desc">Поведение и отображение графических компонентов</div>
+        </div>
+
+        <div class="settings-card-box">
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Плавные анимации и переходы</div>
+              <div class="settings-toggle-desc">Плавное раскрытие новостей и переключение разделов</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="toggleAnimSetting">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Аппаратное ускорение графики</div>
+              <div class="settings-toggle-desc">Использовать видеокарту для рендера анимаций лаунчера</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="toggleGpuSetting">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn line" onclick="resetLauncherSettings()" style="font-size:12px;">Сбросить</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn ghost" onclick="closeSettingsModal()" style="font-size:12px;">Отмена</button>
+        <button class="btn primary" onclick="saveLauncherSettings()" style="font-size:12px;padding:9px 20px;">Сохранить</button>
       </div>
     </div>
   </div>
@@ -2524,12 +2970,120 @@
   }
 
   window.addEventListener('keydown', (e)=>{
+    const sm = document.getElementById('settingsModal');
+    if (sm && sm.classList.contains('show') && e.key === 'Escape') {
+      closeSettingsModal();
+      return;
+    }
     const lb = document.getElementById('lightbox');
     if (!lb || !lb.classList.contains('show')) return;
     if (e.key === 'Escape') closeLightbox();
     if (e.key === 'ArrowLeft') prevScreenshot();
     if (e.key === 'ArrowRight') nextScreenshot();
   });
+
+  // --- Настройки лаунчера (модальное окно) ---
+  function openSettingsModal(){
+    const m = document.getElementById('settingsModal');
+    if (m) m.classList.add('show');
+  }
+
+  function closeSettingsModal(){
+    const m = document.getElementById('settingsModal');
+    if (m) m.classList.remove('show');
+  }
+
+  function handleSettingsBackdrop(e){
+    if (e.target.id === 'settingsModal') {
+      closeSettingsModal();
+    }
+  }
+
+  function openSettingsFromMenu(e){
+    if (e) e.stopPropagation();
+    const m = document.getElementById('moreMenu');
+    if (m) m.classList.remove('show');
+    openSettingsModal();
+  }
+
+  function selectBgPreset(preset){
+    ['Default', 'Civ', 'Dark', 'Custom'].forEach(name => {
+      const el = document.getElementById('bgPreset' + name);
+      if (el) el.classList.remove('active');
+    });
+    const selected = document.getElementById('bgPreset' + preset.charAt(0).toUpperCase() + preset.slice(1));
+    if (selected) selected.classList.add('active');
+
+    const pathInput = document.getElementById('customBgPathInput');
+    if (pathInput) {
+      if (preset === 'default') pathInput.value = 'assets/bg.png';
+      else if (preset === 'civ') pathInput.value = 'assets/bg.png';
+      else if (preset === 'dark') pathInput.value = 'Чистый тёмный фон';
+      else if (preset === 'custom') pathInput.value = 'C:\\Users\\User\\Pictures\\custom_bg.png';
+    }
+  }
+
+  function browseCustomBackground(){
+    selectBgPreset('custom');
+    toast('Файловый диалог: выберите фоновое изображение');
+  }
+
+  function updateBgDimValue(val){
+    const el = document.getElementById('bgDimVal');
+    if (el) el.textContent = val + '%';
+  }
+
+  function updateBgBlurValue(val){
+    const el = document.getElementById('bgBlurVal');
+    if (el) el.textContent = val + 'px';
+  }
+
+  let currentAccentColor = '#f0f0f2';
+  function selectAccentColor(color, el){
+    currentAccentColor = color;
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    if (el) el.classList.add('active');
+
+    const preview = document.getElementById('customColorPreview');
+    const hex = document.getElementById('customColorHex');
+    const input = document.getElementById('customColorInput');
+    if (preview) preview.style.background = color;
+    if (hex) hex.textContent = color.toUpperCase();
+    if (input) input.value = color;
+
+    document.documentElement.style.setProperty('--accent', color);
+  }
+
+  function onCustomColorChange(color){
+    currentAccentColor = color;
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    const preview = document.getElementById('customColorPreview');
+    const hex = document.getElementById('customColorHex');
+    if (preview) preview.style.background = color;
+    if (hex) hex.textContent = color.toUpperCase();
+
+    document.documentElement.style.setProperty('--accent', color);
+  }
+
+  function resetLauncherSettings(){
+    selectBgPreset('default');
+    const dim = document.getElementById('bgDimRange');
+    if (dim) { dim.value = 65; updateBgDimValue(65); }
+    const blur = document.getElementById('bgBlurRange');
+    if (blur) { blur.value = 6; updateBgBlurValue(6); }
+    const swatch = document.getElementById('swatchDefault');
+    selectAccentColor('#f0f0f2', swatch);
+    const anim = document.getElementById('toggleAnimSetting');
+    if (anim) anim.checked = true;
+    const gpu = document.getElementById('toggleGpuSetting');
+    if (gpu) gpu.checked = true;
+    toast('Настройки сброшены по умолчанию');
+  }
+
+  function saveLauncherSettings(){
+    toast('Настройки сохранены');
+    closeSettingsModal();
+  }
 
   let currentView = 'main';
   function hideAllViews(){
