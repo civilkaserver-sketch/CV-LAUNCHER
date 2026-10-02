@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Web.Script.Serialization;
 using System.IO.Compression;
 using System.Runtime.InteropServices;
+using System.Management;
 
 namespace CivilizationLauncher
 {
@@ -18,6 +19,7 @@ namespace CivilizationLauncher
     {
         private static int port = 0;
         private static HttpListener listener;
+        private static ManualResetEvent serverReady = new ManualResetEvent(false);
         private static bool isRunning = true;
         private static Process browserProcess;
         private static string appDir;
@@ -76,12 +78,19 @@ namespace CivilizationLauncher
                 {
                     if (p.Id != current.Id)
                     {
-                        Log("Killing old instance PID " + p.Id);
-                        try { p.Kill(); } catch { }
+                        Log("Killing old launcher instance PID " + p.Id);
+                        try
+                        {
+                            p.Kill();
+                            p.WaitForExit(1500);
+                        }
+                        catch { }
                     }
                 }
             }
             catch (Exception ex) { Log("Cleanup error: " + ex.Message); }
+
+            KillStaleBrowserProcesses();
 
             try { SetCurrentProcessExplicitAppUserModelID("Civilization.Launcher.CV"); } catch { }
 
@@ -92,6 +101,7 @@ namespace CivilizationLauncher
                 {
                     listener = new HttpListener();
                     listener.Prefixes.Add(string.Format("http://127.0.0.1:{0}/", p));
+                    try { listener.Prefixes.Add(string.Format("http://localhost:{0}/", p)); } catch { }
                     listener.Start();
                     port = p;
                     Log("Successfully bound to port " + p);
@@ -105,7 +115,7 @@ namespace CivilizationLauncher
                         try { listener.Close(); } catch { }
                         listener = null;
                     }
-                    if (p > 52145) break; // don't spam 100 ports if HttpListener permission denied
+                    if (p > 52160) break;
                 }
             }
 
@@ -122,7 +132,9 @@ namespace CivilizationLauncher
             Thread serverThread = new Thread(ServerLoop);
             serverThread.IsBackground = true;
             serverThread.Start();
-            Log("Server started");
+            serverReady.WaitOne(2000);
+            Thread.Sleep(50);
+            Log("Server started and ready");
 
             try { SetupScreenshotWatchers(); } catch { }
 
@@ -138,6 +150,46 @@ namespace CivilizationLauncher
             Log("Main exiting, isRunning = false");
 
             try { listener.Stop(); } catch { }
+            KillStaleBrowserProcesses();
+            Log("Launcher shutdown complete");
+        }
+
+        private static void KillStaleBrowserProcesses()
+        {
+            try
+            {
+                using (var searcher = new ManagementObjectSearcher(
+                    "SELECT ProcessId, CommandLine FROM Win32_Process WHERE Name = 'msedge.exe' OR Name = 'chrome.exe'"))
+                {
+                    foreach (ManagementObject obj in searcher.Get())
+                    {
+                        try
+                        {
+                            var cmd = obj["CommandLine"] as string;
+                            if (!string.IsNullOrEmpty(cmd) && cmd.IndexOf("CivLauncherProfile", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                uint pid = (uint)obj["ProcessId"];
+                                Log("Terminating stale browser process PID " + pid);
+                                try
+                                {
+                                    var proc = Process.GetProcessById((int)pid);
+                                    if (!proc.HasExited)
+                                    {
+                                        proc.Kill();
+                                        proc.WaitForExit(1000);
+                                    }
+                                }
+                                catch { }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("KillStaleBrowserProcesses warning: " + ex.Message);
+            }
         }
 
         static void LaunchBrowser()
@@ -158,6 +210,8 @@ namespace CivilizationLauncher
             {
                 if (File.Exists(p)) { exeToUse = p; break; }
             }
+
+            KillStaleBrowserProcesses();
 
             try
             {
@@ -180,22 +234,24 @@ namespace CivilizationLauncher
                 string lockFile = Path.Combine(tempProfile, "lockfile");
                 if (File.Exists(lockFile))
                 {
-                    try { File.Delete(lockFile); }
-                    catch
+                    for (int i = 0; i < 5; i++)
                     {
                         try
                         {
-                            var psiKill = new ProcessStartInfo("cmd.exe", "/c wmic process where \"CommandLine like '%CivLauncherProfile%' and Name='msedge.exe'\" call terminate");
-                            psiKill.CreateNoWindow = true;
-                            psiKill.UseShellExecute = false;
-                            using (var kp = Process.Start(psiKill)) kp.WaitForExit(2000);
+                            File.Delete(lockFile);
+                            break;
                         }
-                        catch { }
-                        try { File.Delete(lockFile); } catch { }
+                        catch
+                        {
+                            Thread.Sleep(100);
+                        }
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                Log("Profile setup warning: " + ex.Message);
+            }
 
             if (exeToUse != null)
             {
@@ -204,7 +260,9 @@ namespace CivilizationLauncher
                 psi.FileName = exeToUse;
                 psi.Arguments = string.Format(
                     "--app=\"{0}\" --window-size=1150,740 --user-data-dir=\"{1}\" " +
-                    "--disable-features=WebAppIconInTitlebar --disable-background-mode --no-first-run --no-default-browser-check",
+                    "--no-startup-boost --disable-features=WebAppIconInTitlebar,Translate --disable-background-mode " +
+                    "--disable-background-networking --disable-component-update --disable-sync " +
+                    "--no-first-run --no-default-browser-check",
                     url, tempProfile);
                 psi.UseShellExecute = false;
                 try
@@ -294,10 +352,11 @@ namespace CivilizationLauncher
             catch { }
 
             int styledCount = 0;
+            IntPtr mainHwnd = IntPtr.Zero;
+
             for (int i = 0; i < 50; i++)
             {
                 Thread.Sleep(200);
-                if (browserProcess != null && browserProcess.HasExited) break;
 
                 EnumWindows(delegate(IntPtr hWnd, IntPtr lParam)
                 {
@@ -320,6 +379,7 @@ namespace CivilizationLauncher
                                     string title = tb.ToString();
                                     if (string.IsNullOrEmpty(title) || title.Contains("Civilization") || title.Contains("Launcher") || title.Contains("127.0.0.1") || title.Contains("localhost"))
                                     {
+                                        mainHwnd = hWnd;
                                         DwmSetWindowAttribute(hWnd, 20, ref dark, 4);     // DWMWA_USE_IMMERSIVE_DARK_MODE
                                         DwmSetWindowAttribute(hWnd, 35, ref colorRef, 4); // DWMWA_CAPTION_COLOR
                                         DwmSetWindowAttribute(hWnd, 34, ref colorRef, 4); // DWMWA_BORDER_COLOR
@@ -341,25 +401,47 @@ namespace CivilizationLauncher
                     return true;
                 }, IntPtr.Zero);
 
-                if (styledCount > 0 && i > 15) break; // Window styled, exit polling loop
+                if (styledCount > 0 && i >= 10) break; // Window styled, exit polling loop
             }
 
-            Log("StyleWindowLoop completed initial styling, waiting for browser to exit");
-            if (browserProcess != null && !browserProcess.HasExited)
+            Log(string.Format("StyleWindowLoop finished styling. styledCount={0}, mainHwnd={1}", styledCount, mainHwnd));
+
+            if (mainHwnd != IntPtr.Zero)
             {
+                Log("Monitoring window HWND " + mainHwnd);
+                while (isRunning)
+                {
+                    Thread.Sleep(300);
+                    if (!IsWindow(mainHwnd))
+                    {
+                        Log("Target window was closed by user");
+                        break;
+                    }
+                }
+            }
+            else if (browserProcess != null && !browserProcess.HasExited)
+            {
+                Log("Target window HWND not found, falling back to browserProcess.WaitForExit()");
                 browserProcess.WaitForExit();
             }
-            Log("Browser process exited, closing launcher");
+            else
+            {
+                Log("Neither target window nor running browser process was found.");
+            }
+
+            Log("Browser window closed, terminating launcher");
             isRunning = false;
             }
             catch (Exception ex)
             {
                 Log("StyleWindowLoop error: " + ex.ToString());
+                isRunning = false;
             }
         }
 
         static void ServerLoop()
         {
+            serverReady.Set();
             while (isRunning)
             {
                 try
