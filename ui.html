@@ -971,6 +971,36 @@
     margin-bottom:48px;
   }
   .news-card:last-child{margin-bottom:0}
+  .news-content-collapse{
+    position:relative;
+    max-height:220px;
+    overflow:hidden;
+    transition:max-height .3s ease;
+  }
+  .news-content-collapse::after{
+    content:'';
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:80px;
+    background:linear-gradient(to bottom, rgba(12,12,12,0) 0%, var(--card) 100%);
+    pointer-events:none;
+    z-index:2;
+  }
+  .news-content-collapse.expanded{
+    max-height:none;
+    overflow:visible;
+  }
+  .news-content-collapse.expanded::after{
+    display:none;
+  }
+  .news-card-footer{
+    padding:6px 24px 20px;
+    background:var(--card);
+    position:relative;
+    z-index:3;
+  }
   .ncard-banner{
     display:block;
     width:100%;
@@ -1227,7 +1257,6 @@
         <div class="card changelog-card">
           <div class="changelog-head">
             <h3>ЧТО НОВОГО</h3>
-            <span class="changelog-ver">Civilization &amp; Player Trading</span>
           </div>
           <div class="changelog-list-wrap">
             <div class="changelog-list" id="changelogList">
@@ -1264,7 +1293,7 @@
           <div class="changelog-latest" id="changelogLatest" style="display:none">
             Вы на последней версии v1.21.8 · проверено сегодня
           </div>
-          <button class="changelog-more-link" onclick="showNews()">Узнать больше →</button>
+          <button class="changelog-more-link" onclick="showNews(true)">Узнать больше →</button>
         </div>
 
         <!-- СТРОКА «ПАПКА» (ТОНКАЯ, ~52px) -->
@@ -1306,7 +1335,8 @@
             <div style="height:200px;overflow:hidden;line-height:0;background:#ffffff;">
               <img src="assets/news_banner_1.svg" alt="CIVILIZATION REBORN" style="width:100%;height:200px;object-fit:cover;display:block;">
             </div>
-            <div style="padding:22px 24px 24px;">
+            <div class="news-content-collapse" id="newsCollapseWrap">
+              <div style="padding:22px 24px 24px;">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:12px;color:var(--dim);letter-spacing:.5px;">
                 <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:2px 8px;border:1px solid var(--line);border-radius:6px;color:var(--text);background:var(--card);">Релиз</span>
                 <span>30 сентября 2026</span>
@@ -1573,6 +1603,11 @@
 
             </div>
           </div>
+          <!-- Футер карточки с кнопкой разворачивания/сворачивания -->
+          <div class="news-card-footer">
+            <button class="changelog-more-link" id="btnToggleNews" onclick="toggleNewsCard()">Узнать больше →</button>
+          </div>
+        </div>
         </div>
       </div>
     </div>
@@ -2516,12 +2551,32 @@
     document.getElementById('pageTitle').textContent = 'ГЛАВНАЯ';
   }
 
-  function showNews(){
+  function showNews(autoExpand){
     currentView = 'news';
     hideAllViews();
     document.getElementById('viewNews').style.display = 'flex';
     document.getElementById('btnNews').classList.add('active');
     document.getElementById('pageTitle').textContent = 'НОВОСТИ';
+    if(autoExpand === true){
+      const wrap = document.getElementById('newsCollapseWrap');
+      const btn = document.getElementById('btnToggleNews');
+      if(wrap && !wrap.classList.contains('expanded')){
+        wrap.classList.add('expanded');
+        if(btn) btn.textContent = 'Свернуть ↑';
+      }
+    }
+  }
+
+  function toggleNewsCard(){
+    const wrap = document.getElementById('newsCollapseWrap');
+    const btn = document.getElementById('btnToggleNews');
+    if(!wrap || !btn) return;
+    const isExpanded = wrap.classList.toggle('expanded');
+    btn.textContent = isExpanded ? 'Свернуть ↑' : 'Узнать больше →';
+    if(!isExpanded){
+      const view = document.getElementById('viewNews');
+      if(view) view.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }
 
   function showGallery(){
