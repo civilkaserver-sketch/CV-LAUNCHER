@@ -659,6 +659,60 @@
     padding:6px 0;
   }
 
+  /* Статус-бар сервера */
+  .server-status-bar{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    height:52px;
+    padding:0 18px;
+    margin-top:14px;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:var(--card);
+    box-sizing:border-box;
+  }
+  .server-status-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--dim);
+    flex-shrink:0;
+  }
+  .server-status-dot.online{ background:#2ecc71; box-shadow:0 0 6px rgba(46,204,113,.5); }
+  .server-status-dot.offline{ background:#e74c3c; }
+  .server-status-label{
+    font-size:10px;
+    letter-spacing:2px;
+    color:var(--dim);
+    text-transform:uppercase;
+    flex-shrink:0;
+  }
+  .server-status-value{
+    font-size:12px;
+    color:var(--text);
+    letter-spacing:.4px;
+  }
+  .server-status-players{
+    font-size:13px;
+    color:var(--text);
+    letter-spacing:.4px;
+    font-weight:bold;
+  }
+  .server-status-sep{
+    width:1px;
+    height:20px;
+    background:var(--line);
+    flex-shrink:0;
+  }
+  .server-status-addr{
+    font-size:11px;
+    color:var(--dim);
+    letter-spacing:.5px;
+    margin-left:auto;
+    white-space:nowrap;
+  }
+
   /* Тонкая строка «Папка» (~52px) */
   .folder-bar{
     display:flex;
@@ -1491,7 +1545,13 @@
     </div>
 
     <div class="side-footer">
-      <button class="side-nav-item" onclick="openSettingsModal()" style="width:100%;text-align:left;">Настройки</button>
+      <button class="side-nav-item" onclick="openSettingsModal()" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Настройки
+      </button>
     </div>
 
   </aside>
@@ -1591,24 +1651,16 @@
           <button class="changelog-more-link" onclick="showNews(true)">Узнать больше</button>
         </div>
 
-        <!-- СТРОКА «ПАПКА» (ТОНКАЯ, ~52px) -->
-        <div class="folder-bar">
-          <div class="folder-bar-label">ПАПКА</div>
-          <div class="folder-bar-path" id="mcPathDisplay" onclick="copyPathToClipboard()" title="Нажмите, чтобы скопировать путь">C:\Users\You\AppData\Roaming\.minecraft</div>
-          <input type="hidden" id="mcPath" value="C:\Users\You\AppData\Roaming\.minecraft">
-          <div class="folder-change-wrap" id="folderChangeWrap">
-            <button class="folder-change-btn" id="btnChangeFolder" onclick="toggleFolderMenu(event)">Изменить</button>
-            <div class="folder-menu" id="folderMenu">
-              <button class="more-item" onclick="onFolderMenuAction('detect', event)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
-                Найти автоматически
-              </button>
-              <button class="more-item" onclick="onFolderMenuAction('pick', event)">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                Обзор…
-              </button>
-            </div>
-          </div>
+        <!-- СТАТУС СЕРВЕРА -->
+        <div class="server-status-bar" id="serverStatusBar">
+          <div class="server-status-dot" id="serverStatusDot"></div>
+          <div class="server-status-label" id="serverStatusLabel">СЕРВЕР</div>
+          <div class="server-status-value" id="serverStatusValue">Проверка...</div>
+          <div class="server-status-sep"></div>
+          <div class="server-status-label">ОНЛАЙН</div>
+          <div class="server-status-players" id="serverStatusPlayers">—</div>
+          <div class="server-status-sep"></div>
+          <div class="server-status-addr">civilization.server.ru : 25565</div>
         </div>
 
       </div>
@@ -2110,6 +2162,33 @@
               <input type="checkbox" checked id="toggleGpuSetting">
               <span class="slider"></span>
             </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. ПАПКА ИГРЫ -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Папка игры</div>
+          <div class="settings-desc">Путь к директории .minecraft</div>
+        </div>
+        <div class="settings-card-box">
+          <div class="folder-bar" style="margin-top:0;border:none;padding:0;height:auto;background:transparent;gap:12px;flex-wrap:wrap;">
+            <div class="folder-bar-path" id="mcPathDisplay" onclick="copyPathToClipboard()" title="Нажмите, чтобы скопировать путь" style="flex:1;min-width:0;">C:\Users\You\AppData\Roaming\.minecraft</div>
+            <input type="hidden" id="mcPath" value="C:\Users\You\AppData\Roaming\.minecraft">
+            <div class="folder-change-wrap" id="folderChangeWrap">
+              <button class="folder-change-btn" id="btnChangeFolder" onclick="toggleFolderMenu(event)" style="padding:6px 12px;border:1px solid var(--line);border-radius:var(--r);">Изменить</button>
+              <div class="folder-menu" id="folderMenu">
+                <button class="more-item" onclick="onFolderMenuAction('detect', event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                  Найти автоматически
+                </button>
+                <button class="more-item" onclick="onFolderMenuAction('pick', event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  Обзор…
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -3295,6 +3374,47 @@
   checkBackendStatus();
   loadRealScreenshots();
   setInterval(checkScreenshotsUpdate, 1500);
+
+  // --- Статус сервера ---
+  function updateServerStatus(online, players) {
+    const dot = document.getElementById('serverStatusDot');
+    const val = document.getElementById('serverStatusValue');
+    const pls = document.getElementById('serverStatusPlayers');
+    if (!dot) return;
+    if (online === null) {
+      dot.className = 'server-status-dot';
+      if (val) val.textContent = 'Проверка...';
+      if (pls) pls.textContent = '—';
+    } else if (online) {
+      dot.className = 'server-status-dot online';
+      if (val) val.textContent = 'Онлайн';
+      if (pls) pls.textContent = players !== undefined ? players + ' игр.' : '—';
+    } else {
+      dot.className = 'server-status-dot offline';
+      if (val) val.textContent = 'Оффлайн';
+      if (pls) pls.textContent = '0';
+    }
+  }
+
+  async function checkServerStatus() {
+    try {
+      // Псевдо-запрос — в реальности заменить на API бэкенда
+      const res = await fetch('/api/server-status').catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json();
+        updateServerStatus(data.online, data.players);
+      } else {
+        // Бэкенд не доступен — показываем оффлайн
+        updateServerStatus(false);
+      }
+    } catch(e) {
+      updateServerStatus(false);
+    }
+  }
+
+  updateServerStatus(null);
+  checkServerStatus();
+  setInterval(checkServerStatus, 30000);
 </script>
 </body>
 </html>
