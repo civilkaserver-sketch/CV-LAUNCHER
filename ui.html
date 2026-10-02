@@ -924,14 +924,14 @@
     color:#ff7b85;
   }
   .lightbox-close{
-    background:var(--card);border:1px solid var(--line);border-radius:var(--r);
-    color:var(--text);width:34px;height:34px;cursor:pointer;
+    background:transparent;border:none;border-radius:var(--r);
+    color:var(--dim);width:34px;height:34px;cursor:pointer;
     display:flex;align-items:center;justify-content:center;
-    transition:color .15s,border-color .15s,background .15s;
+    transition:color .15s;
     padding:0;
   }
   .lightbox-close:hover{
-    color:var(--text-hover);border-color:var(--line-strong);background:var(--card-hover);
+    color:var(--text);border:none;background:transparent;
   }
   .lightbox-close svg{display:block}
   .lightbox-body{
@@ -1128,7 +1128,6 @@
     flex-direction:column;
     justify-content:flex-end;
     padding:8px 10px;
-    transition:border-color .15s, transform .15s, box-shadow .15s;
     user-select:none;
     background-size:cover;
     background-position:center;
@@ -1137,7 +1136,6 @@
   }
   .bg-preset-item:hover{
     border-color:var(--line-strong);
-    transform:translateY(-1px);
   }
   .bg-preset-item.active{
     border-color:var(--accent, #f0f0f2);
@@ -1173,14 +1171,12 @@
   }
   .bg-preset-custom-icon{
     color:var(--dim);
-    transition:color .15s, transform .15s;
     display:flex;
     align-items:center;
     justify-content:center;
   }
   .bg-preset-item:hover .bg-preset-custom-icon{
     color:var(--text);
-    transform:scale(1.08);
   }
   .color-swatches{
     display:flex;
