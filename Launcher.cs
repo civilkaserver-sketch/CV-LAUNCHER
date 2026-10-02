@@ -795,11 +795,98 @@ namespace CivilizationLauncher
                 return;
             }
 
+            if (endpoint == "stop-game")
+            {
+                string err;
+                bool stopped = StopGame(out err);
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "ok", true },
+                    { "stopped", stopped },
+                    { "msg", stopped ? "Игра закрыта" : "Процесс игры не найден" }
+                });
+                return;
+            }
+
             ctx.Response.StatusCode = 404;
             ctx.Response.Close();
         }
 
         private static Process activeGameProcess = null;
+
+        static bool StopGame(out string error)
+        {
+            error = null;
+            bool killedAny = false;
+            try
+            {
+                if (activeGameProcess != null)
+                {
+                    try
+                    {
+                        if (!activeGameProcess.HasExited)
+                        {
+                            int pid = activeGameProcess.Id;
+                            var psi = new ProcessStartInfo("taskkill", string.Format("/PID {0} /T /F", pid));
+                            psi.CreateNoWindow = true;
+                            psi.UseShellExecute = false;
+                            var p = Process.Start(psi);
+                            if (p != null) p.WaitForExit(3000);
+                            killedAny = true;
+                        }
+                    }
+                    catch
+                    {
+                        try { activeGameProcess.Kill(); killedAny = true; } catch { }
+                    }
+                    activeGameProcess = null;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("StopGame active proc error: " + ex.Message);
+            }
+
+            try
+            {
+                var procs = Process.GetProcessesByName("javaw");
+                foreach (var p in procs)
+                {
+                    try
+                    {
+                        if (!p.HasExited)
+                        {
+                            string title = p.MainWindowTitle ?? "";
+                            if (title.IndexOf("Civilization", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                title.IndexOf("Minecraft", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                int pid = p.Id;
+                                try
+                                {
+                                    var psi = new ProcessStartInfo("taskkill", string.Format("/PID {0} /T /F", pid));
+                                    psi.CreateNoWindow = true;
+                                    psi.UseShellExecute = false;
+                                    var kp = Process.Start(psi);
+                                    if (kp != null) kp.WaitForExit(2000);
+                                }
+                                catch
+                                {
+                                    p.Kill();
+                                }
+                                killedAny = true;
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("StopGame scan error: " + ex.Message);
+            }
+
+            activeGameProcess = null;
+            return killedAny;
+        }
 
         static bool IsGameRunning()
         {

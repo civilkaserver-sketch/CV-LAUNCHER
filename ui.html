@@ -708,6 +708,8 @@
   .btn.ghost:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
   .btn.line{border-color:var(--line);background:var(--card);color:var(--text)}
   .btn.line:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
+  .btn.danger{border-color:rgba(235,87,87,.45);background:rgba(235,87,87,.12);color:#ff6b6b;font-weight:bold}
+  .btn.danger:hover{background:rgba(235,87,87,.22);border-color:rgba(235,87,87,.85);color:#fff}
   .btn:disabled{opacity:.3;cursor:not-allowed}
   .actions .btn{flex:1;min-width:130px}
 
@@ -1504,12 +1506,13 @@
   }
 
   function onMainActionClick(){
-    if(gameRunning) return;
     if(!installed){
       if(installing) stopInstall();
       else run('install');
     } else if(updateAvailable){
       run('update');
+    } else if(gameRunning){
+      stopGame();
     } else {
       startGame();
     }
@@ -1592,15 +1595,15 @@
       }
       if(playBtn) playBtn.disabled = false;
     } else if(gameRunning){
-      // Состояние: Игра запущена (В ИГРЕ)
+      // Состояние 3: ЗАКРЫТЬ
       if(mainBtn){
-        mainBtn.textContent = 'В ИГРЕ';
-        mainBtn.className = 'btn ghost banner-main-btn';
-        mainBtn.disabled = true;
+        mainBtn.textContent = 'ЗАКРЫТЬ';
+        mainBtn.className = 'btn danger banner-main-btn';
+        mainBtn.disabled = false;
       }
       if(playBtn) playBtn.disabled = true;
     } else {
-      // Состояние: Установлено (ИГРАТЬ)
+      // Состояние 1: ИГРАТЬ
       if(mainBtn){
         mainBtn.textContent = 'ИГРАТЬ';
         mainBtn.className = 'btn primary banner-main-btn';
@@ -1612,15 +1615,21 @@
 
   const isBackend = window.location.protocol.startsWith('http');
 
-  function setGameRunningState(running, text){
+  function setGameRunningState(running, stateText){
     gameRunning = running;
     const mainBtn = document.getElementById('btnMainAction');
     const playBtn = document.getElementById('playBtn');
     if(running){
       if(mainBtn){
-        mainBtn.textContent = text || 'В ИГРЕ';
-        mainBtn.className = 'btn ghost banner-main-btn';
-        mainBtn.disabled = true;
+        if(stateText === 'ЗАПУСК' || stateText === 'ЗАПУСК...'){
+          mainBtn.textContent = 'ЗАПУСК...';
+          mainBtn.className = 'btn ghost banner-main-btn';
+          mainBtn.disabled = true;
+        } else {
+          mainBtn.textContent = 'ЗАКРЫТЬ';
+          mainBtn.className = 'btn danger banner-main-btn';
+          mainBtn.disabled = false;
+        }
       }
       if(playBtn) playBtn.disabled = true;
     } else {
@@ -1638,7 +1647,7 @@
         const data = await res.json();
         if(data.running){
           if(!gameRunning){
-            setGameRunningState(true, 'В ИГРЕ');
+            setGameRunningState(true, 'ЗАКРЫТЬ');
           }
         } else {
           if(gameRunning){
@@ -1800,7 +1809,7 @@
   async function startGame(){
     if(currentView !== 'main') showMain();
     if(!installed){ toast('Сначала установи сборку'); return; }
-    if(gameRunning){ toast('Игра уже запущена'); return; }
+    if(gameRunning){ stopGame(); return; }
 
     setGameRunningState(true, 'ЗАПУСК...');
 
@@ -1810,7 +1819,7 @@
         const data = await res.json();
         if(data.ok){
           toast(data.msg || 'Запуск игры...');
-          setGameRunningState(true, 'В ИГРЕ');
+          setGameRunningState(true, 'ЗАКРЫТЬ');
           if(!gamePollTimer){
             gamePollTimer = setInterval(checkGameStatus, 2500);
           }
@@ -1826,7 +1835,29 @@
       }
     }
     toast('Запуск Civilization...');
-    setTimeout(()=>{ setGameRunningState(false); }, 3000);
+    setTimeout(()=>{ setGameRunningState(true, 'ЗАКРЫТЬ'); }, 1500);
+  }
+
+  async function stopGame(){
+    const mainBtn = document.getElementById('btnMainAction');
+    if(mainBtn){
+      mainBtn.textContent = 'ЗАКРЫТИЕ...';
+      mainBtn.disabled = true;
+    }
+    toast('Закрытие игры...');
+    if(isBackend){
+      try {
+        const res = await fetch('/api/stop-game', { method: 'POST' });
+        const data = await res.json();
+        if(data && data.ok){
+          setGameRunningState(false);
+          toast('Игра закрыта');
+          return;
+        }
+      } catch(e) {}
+    }
+    setGameRunningState(false);
+    toast('Игра закрыта');
   }
 
   async function detectPath(){
