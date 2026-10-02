@@ -28,6 +28,10 @@
     --dim:#5E5E5E;
     --accent:#f0f0f2;
     --accent-text:#0b0b0d;
+    --banner-bg:url('assets/bg.png');
+    --banner-blur:0px;
+    --banner-dim:0;
+    --banner-scale:1;
     --r:6px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -313,15 +317,23 @@
     content:'';
     position:absolute;
     inset:0;
-    background:url('assets/bg.png') center right / cover no-repeat;
+    background-image:var(--banner-bg, url('assets/bg.png'));
+    background-position:center right;
+    background-size:cover;
+    background-repeat:no-repeat;
+    filter:blur(var(--banner-blur, 0px));
+    transform:scale(var(--banner-scale, 1));
+    transition:filter .15s ease, transform .15s ease;
   }
   #bannerCard::after{
     content:'';
     position:absolute;
     inset:0;
     background:linear-gradient(to right, rgba(12,12,12,0.96) 0%, rgba(12,12,12,0.85) 42%, rgba(12,12,12,0.32) 75%, rgba(12,12,12,0.02) 100%),
-               linear-gradient(to top, rgba(12,12,12,0.65) 0%, transparent 45%);
+               linear-gradient(to top, rgba(12,12,12,0.65) 0%, transparent 45%),
+               rgba(12,12,12,var(--banner-dim, 0));
     pointer-events:none;
+    transition:background-color .15s ease;
   }
   #bannerCard > *{
     position:relative;
@@ -1088,47 +1100,6 @@
     flex-direction:column;
     gap:14px;
   }
-  /* Фон лаунчера (фоновые слои) */
-  .launcher-bg-layer{
-    position:fixed;
-    inset:0;
-    z-index:0;
-    background-size:cover;
-    background-position:center;
-    pointer-events:none;
-    transform:scale(1.05);
-    transition:filter .15s ease, opacity .25s ease;
-  }
-  .launcher-bg-dim{
-    position:fixed;
-    inset:0;
-    z-index:1;
-    pointer-events:none;
-    background:rgba(12,12,12,0.65);
-    transition:background-color .15s ease;
-  }
-  body.has-custom-bg .main{
-    background: transparent !important;
-  }
-  body.has-custom-bg .main::before,
-  body.has-custom-bg .main::after{
-    display: none !important;
-  }
-  body.has-custom-bg .side{
-    background: rgba(12,12,12,0.85);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-  }
-  body.has-custom-bg .top-bar{
-    background: rgba(12,12,12,0.8);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-  }
-  body.has-custom-bg .content{
-    background: rgba(14,14,14,0.72);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-  }
   body.no-transitions *{
     transition: none !important;
     animation: none !important;
@@ -1529,9 +1500,6 @@
 </head>
 <body>
 <div class="app">
-  <!-- Фоновые слои кастомного фона -->
-  <div id="launcherCustomBg" class="launcher-bg-layer" style="display:none;"></div>
-  <div id="launcherCustomDim" class="launcher-bg-dim" style="display:none;"></div>
 
   <!-- САЙДБАР -->
   <aside class="side">
@@ -2083,15 +2051,15 @@
     </div>
 
     <div class="modal-body">
-      <!-- 1. ФОН ЛАУНЧЕРА -->
+      <!-- 1. ФОН БАННЕРА КАРТОЧКИ -->
       <div class="settings-group">
         <div class="settings-group-header">
-          <div class="settings-title">Фон лаунчера</div>
-          <div class="settings-desc">Выберите стандартное оформление или установите собственное изображение</div>
+          <div class="settings-title">Фон баннера (#bannerCard)</div>
+          <div class="settings-desc">Фоновое изображение главной карточки (assets/bg.png по умолчанию)</div>
         </div>
 
         <div class="settings-card-box">
-          <!-- Режимы: По умолчанию / Свой фон -->
+          <!-- Режимы: По умолчанию / Свой баннер -->
           <div class="bg-mode-tabs">
             <button type="button" class="bg-mode-btn active" id="btnBgModeDefault" onclick="setBgMode('default')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2099,7 +2067,7 @@
                 <line x1="3" y1="9" x2="21" y2="9"/>
                 <line x1="9" y1="21" x2="9" y2="9"/>
               </svg>
-              <span>По умолчанию (Текущий)</span>
+              <span>По умолчанию</span>
             </button>
             <button type="button" class="bg-mode-btn" id="btnBgModeCustom" onclick="setBgMode('custom')">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2107,7 +2075,7 @@
                 <circle cx="8.5" cy="8.5" r="1.5"/>
                 <polyline points="21 15 16 10 5 21"/>
               </svg>
-              <span>Свой фон</span>
+              <span>Свой баннер</span>
             </button>
           </div>
 
@@ -2132,16 +2100,16 @@
 
             <!-- Слайдер затемнения -->
             <div class="settings-slider-row">
-              <span>Затемнение фона</span>
-              <input type="range" id="bgDimRange" min="15" max="95" value="65" oninput="onBgDimInput(this.value)">
-              <span class="settings-slider-val" id="bgDimVal">65%</span>
+              <span>Дополнительное затемнение</span>
+              <input type="range" id="bgDimRange" min="0" max="80" value="0" oninput="onBgDimInput(this.value)">
+              <span class="settings-slider-val" id="bgDimVal">0%</span>
             </div>
 
             <!-- Слайдер размытия -->
             <div class="settings-slider-row">
               <span>Размытие (Blur)</span>
-              <input type="range" id="bgBlurRange" min="0" max="25" value="5" oninput="onBgBlurInput(this.value)">
-              <span class="settings-slider-val" id="bgBlurVal">5px</span>
+              <input type="range" id="bgBlurRange" min="0" max="20" value="0" oninput="onBgBlurInput(this.value)">
+              <span class="settings-slider-val" id="bgBlurVal">0px</span>
             </div>
           </div>
         </div>
@@ -3085,8 +3053,8 @@
     bgMode: 'default',
     bgCustomData: '',
     bgCustomFileName: '',
-    bgDim: 65,
-    bgBlur: 5,
+    bgDim: 0,
+    bgBlur: 0,
     accentColor: '#f0f0f2',
     smoothAnim: true,
     gpuAccel: true
@@ -3114,32 +3082,20 @@
     document.documentElement.style.setProperty('--accent', accent);
     document.documentElement.style.setProperty('--accent-text', getContrastColor(accent));
 
-    // 2. Фон лаунчера
-    const bgLayer = document.getElementById('launcherCustomBg');
-    const dimLayer = document.getElementById('launcherCustomDim');
-
+    // 2. Фон баннера (#bannerCard::before и ::after)
     if (settings.bgMode === 'custom' && settings.bgCustomData) {
-      document.body.classList.add('has-custom-bg');
-      if (bgLayer) {
-        bgLayer.style.display = 'block';
-        bgLayer.style.backgroundImage = 'url("' + settings.bgCustomData + '")';
-        bgLayer.style.filter = 'blur(' + (settings.bgBlur !== undefined ? settings.bgBlur : 5) + 'px)';
-      }
-      if (dimLayer) {
-        dimLayer.style.display = 'block';
-        const dimAlpha = (settings.bgDim !== undefined ? settings.bgDim : 65) / 100;
-        dimLayer.style.backgroundColor = 'rgba(12, 12, 12, ' + dimAlpha + ')';
-      }
+      document.documentElement.style.setProperty('--banner-bg', 'url("' + settings.bgCustomData + '")');
+      const blur = settings.bgBlur !== undefined ? settings.bgBlur : 0;
+      document.documentElement.style.setProperty('--banner-blur', blur + 'px');
+      document.documentElement.style.setProperty('--banner-scale', blur > 0 ? '1.04' : '1');
+      const dim = (settings.bgDim !== undefined ? settings.bgDim : 0) / 100;
+      document.documentElement.style.setProperty('--banner-dim', dim);
     } else {
-      // Режим «По умолчанию» — чистый стандартный вид лаунчера
-      document.body.classList.remove('has-custom-bg');
-      if (bgLayer) {
-        bgLayer.style.display = 'none';
-        bgLayer.style.backgroundImage = 'none';
-      }
-      if (dimLayer) {
-        dimLayer.style.display = 'none';
-      }
+      // Режим «По умолчанию» — оригинальный assets/bg.png
+      document.documentElement.style.setProperty('--banner-bg', 'url("assets/bg.png")');
+      document.documentElement.style.setProperty('--banner-blur', '0px');
+      document.documentElement.style.setProperty('--banner-scale', '1');
+      document.documentElement.style.setProperty('--banner-dim', '0');
     }
 
     // 3. Анимации
@@ -3173,7 +3129,7 @@
       if (customControls) customControls.style.display = 'none';
     }
 
-    // Превью пользовательского изображения
+    // Превью баннера
     const thumb = document.getElementById('customBgThumb');
     const thumbIcon = document.getElementById('customBgThumbIcon');
     const fileName = document.getElementById('customBgFileName');
@@ -3182,25 +3138,25 @@
     if (settings.bgCustomData) {
       if (thumb) thumb.style.backgroundImage = 'url("' + settings.bgCustomData + '")';
       if (thumbIcon) thumbIcon.style.display = 'none';
-      if (fileName) fileName.textContent = settings.bgCustomFileName || 'Пользовательское изображение';
+      if (fileName) fileName.textContent = settings.bgCustomFileName || 'Пользовательский баннер';
       if (btnRemove) btnRemove.style.display = 'inline-block';
     } else {
-      if (thumb) thumb.style.backgroundImage = 'none';
-      if (thumbIcon) thumbIcon.style.display = 'block';
-      if (fileName) fileName.textContent = 'Файл не выбран';
+      if (thumb) thumb.style.backgroundImage = 'url("assets/bg.png")';
+      if (thumbIcon) thumbIcon.style.display = 'none';
+      if (fileName) fileName.textContent = 'assets/bg.png (По умолчанию)';
       if (btnRemove) btnRemove.style.display = 'none';
     }
 
     // Слайдеры затемнения и размытия
     const dimRange = document.getElementById('bgDimRange');
     const dimVal = document.getElementById('bgDimVal');
-    const currentDim = settings.bgDim !== undefined ? settings.bgDim : 65;
+    const currentDim = settings.bgDim !== undefined ? settings.bgDim : 0;
     if (dimRange) dimRange.value = currentDim;
     if (dimVal) dimVal.textContent = currentDim + '%';
 
     const blurRange = document.getElementById('bgBlurRange');
     const blurVal = document.getElementById('bgBlurVal');
-    const currentBlur = settings.bgBlur !== undefined ? settings.bgBlur : 5;
+    const currentBlur = settings.bgBlur !== undefined ? settings.bgBlur : 0;
     if (blurRange) blurRange.value = currentBlur;
     if (blurVal) blurVal.textContent = currentBlur + 'px';
 
@@ -3295,7 +3251,7 @@
 
         applyLauncherSettings(launcherSettings, true);
         saveLauncherSettingsToStorage();
-        toast('Фон успешно установлен');
+        toast('Баннер успешно установлен');
       };
       img.onerror = function() {
         toast('Не удалось прочитать изображение');
@@ -3313,9 +3269,11 @@
     launcherSettings.bgCustomData = '';
     launcherSettings.bgCustomFileName = '';
     launcherSettings.bgMode = 'default';
+    launcherSettings.bgDim = 0;
+    launcherSettings.bgBlur = 0;
     applyLauncherSettings(launcherSettings, true);
     saveLauncherSettingsToStorage();
-    toast('Кастомный фон удален');
+    toast('Кастомный баннер удален');
   }
 
   function onBgDimInput(val) {
@@ -3323,11 +3281,7 @@
     launcherSettings.bgDim = num;
     const dimVal = document.getElementById('bgDimVal');
     if (dimVal) dimVal.textContent = num + '%';
-
-    const dimLayer = document.getElementById('launcherCustomDim');
-    if (dimLayer) {
-      dimLayer.style.backgroundColor = 'rgba(12, 12, 12, ' + (num / 100) + ')';
-    }
+    document.documentElement.style.setProperty('--banner-dim', (num / 100));
     saveLauncherSettingsToStorage();
   }
 
@@ -3336,11 +3290,8 @@
     launcherSettings.bgBlur = num;
     const blurVal = document.getElementById('bgBlurVal');
     if (blurVal) blurVal.textContent = num + 'px';
-
-    const bgLayer = document.getElementById('launcherCustomBg');
-    if (bgLayer) {
-      bgLayer.style.filter = 'blur(' + num + 'px)';
-    }
+    document.documentElement.style.setProperty('--banner-blur', num + 'px');
+    document.documentElement.style.setProperty('--banner-scale', num > 0 ? '1.04' : '1');
     saveLauncherSettingsToStorage();
   }
 
