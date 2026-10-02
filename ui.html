@@ -313,31 +313,42 @@
     border:1px solid var(--line);
     border-radius:var(--r);
   }
+  .banner-bg-layer{
+    position:absolute;
+    inset:0;
+    background-position:center right;
+    background-size:cover;
+    background-repeat:no-repeat;
+    transition:opacity 1.5s ease-in-out;
+    pointer-events:none;
+    z-index:0;
+  }
   #bannerCard::before{
     content:'';
     position:absolute;
     inset:0;
-    background-image:var(--banner-bg, url('assets/bg.png'));
+    background-image:var(--banner-bg, url('assets/pool/pool_1.png'));
     background-position:center right;
     background-size:cover;
     background-repeat:no-repeat;
-    filter:blur(var(--banner-blur, 0px));
-    transform:scale(var(--banner-scale, 1));
-    transition:filter .15s ease, transform .15s ease;
+    z-index:0;
+    display:none;
   }
   #bannerCard::after{
     content:'';
     position:absolute;
     inset:0;
     background:linear-gradient(to right, rgba(12,12,12,0.96) 0%, rgba(12,12,12,0.85) 42%, rgba(12,12,12,0.32) 75%, rgba(12,12,12,0.02) 100%),
-               linear-gradient(to top, rgba(12,12,12,0.65) 0%, transparent 45%),
-               rgba(12,12,12,var(--banner-dim, 0));
+               linear-gradient(to top, rgba(12,12,12,0.65) 0%, transparent 45%);
     pointer-events:none;
-    transition:background-color .15s ease;
+    z-index:1;
   }
   #bannerCard > *{
     position:relative;
     z-index:2;
+  }
+  #bannerCard > .banner-bg-layer{
+    z-index:0;
   }
 
   #bannerCard .banner-badge{
@@ -1450,7 +1461,7 @@
     margin:18px 0 22px;
     width:100%;
     aspect-ratio:16 / 9;
-    border:1px dashed var(--line-strong);
+    border:1px solid var(--line);
     border-radius:var(--r);
     background:rgba(255,255,255,.018);
     display:flex;
@@ -1573,6 +1584,8 @@
 
         <!-- БАННЕР -->
         <div class="card" id="bannerCard">
+          <div class="banner-bg-layer" id="bannerBgA" style="opacity:1;background-image:url('assets/pool/pool_1.png');"></div>
+          <div class="banner-bg-layer" id="bannerBgB" style="opacity:0;"></div>
           <div class="banner-badge not-installed" id="bannerBadge"><span id="badgeText">Не установлено</span></div>
 
           <h1 class="banner-title">CIVILIZATION</h1>
@@ -1709,18 +1722,9 @@
                   <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Содержит кнопки перехода во все разделы: Банк, Рынок, Хранилище, Восьмёрка, Союзы и Трейды.</div>
                 </div>
 
-                <!-- Плашка Скриншот 1 -->
+                <!-- Скриншот 1: Меню -->
                 <div class="news-shot-plate">
-                  <div class="news-shot-placeholder">
-                    <svg class="news-shot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    <span class="news-shot-badge">Скриншот 16:9</span>
-                    <div class="news-shot-title">СКРИНШОТ 1</div>
-                    <div class="news-shot-caption">Открытое главное меню M с наведённым курсором на одну из кнопок</div>
-                  </div>
+                  <img src="assets/news/menu.png" alt="Главное меню" loading="lazy">
                 </div>
               </div>
 
@@ -1735,18 +1739,9 @@
                   <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Двустороннее окно сделки с защитой от скама</strong>: если второй игрок меняет или убирает предмет, статус подтверждения моментально сбрасывается у обеих сторон.</div>
                 </div>
 
-                <!-- Плашка Скриншот 2 -->
+                <!-- Скриншот 2: Трейды -->
                 <div class="news-shot-plate">
-                  <div class="news-shot-placeholder">
-                    <svg class="news-shot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    <span class="news-shot-badge">Скриншот 16:9</span>
-                    <div class="news-shot-title">СКРИНШОТ 2</div>
-                    <div class="news-shot-caption">Окно активного трейда с предметами в слотах и кнопкой подтверждения</div>
-                  </div>
+                  <img src="assets/news/trades.png" alt="Трейды" loading="lazy">
                 </div>
               </div>
 
@@ -1772,18 +1767,9 @@
                   </div>
                 </div>
 
-                <!-- Плашка Скриншот 3 -->
+                <!-- Скриншот 3: Банк -->
                 <div class="news-shot-plate">
-                  <div class="news-shot-placeholder">
-                    <svg class="news-shot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    <span class="news-shot-badge">Скриншот 16:9</span>
-                    <div class="news-shot-title">СКРИНШОТ 3</div>
-                    <div class="news-shot-caption">Окно Банка с балансом и кнопками сдачи алмазов / изумрудов</div>
-                  </div>
+                  <img src="assets/news/bank.png" alt="Банк" loading="lazy">
                 </div>
 
                 <!-- Подраздел: Рынок -->
@@ -1800,18 +1786,9 @@
                   </div>
                 </div>
 
-                <!-- Плашка Скриншот 4 -->
+                <!-- Скриншот 4: Рынок -->
                 <div class="news-shot-plate">
-                  <div class="news-shot-placeholder">
-                    <svg class="news-shot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    <span class="news-shot-badge">Скриншот 16:9</span>
-                    <div class="news-shot-title">СКРИНШОТ 4</div>
-                    <div class="news-shot-caption">Окно Рынка с каталогом товаров и вкладками категорий</div>
-                  </div>
+                  <img src="assets/news/market.png" alt="Рынок" loading="lazy">
                 </div>
 
                 <!-- Подраздел: Хранилище -->
@@ -1835,18 +1812,9 @@
                   </div>
                 </div>
 
-                <!-- Плашка Скриншот 5 -->
+                <!-- Скриншот 5: Хранилище -->
                 <div class="news-shot-plate">
-                  <div class="news-shot-placeholder">
-                    <svg class="news-shot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    <span class="news-shot-badge">Скриншот 16:9</span>
-                    <div class="news-shot-title">СКРИНШОТ 5</div>
-                    <div class="news-shot-caption">Интерфейс Хранилища с переключателем страниц и замочком разблокировки новой страницы</div>
-                  </div>
+                  <img src="assets/news/storage.png" alt="Хранилище" loading="lazy">
                 </div>
               </div>
 
@@ -1862,18 +1830,9 @@
                   <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Выставленные предметы сразу попадают в категорию «Товары игроков» на городском рынке.</div>
                 </div>
 
-                <!-- Плашка Скриншот 6 -->
+                <!-- Скриншот 6: Продажа -->
                 <div class="news-shot-plate">
-                  <div class="news-shot-placeholder">
-                    <svg class="news-shot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    <span class="news-shot-badge">Скриншот 16:9</span>
-                    <div class="news-shot-title">СКРИНШОТ 6</div>
-                    <div class="news-shot-caption">Окно продажи предметов — инвентарь справа, поле ввода цены слева и список «Мои лоты» снизу</div>
-                  </div>
+                  <img src="assets/news/sell.png" alt="Продажа предметов" loading="lazy">
                 </div>
               </div>
 
@@ -1886,18 +1845,9 @@
                   <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Второстепенные NPC</strong>: в разных уголках мира можно наткнуться на других персонажей, у которых можно узнать полезную информацию или приобрести редкие предметы.</div>
                 </div>
 
-                <!-- Плашка Скриншот 7 -->
+                <!-- Скриншот 7: Восьмёрка -->
                 <div class="news-shot-plate">
-                  <div class="news-shot-placeholder">
-                    <svg class="news-shot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    <span class="news-shot-badge">Скриншот 16:9</span>
-                    <div class="news-shot-title">СКРИНШОТ 7</div>
-                    <div class="news-shot-caption">Окно «Восьмёрки» со статусом открытых секретных NPC и ячейками артефактов</div>
-                  </div>
+                  <img src="assets/news/eight.png" alt="NPC и Восьмёрка" loading="lazy">
                 </div>
               </div>
 
@@ -1912,18 +1862,9 @@
                   <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Станция вагонеток</strong>: в том же помещении находится Вагонетчик. За $10 у него можно приобрести вагонетку и отправиться по защищённой сети рельсов Незера прямо через тоннели.</div>
                 </div>
 
-                <!-- Плашка Скриншот 8 -->
+                <!-- Скриншот 8: Таверна -->
                 <div class="news-shot-plate">
-                  <div class="news-shot-placeholder">
-                    <svg class="news-shot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    <span class="news-shot-badge">Скриншот 16:9</span>
-                    <div class="news-shot-title">СКРИНШОТ 8</div>
-                    <div class="news-shot-caption">Общий вид Таверны в Аду — барная стойка с Барменом и зона отправки путей с Вагонетчиком</div>
-                  </div>
+                  <img src="assets/news/tavern.png" alt="Таверна в Аду" loading="lazy">
                 </div>
               </div>
 
@@ -1938,18 +1879,9 @@
                   <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Между союзниками полностью отключён урон (защита от случайного тимкилла).</div>
                 </div>
 
-                <!-- Плашка Скриншот 9 -->
+                <!-- Скриншот 9: Союзы -->
                 <div class="news-shot-plate">
-                  <div class="news-shot-placeholder">
-                    <svg class="news-shot-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                      <circle cx="8.5" cy="8.5" r="1.5"/>
-                      <polyline points="21 15 16 10 5 21"/>
-                    </svg>
-                    <span class="news-shot-badge">Скриншот 16:9</span>
-                    <div class="news-shot-title">СКРИНШОТ 9</div>
-                    <div class="news-shot-caption">Интерфейс вкладки «Союзы» со списком союзных игроков</div>
-                  </div>
+                  <img src="assets/news/allies.png" alt="Союзы" loading="lazy">
                 </div>
               </div>
 
@@ -3087,6 +3019,88 @@
     return (yiq >= 150) ? '#0b0b0d' : '#ffffff';
   }
 
+  const BANNER_POOL = [
+    'assets/pool/pool_1.png',
+    'assets/pool/pool_2.png',
+    'assets/pool/pool_3.png',
+    'assets/pool/pool_4.png',
+    'assets/pool/pool_5.png',
+    'assets/pool/pool_6.png',
+    'assets/pool/pool_7.png',
+    'assets/pool/pool_8.png',
+    'assets/pool/pool_9.png'
+  ];
+
+  let bannerSlideTimer = null;
+  let bannerPoolIdx = 0;
+  let activeBannerLayer = 'A';
+
+  // Предзагрузка картинок пула
+  BANNER_POOL.forEach(url => {
+    const img = new Image();
+    img.src = url;
+  });
+
+  function startBannerSlideshow() {
+    stopBannerSlideshow();
+    bannerSlideTimer = setInterval(nextBannerSlide, 8000);
+  }
+
+  function stopBannerSlideshow() {
+    if (bannerSlideTimer) {
+      clearInterval(bannerSlideTimer);
+      bannerSlideTimer = null;
+    }
+  }
+
+  function nextBannerSlide() {
+    const layerA = document.getElementById('bannerBgA');
+    const layerB = document.getElementById('bannerBgB');
+    if (!layerA || !layerB) return;
+
+    bannerPoolIdx = (bannerPoolIdx + 1) % BANNER_POOL.length;
+    const nextUrl = BANNER_POOL[bannerPoolIdx];
+
+    if (activeBannerLayer === 'A') {
+      layerB.style.backgroundImage = 'url("' + nextUrl + '")';
+      layerB.style.opacity = '1';
+      layerA.style.opacity = '0';
+      activeBannerLayer = 'B';
+    } else {
+      layerA.style.backgroundImage = 'url("' + nextUrl + '")';
+      layerA.style.opacity = '1';
+      layerB.style.opacity = '0';
+      activeBannerLayer = 'A';
+    }
+    document.documentElement.style.setProperty('--banner-bg', 'url("' + nextUrl + '")');
+  }
+
+  function setBannerCustomImage(dataUrl) {
+    stopBannerSlideshow();
+    const layerA = document.getElementById('bannerBgA');
+    const layerB = document.getElementById('bannerBgB');
+    if (layerA && layerB) {
+      layerA.style.backgroundImage = 'url("' + dataUrl + '")';
+      layerA.style.opacity = '1';
+      layerB.style.opacity = '0';
+      activeBannerLayer = 'A';
+    }
+    document.documentElement.style.setProperty('--banner-bg', 'url("' + dataUrl + '")');
+  }
+
+  function resetBannerToDefault() {
+    const layerA = document.getElementById('bannerBgA');
+    const layerB = document.getElementById('bannerBgB');
+    if (layerA && layerB) {
+      layerA.style.backgroundImage = 'url("' + BANNER_POOL[bannerPoolIdx] + '")';
+      layerA.style.opacity = '1';
+      layerB.style.opacity = '0';
+      activeBannerLayer = 'A';
+    }
+    document.documentElement.style.setProperty('--banner-bg', 'url("' + BANNER_POOL[bannerPoolIdx] + '")');
+    startBannerSlideshow();
+  }
+
   function applyLauncherSettings(settings, syncUI) {
     if (!settings) settings = launcherSettings;
 
@@ -3095,12 +3109,12 @@
     document.documentElement.style.setProperty('--accent', accent);
     document.documentElement.style.setProperty('--accent-text', getContrastColor(accent));
 
-    // 2. Фон баннера (#bannerCard::before)
+    // 2. Фон баннера (#bannerCard / пул картинок)
     const preset = settings.bgPreset || 'default';
     if (preset === 'custom' && settings.bgCustomData) {
-      document.documentElement.style.setProperty('--banner-bg', 'url("' + settings.bgCustomData + '")');
+      setBannerCustomImage(settings.bgCustomData);
     } else {
-      document.documentElement.style.setProperty('--banner-bg', 'url("assets/bg.png")');
+      resetBannerToDefault();
     }
 
     // 3. Анимации
