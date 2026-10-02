@@ -1190,7 +1190,6 @@
     border-radius:50%;
     cursor:pointer;
     border:2px solid transparent;
-    transition:transform .15s, border-color .15s, box-shadow .15s;
     position:relative;
     display:flex;
     align-items:center;
@@ -1199,7 +1198,7 @@
     box-sizing:border-box;
   }
   .color-swatch:hover{
-    transform:scale(1.1);
+    border-color:rgba(255,255,255,.4);
   }
   .color-swatch.active{
     border-color:#fff;
@@ -2074,12 +2073,12 @@
 
         <div class="settings-card-box">
           <div class="color-swatches">
-            <!-- 1. Серебро (По умолчанию) -->
-            <button class="color-swatch active" id="swatchDefault" onclick="selectAccentColor('#f0f0f2', this)" style="background:#f0f0f2;" title="Серебро (По умолчанию)">
+            <!-- 1. Базовый (По умолчанию) -->
+            <button class="color-swatch active" id="swatchDefault" onclick="selectAccentColor('#f0f0f2', this)" style="background:#f0f0f2;" title="Базовый (По умолчанию)">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
-            <!-- 2. Белый -->
-            <button class="color-swatch" onclick="selectAccentColor('#ffffff', this)" style="background:#ffffff;" title="Чистый белый">
+            <!-- 2. Жёлтый -->
+            <button class="color-swatch" onclick="selectAccentColor('#eab308', this)" style="background:#eab308;" title="Жёлтый">
               <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             </button>
             <!-- 3. Золото -->
