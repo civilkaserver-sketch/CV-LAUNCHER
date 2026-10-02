@@ -965,33 +965,28 @@
   /* Кнопка настроек в хедере */
   .top-settings-btn{
     background:transparent;
-    border:1px solid var(--line);
-    border-radius:6px;
+    border:none;
+    outline:none;
     color:var(--dim);
     font-family:inherit;
     font-size:11px;
     letter-spacing:1.5px;
     text-transform:uppercase;
-    padding:5px 12px;
+    padding:4px 0;
     cursor:pointer;
     display:inline-flex;
     align-items:center;
-    gap:7px;
-    transition:background .15s, border-color .15s, color .15s;
+    gap:6px;
   }
   .top-settings-btn:hover{
-    border-color:var(--line-strong);
     color:var(--text);
-    background:rgba(255,255,255,.04);
   }
   .top-settings-btn svg{
     display:block;
     opacity:.7;
-    transition:opacity .15s, transform .3s;
   }
   .top-settings-btn:hover svg{
     opacity:1;
-    transform:rotate(45deg);
   }
 
   /* ---------------- МОДАЛЬНОЕ ОКНО НАСТРОЕК ---------------- */
