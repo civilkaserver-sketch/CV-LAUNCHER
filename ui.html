@@ -1111,6 +1111,12 @@
     grid-template-columns:repeat(2, 1fr);
     gap:12px;
   }
+  .bg-presets-grid.custom-first #bgPresetCustom{
+    order:1;
+  }
+  .bg-presets-grid.custom-first #bgPresetDefault{
+    order:2;
+  }
   .bg-preset-item{
     height:80px;
     border-radius:6px;
@@ -1152,7 +1158,7 @@
     font-size:10px;
     letter-spacing:.6px;
     color:#fff;
-    background:rgba(0,0,0,.75);
+    /* background: rgba(0, 0, 0, .75); */
     padding:2px 6px;
     border-radius:4px;
     white-space:nowrap;
@@ -1162,6 +1168,7 @@
     max-width:100%;
     backdrop-filter:blur(4px);
     -webkit-backdrop-filter:blur(4px);
+    text-shadow:0 1px 3px rgba(0,0,0,.8);
     z-index:2;
   }
   .bg-preset-custom-icon{
@@ -2048,7 +2055,7 @@
             </div>
 
             <!-- 2. Свой фон (кнопка аплоад) -->
-            <div class="bg-preset-item upload-btn" id="bgPresetCustom" onclick="onCustomCardClick()" title="Загрузить свой фон">
+            <div class="bg-preset-item upload-btn" id="bgPresetCustom" onclick="onCustomCardClick()" title="Загрузить фон">
               <div class="bg-preset-custom-icon" id="bgPresetCustomIcon">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -2056,7 +2063,7 @@
                   <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
-              <span class="bg-preset-label" id="bgPresetCustomLabel">Загрузить свой…</span>
+              <span class="bg-preset-label" id="bgPresetCustomLabel">Загрузить фон</span>
             </div>
           </div>
         </div>
@@ -3066,27 +3073,33 @@
 
     // Пресеты фонов (мини-превьюшки: default, custom)
     const preset = settings.bgPreset || 'default';
+    const grid = document.querySelector('.bg-presets-grid');
     const defEl = document.getElementById('bgPresetDefault');
     const customCard = document.getElementById('bgPresetCustom');
     const customIcon = document.getElementById('bgPresetCustomIcon');
     const customLabel = document.getElementById('bgPresetCustomLabel');
 
+    const hasCustomImage = Boolean(settings.bgCustomData);
+    if (grid) {
+      grid.classList.toggle('custom-first', hasCustomImage);
+    }
+
     if (defEl) defEl.classList.toggle('active', preset === 'default');
 
     if (customCard) {
       customCard.classList.toggle('active', preset === 'custom');
-      if (settings.bgCustomData) {
+      if (hasCustomImage) {
         customCard.classList.add('has-image');
         customCard.style.backgroundImage = 'url("' + settings.bgCustomData + '")';
         if (customIcon) customIcon.style.display = 'none';
         if (customLabel) customLabel.textContent = 'Свой фон';
-        customCard.setAttribute('title', 'Свой фон: ' + (settings.bgCustomFileName || 'пользовательский') + ' (нажмите для смены)');
+        customCard.setAttribute('title', 'Свой фон (нажмите для смены)');
       } else {
         customCard.classList.remove('has-image');
         customCard.style.backgroundImage = '';
         if (customIcon) customIcon.style.display = 'flex';
-        if (customLabel) customLabel.textContent = 'Загрузить свой…';
-        customCard.setAttribute('title', 'Загрузить свой фон');
+        if (customLabel) customLabel.textContent = 'Загрузить фон';
+        customCard.setAttribute('title', 'Загрузить фон');
       }
     }
 
