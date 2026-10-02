@@ -571,6 +571,22 @@
     color:var(--dim);
     background:rgba(255,255,255,.02);
   }
+  .changelog-list-wrap{
+    position:relative;
+    height:80px;
+    overflow:hidden;
+  }
+  .changelog-list-wrap::after{
+    content:'';
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:36px;
+    background:linear-gradient(to bottom, rgba(12,12,12,0) 0%, var(--card) 100%);
+    pointer-events:none;
+    z-index:2;
+  }
   .changelog-list{
     display:flex;
     flex-direction:column;
@@ -1213,40 +1229,42 @@
             <h3>ЧТО НОВОГО</h3>
             <span class="changelog-ver">Civilization &amp; Player Trading</span>
           </div>
-          <div class="changelog-list" id="changelogList">
-            <div class="changelog-item">
-              <span class="bullet">—</span>
-              <div class="cl-text"><strong>1. Главное меню (M)</strong>: быстрый доступ ко всем разделам без команд (Банк, Рынок, Хранилище, Трейды)</div>
-            </div>
-            <div class="changelog-item">
-              <span class="bullet">—</span>
-              <div class="cl-text"><strong>2. Безопасные Трейды</strong>: двусторонний обмен предметами с защитой от скама и сбросом подтверждения</div>
-            </div>
-            <div class="changelog-item">
-              <span class="bullet">—</span>
-              <div class="cl-text"><strong>3. Обновленная экономика</strong>: конвертация в Банке, ротация Рынка каждые 12ч и Хранилище до 162 слотов</div>
-            </div>
-            <div class="changelog-item">
-              <span class="bullet">—</span>
-              <div class="cl-text"><strong>4. Продажа предметов</strong>: выставление товаров на общий рынок игрокам и раздел «Мои лоты»</div>
-            </div>
-            <div class="changelog-item">
-              <span class="bullet">—</span>
-              <div class="cl-text"><strong>5. NPC и «Восьмёрка»</strong>: 8 секретных NPC по миру, уникальные события и коллекция артефактов</div>
-            </div>
-            <div class="changelog-item">
-              <span class="bullet">—</span>
-              <div class="cl-text"><strong>6. Таверна в Аду</strong>: Бармен с напитками и эффектами, сеть защищённых рельсов и вагонетки за $10</div>
-            </div>
-            <div class="changelog-item">
-              <span class="bullet">—</span>
-              <div class="cl-text"><strong>7. Союзы</strong>: система альянсов между игроками с полным отключением урона (без тимкилла)</div>
+          <div class="changelog-list-wrap">
+            <div class="changelog-list" id="changelogList">
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>1. Главное меню (M)</strong>: быстрый доступ ко всем разделам без команд (Банк, Рынок, Хранилище, Трейды)</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>2. Безопасные Трейды</strong>: двусторонний обмен предметами с защитой от скама и сбросом подтверждения</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>3. Обновленная экономика</strong>: конвертация в Банке, ротация Рынка каждые 12ч и Хранилище до 162 слотов</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>4. Продажа предметов</strong>: выставление товаров на общий рынок игрокам и раздел «Мои лоты»</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>5. NPC и «Восьмёрка»</strong>: 8 секретных NPC по миру, уникальные события и коллекция артефактов</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>6. Таверна в Аду</strong>: Бармен с напитками и эффектами, сеть защищённых рельсов и вагонетки за $10</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>7. Союзы</strong>: система альянсов между игроками с полным отключением урона (без тимкилла)</div>
+              </div>
             </div>
           </div>
           <div class="changelog-latest" id="changelogLatest" style="display:none">
             Вы на последней версии v1.21.8 · проверено сегодня
           </div>
-          <button class="changelog-more-link" onclick="showNews()">Все подробности и скриншоты в новостях →</button>
+          <button class="changelog-more-link" onclick="showNews()">Узнать больше →</button>
         </div>
 
         <!-- СТРОКА «ПАПКА» (ТОНКАЯ, ~52px) -->
