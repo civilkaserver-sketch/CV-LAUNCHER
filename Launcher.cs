@@ -845,6 +845,13 @@ namespace CivilizationLauncher
                     if (ico != null && ico.Length > 0) File.WriteAllBytes(icoPath, ico);
                 }
 
+                string newsPath = Path.Combine(appDir, "news.json");
+                if (!File.Exists(newsPath))
+                {
+                    byte[] nj = GetEmbeddedResource("news.json");
+                    if (nj != null && nj.Length > 0) File.WriteAllBytes(newsPath, nj);
+                }
+
                 try
                 {
                     if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
@@ -913,6 +920,12 @@ namespace CivilizationLauncher
                 if (path.Equals("manifest.json", StringComparison.OrdinalIgnoreCase))
                 {
                     ServeFile(ctx, Path.Combine(appDir, "manifest.json"), "application/manifest+json; charset=utf-8", "manifest.json");
+                    return;
+                }
+
+                if (path.Equals("news.json", StringComparison.OrdinalIgnoreCase))
+                {
+                    ServeFile(ctx, Path.Combine(appDir, "news.json"), "application/json; charset=utf-8", "news.json");
                     return;
                 }
 
@@ -1660,6 +1673,24 @@ namespace CivilizationLauncher
                     { "stopped", stopped },
                     { "msg", stopped ? "Игра закрыта" : "Процесс игры не найден" }
                 });
+                return;
+            }
+
+            if (endpoint == "news")
+            {
+                string newsPath = Path.Combine(appDir, "news.json");
+                if (File.Exists(newsPath))
+                {
+                    ServeFile(ctx, newsPath, "application/json; charset=utf-8", "news.json");
+                    return;
+                }
+                byte[] emb = GetEmbeddedResource("news.json");
+                if (emb != null)
+                {
+                    ServeBytes(ctx, emb, "application/json; charset=utf-8");
+                    return;
+                }
+                SendJson(ctx, new object[] { });
                 return;
             }
 

@@ -1757,204 +1757,8 @@
           <div class="empty-desc">Свежие события и обновления сборки появятся здесь автоматически</div>
         </div>
 
-        <div id="newsContent">
-          <!-- карточка 1 -->
-          <div class="news-card">
-            <div style="height:200px;overflow:hidden;line-height:0;background:var(--card);">
-              <img src="assets/news_banner_1.svg?v=2" onerror="this.src='assets/news_banner_1.png?v=2'" alt="CIVILIZATION REBORN" style="width:100%;height:200px;object-fit:cover;display:block;">
-            </div>
-            <div class="news-content-collapse" id="newsCollapseWrap">
-              <div style="padding:22px 24px 24px;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:12px;color:var(--dim);letter-spacing:.5px;">
-                <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:2px 8px;border:1px solid var(--line);border-radius:6px;color:var(--text);background:var(--card);">Релиз</span>
-                <span>30 сентября 2026</span>
-              </div>
-              <div class="news-card-title" style="font-size:18px;letter-spacing:2px;color:var(--text);margin-bottom:12px;font-weight:700;">Обновление: Civilization &amp; Player Trading</div>
-              <div style="font-size:14px;color:var(--muted);line-height:1.75;margin-bottom:20px;">
-                Краткий список основных изменений и систем, добавленных на сервер. Все взаимодействия производятся через графический интерфейс.
-              </div>
-
-              <!-- 1. Меню -->
-              <div style="margin-top:24px;">
-                <div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">1. Меню</div>
-                <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">
-                  Главное окно для быстрого доступа ко всем системам сервера без ввода команд.
-                </div>
-                <div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Открытие</strong>: клавиша <code style="font-family:inherit;font-size:11px;background:var(--card);border:1px solid var(--line);color:var(--text);padding:1px 5px;border-radius:4px;">M</code> (переназначается в настройках управления) или команда <code style="font-family:inherit;font-size:11px;background:var(--card);border:1px solid var(--line);color:var(--text);padding:1px 5px;border-radius:4px;">/menu</code>.</div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Содержит кнопки перехода во все разделы: Банк, Рынок, Хранилище, Восьмёрка, Союзы и Трейды.</div>
-                </div>
-
-                <!-- Скриншот 1: Меню -->
-                <div class="news-shot-plate">
-                  <img src="assets/news/menu.png" alt="Главное меню">
-                </div>
-              </div>
-
-              <!-- 2. Трейды -->
-              <div style="margin-top:24px;">
-                <div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">2. Трейды</div>
-                <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">
-                  Система безопасного обмена предметами между игроками.
-                </div>
-                <div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Открывается через меню выбора игрока поблизости.</div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Двустороннее окно сделки с защитой от скама</strong>: если второй игрок меняет или убирает предмет, статус подтверждения моментально сбрасывается у обеих сторон.</div>
-                </div>
-
-                <!-- Скриншот 2: Трейды -->
-                <div class="news-shot-plate">
-                  <img src="assets/news/trades.png" alt="Трейды">
-                </div>
-              </div>
-
-              <!-- 3. Обновленная экономика -->
-              <div style="margin-top:24px;">
-                <div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">3. Обновленная экономика</div>
-                <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:12px;">
-                  Вся финансовая инфраструктура сервера разделена на три взаимосвязанных раздела:
-                </div>
-
-                <!-- Подраздел: Банк -->
-                <div style="margin-left:8px;padding-left:14px;border-left:2px solid var(--line);margin-bottom:16px;">
-                  <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">Банк:</div>
-                  <div style="font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:6px;">
-                    — Хранение виртуальной валюты на личном балансе.
-                  </div>
-                  <div style="font-size:13px;color:var(--dim);line-height:1.6;">
-                    — Прямая конвертация ресурсов в доллары по фиксированному курсу:
-                    <div style="padding-left:14px;margin-top:4px;">
-                      • Алмазы: <strong style="color:var(--text);">2 шт = $1.00</strong> (1 алмаз = $0.50)<br>
-                      • Изумруды: <strong style="color:var(--text);">128 шт = $1.00</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Скриншот 3: Банк -->
-                <div class="news-shot-plate">
-                  <img src="assets/news/bank.png" alt="Банк">
-                </div>
-
-                <!-- Подраздел: Рынок -->
-                <div style="margin-left:8px;padding-left:14px;border-left:2px solid var(--line);margin-bottom:16px;">
-                  <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">Рынок:</div>
-                  <div style="font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:6px;">
-                    — Ассортимент товаров регулярно меняется (каждые 12 часов происходит ротация пулов предметов).
-                  </div>
-                  <div style="font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:6px;">
-                    — На рынке действуют <strong style="color:var(--text);">скидки дня (-20%)</strong> и шанс выпадения редких джекпотов.
-                  </div>
-                  <div style="font-size:13px;color:var(--dim);line-height:1.6;">
-                    — Удобные категории: <em style="color:var(--muted);">Блоки, Снаряжение, Руды, Редкое, Редстоун и Товары игроков</em>.
-                  </div>
-                </div>
-
-                <!-- Скриншот 4: Рынок -->
-                <div class="news-shot-plate">
-                  <img src="assets/news/market.png" alt="Рынок">
-                </div>
-
-                <!-- Подраздел: Хранилище -->
-                <div style="margin-left:8px;padding-left:14px;border-left:2px solid var(--line);margin-bottom:16px;">
-                  <div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">Хранилище:</div>
-                  <div style="font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:6px;">
-                    — Персональный сейф игрока, доступный из любой точки мира.
-                  </div>
-                  <div style="font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:6px;">
-                    — Вмещает до 6 страниц по 27 слотов (до 162 слотов суммарно).
-                  </div>
-                  <div style="font-size:13px;color:var(--dim);line-height:1.6;">
-                    — Первая страница доступна сразу и бесплатно, дополнительные страницы докупаются за валюту:
-                    <div style="padding-left:14px;margin-top:4px;">
-                      • 2-я страница — <strong style="color:var(--text);">$25</strong><br>
-                      • 3-я страница — <strong style="color:var(--text);">$100</strong><br>
-                      • 4-я страница — <strong style="color:var(--text);">$400</strong><br>
-                      • 5-я страница — <strong style="color:var(--text);">$1,600</strong><br>
-                      • 6-я страница — <strong style="color:var(--text);">$6,400</strong>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Скриншот 5: Хранилище -->
-                <div class="news-shot-plate">
-                  <img src="assets/news/storage.png" alt="Хранилище">
-                </div>
-              </div>
-
-              <!-- 4. Продажа предметов -->
-              <div style="margin-top:24px;">
-                <div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">4. Продажа предметов</div>
-                <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">
-                  Возможность продавать свои ресурсы на общий рынок напрямую другим игрокам.
-                </div>
-                <div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Выбор любого предмета из инвентаря, указание нужного количества и своей цены.</div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Раздел «Мои лоты»</strong>: мониторинг всех ваших активных предложений с возможностью снять товар с продажи в один клик.</div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Выставленные предметы сразу попадают в категорию «Товары игроков» на городском рынке.</div>
-                </div>
-
-                <!-- Скриншот 6: Продажа -->
-                <div class="news-shot-plate">
-                  <img src="assets/news/sell.png" alt="Продажа предметов">
-                </div>
-              </div>
-
-              <!-- 5. NPC и «Восьмёрка» -->
-              <div style="margin-top:24px;">
-                <div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">5. NPC и «Восьмёрка»</div>
-                <div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Восьмёрка</strong>: 8 секретных NPC, спрятанных по миру. У каждого из них есть свой остров, собственное уникальное событие и особые артефакты.</div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Трекер коллекции</strong>: в меню Восьмёрки собирается своеобразный пазл ваших открытий — наглядно видно, с кем из секретных NPC вы уже встретились и какие артефакты из доступных удалось получить.</div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Второстепенные NPC</strong>: в разных уголках мира можно наткнуться на других персонажей, у которых можно узнать полезную информацию или приобрести редкие предметы.</div>
-                </div>
-
-                <!-- Скриншот 7: Восьмёрка -->
-                <div class="news-shot-plate">
-                  <img src="assets/news/eight.png" alt="NPC и Восьмёрка">
-                </div>
-              </div>
-
-              <!-- 6. Таверна в Аду -->
-              <div style="margin-top:24px;">
-                <div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">6. Таверна в Аду</div>
-                <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">
-                  В Незере открылась отдельная локация — Таверна.
-                </div>
-                <div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Бармен и выпивка</strong>: за стойкой можно купить пиво, водку или виски. Напитки вызывают эффект опьянения: чем больше выпито, тем сильнее и дольше длится эффект.</div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span><strong style="color:var(--text);">Станция вагонеток</strong>: в том же помещении находится Вагонетчик. За $10 у него можно приобрести вагонетку и отправиться по защищённой сети рельсов Незера прямо через тоннели.</div>
-                </div>
-
-                <!-- Скриншот 8: Таверна -->
-                <div class="news-shot-plate">
-                  <img src="assets/news/tavern.png" alt="Таверна в Аду">
-                </div>
-              </div>
-
-              <!-- 7. Союзы -->
-              <div style="margin-top:24px;">
-                <div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">7. Союзы</div>
-                <div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">
-                  Система альянсов между игроками.
-                </div>
-                <div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Заключение и разрыв союзов через интерфейс меню.</div>
-                  <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;"><span style="position:absolute;left:0;color:var(--line);">—</span>Между союзниками полностью отключён урон (защита от случайного тимкилла).</div>
-                </div>
-
-                <!-- Скриншот 9: Союзы -->
-                <div class="news-shot-plate">
-                  <img src="assets/news/allies.png" alt="Союзы">
-                </div>
-              </div>
-
-            </div>
-          </div>
-          <!-- Футер карточки с кнопкой разворачивания/сворачивания -->
-          <div class="news-card-footer">
-            <button class="changelog-more-link" id="btnToggleNews" onclick="toggleNewsCard()">Развернуть</button>
-          </div>
-        </div>
+        <div id="newsContent" class="news-list-wrap">
+          <!-- Новости генерируются динамически через renderAllNews() -->
         </div>
       </div>
     </div>
@@ -3141,13 +2945,443 @@
     } catch(e) {}
   }
 
-  function setNewsEmpty(empty){
+  // ==========================================
+  // ДИНАМИЧЕСКАЯ СИСТЕМА НОВОСТЕЙ
+  // ==========================================
+  const DEFAULT_NEWS = [
+    {
+      id: "trading-update-2026",
+      badge: "Релиз",
+      badgeType: "primary",
+      date: "30 сентября 2026",
+      title: "Обновление: Civilization & Player Trading",
+      subtitle: "Краткий список основных изменений и систем, добавленных на сервер. Все взаимодействия производятся через графический интерфейс.",
+      banner: {
+        type: "image",
+        url: "assets/news_banner_1.svg?v=2",
+        fallback: "assets/news_banner_1.png?v=2",
+        alt: "CIVILIZATION REBORN"
+      },
+      defaultExpanded: false,
+      sections: [
+        {
+          title: "1. Меню",
+          desc: "Главное окно для быстрого доступа ко всем системам сервера без ввода команд.",
+          items: [
+            "**Открытие**: клавиша `M` (переназначается в настройках управления) или команда `/menu`.",
+            "Содержит кнопки перехода во все разделы: Банк, Рынок, Хранилище, Восьмёрка, Союзы и Трейды."
+          ],
+          media: "assets/news/menu.png"
+        },
+        {
+          title: "2. Трейды",
+          desc: "Система безопасного обмена предметами между игроками.",
+          items: [
+            "Открывается через меню выбора игрока поблизости.",
+            "**Двустороннее окно сделки с защитой от скама**: если второй игрок меняет или убирает предмет, статус подтверждения моментально сбрасывается у обеих сторон."
+          ],
+          media: "assets/news/trades.png"
+        },
+        {
+          title: "3. Обновленная экономика",
+          desc: "Вся финансовая инфраструктура сервера разделена на три взаимосвязанных раздела:",
+          subsections: [
+            {
+              title: "Банк:",
+              desc: "Хранение виртуальной валюты на личном балансе.",
+              items: [
+                "Прямая конвертация ресурсов в доллары по фиксированному курсу:",
+                "Алмазы: **2 шт = $1.00** (1 алмаз = $0.50)",
+                "Изумруды: **128 шт = $1.00**"
+              ],
+              media: "assets/news/bank.png"
+            },
+            {
+              title: "Рынок:",
+              desc: "Ассортимент товаров регулярно меняется (каждые 12 часов происходит ротация пулов предметов).",
+              items: [
+                "На рынке действуют **скидки дня (-20%)** и шанс выпадения редких джекпотов.",
+                "Удобные категории: *Блоки, Снаряжение, Руды, Редкое, Редстоун и Товары игроков*."
+              ],
+              media: "assets/news/market.png"
+            },
+            {
+              title: "Хранилище:",
+              desc: "Персональный сейф игрока, доступный из любой точки мира. Вмещает до 6 страниц по 27 слотов (до 162 слотов суммарно).",
+              items: [
+                "Первая страница доступна сразу и бесплатно, дополнительные докупаются за валюту:",
+                "2-я страница — **$25**",
+                "3-я страница — **$100**",
+                "4-я страница — **$400**",
+                "5-я страница — **$1,600**",
+                "6-я страница — **$6,400**"
+              ],
+              media: "assets/news/storage.png"
+            }
+          ]
+        },
+        {
+          title: "4. Продажа предметов",
+          desc: "Возможность продавать свои ресурсы на общий рынок напрямую другим игрокам.",
+          items: [
+            "Выбор любого предмета из инвентаря, указание нужного количества и своей цены.",
+            "**Раздел «Мои лоты»**: мониторинг всех ваших активных предложений с возможностью снять товар с продажи в один клик.",
+            "Выставленные предметы сразу попадают в категорию «Товары игроков» на городском рынке."
+          ],
+          media: "assets/news/sell.png"
+        },
+        {
+          title: "5. NPC и «Восьмёрка»",
+          items: [
+            "**Восьмёрка**: 8 секретных NPC, спрятанных по миру. У каждого из них есть свой остров, собственное уникальное событие и особые артефакты.",
+            "**Трекер коллекции**: в меню Восьмёрки собирается своеобразный пазл ваших открытий — наглядно видно, с кем из секретных NPC вы уже встретились и какие артефакты из доступных удалось получить.",
+            "**Второстепенные NPC**: в разных уголках мира можно наткнуться на других персонажей, у которых можно узнать полезную информацию или приобрести редкие предметы."
+          ],
+          media: "assets/news/eight.png"
+        },
+        {
+          title: "6. Таверна в Аду",
+          desc: "В Незере открылась отдельная локация — Таверна.",
+          items: [
+            "**Бармен и выпивка**: за стойкой можно купить пиво, водку или виски. Напитки вызывают эффект опьянения: чем больше выпито, тем сильнее и дольше длится эффект.",
+            "**Станция вагонеток**: в том же помещении находится Вагонетчик. За $10 у него можно приобрести вагонетку и отправиться по защищённой сети рельсов Незера прямо через тоннели."
+          ],
+          media: "assets/news/tavern.png"
+        },
+        {
+          title: "7. Союзы",
+          desc: "Система альянсов между игроками.",
+          items: [
+            "Заключение и разрыв союзов через интерфейс меню.",
+            "Между союзниками полностью отключён урон (защита от случайного тимкилла)."
+          ],
+          media: "assets/news/allies.png"
+        }
+      ]
+    },
+    {
+      id: "welcome-guide-2026",
+      badge: "Гайд",
+      badgeType: "gold",
+      date: "28 сентября 2026",
+      title: "Добро пожаловать в Civilization Reborn!",
+      subtitle: "Первые шаги на сервере: как начать развитие, присоединиться к цивилизации и защитить свои ресурсы.",
+      banner: {
+        type: "image",
+        url: "assets/bg.png",
+        alt: "Civilization Reborn Background"
+      },
+      defaultExpanded: false,
+      sections: [
+        {
+          title: "Быстрый старт",
+          desc: "После первого входа в игру вы появляетесь в безопасной зоне спавна. Нажмите клавишу `M`, чтобы открыть главное интерактивное меню.",
+          items: [
+            "**Создайте или выберите цивилизацию**: объединяйтесь с другими игроками для совместной защиты и дипломатии.",
+            "**Зарабатывайте доллары**: конвертируйте алмазы в банке или выставляйте редкие ресурсы на городском рынке.",
+            "**Личное хранилище**: ваш персональный сейф в меню доступен всегда и не теряется при смерти в опасных зонах."
+          ],
+          note: "Если у вас возникнут вопросы или потребуется помощь, администрация и игроки всегда готовы помочь в нашем Discord сервере!"
+        }
+      ]
+    }
+  ];
+
+  let currentNewsData = [];
+
+  function formatNewsText(str) {
+    if (!str) return '';
+    let out = String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    out = out.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text);">$1</strong>');
+    out = out.replace(/\*(.*?)\*/g, '<em style="color:var(--muted);">$1</em>');
+    out = out.replace(/`([^`]+)`/g, '<code style="font-family:inherit;font-size:11px;background:var(--card);border:1px solid var(--line);color:var(--text);padding:1px 5px;border-radius:4px;">$1</code>');
+    return out;
+  }
+
+  function openMediaPreview(src, title) {
+    if (!src) return;
+    const img = document.getElementById('lightboxImg');
+    const titleEl = document.getElementById('lightboxTitle');
+    const metaEl = document.getElementById('lightboxMeta');
+    const counterEl = document.getElementById('lightboxCounter');
+    const prevBtn = document.querySelector('.lightbox-prev');
+    const nextBtn = document.querySelector('.lightbox-next');
+    if (img) img.src = src;
+    if (titleEl) titleEl.textContent = title || 'Изображение к новости';
+    if (metaEl) metaEl.textContent = 'Civilization Reborn';
+    if (counterEl) counterEl.textContent = '';
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    const lb = document.getElementById('lightbox');
+    if (lb) lb.classList.add('show');
+  }
+
+  function renderNewsMedia(media, altText) {
+    if (!media) return '';
+    let type = 'image';
+    let url = '';
+    let fallback = '';
+    let alt = altText || 'Изображение к новости';
+
+    if (typeof media === 'string') {
+      url = media.trim();
+      if (url.endsWith('.mp4') || url.endsWith('.webm')) type = 'video';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) type = 'youtube';
+    } else if (typeof media === 'object') {
+      type = media.type || 'image';
+      url = (media.url || '').trim();
+      fallback = media.fallback || '';
+      alt = media.alt || alt;
+    }
+
+    if (!url) return '';
+
+    if (type === 'video') {
+      return `
+        <div class="news-shot-plate" style="background:#000;">
+          <video controls playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r);">
+            <source src="${url}">
+            Ваш браузер не поддерживает видео.
+          </video>
+        </div>`;
+    }
+
+    if (type === 'youtube') {
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      const videoId = ytMatch ? ytMatch[1] : url;
+      return `
+        <div class="news-shot-plate" style="background:#000;">
+          <iframe src="https://www.youtube-nocookie.com/embed/${videoId}" 
+                  style="width:100%;height:100%;border:none;border-radius:var(--r);" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen></iframe>
+        </div>`;
+    }
+
+    const fallbackAttr = fallback ? `onerror="this.src='${fallback}'"` : '';
+    return `
+      <div class="news-shot-plate" onclick="openMediaPreview('${url}', '${alt.replace(/'/g, "\\'")}')" style="cursor:pointer;" title="Нажмите, чтобы увеличить">
+        <img src="${url}" ${fallbackAttr} alt="${alt}" loading="lazy">
+      </div>`;
+  }
+
+  function renderNewsBanner(banner, title) {
+    if (!banner) return '';
+    let type = 'image';
+    let url = '';
+    let fallback = '';
+    let alt = title || 'Новостной баннер';
+
+    if (typeof banner === 'string') {
+      url = banner.trim();
+      if (url.endsWith('.mp4') || url.endsWith('.webm')) type = 'video';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) type = 'youtube';
+    } else if (typeof banner === 'object') {
+      type = banner.type || 'image';
+      url = (banner.url || '').trim();
+      fallback = banner.fallback || '';
+      alt = banner.alt || alt;
+    }
+
+    if (!url) return '';
+
+    if (type === 'video') {
+      return `
+        <div style="height:220px;overflow:hidden;line-height:0;background:#000;position:relative;">
+          <video autoplay loop muted playsinline style="width:100%;height:220px;object-fit:cover;display:block;">
+            <source src="${url}">
+          </video>
+        </div>`;
+    }
+
+    if (type === 'youtube') {
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      const videoId = ytMatch ? ytMatch[1] : url;
+      return `
+        <div style="height:220px;overflow:hidden;background:#000;">
+          <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}" 
+                  style="width:100%;height:220px;border:none;" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen></iframe>
+        </div>`;
+    }
+
+    const fallbackAttr = fallback ? `onerror="this.src='${fallback}'"` : '';
+    return `
+      <div style="height:200px;overflow:hidden;line-height:0;background:var(--card);">
+        <img src="${url}" ${fallbackAttr} alt="${alt}" style="width:100%;height:200px;object-fit:cover;display:block;">
+      </div>`;
+  }
+
+  function renderNewsCard(item, index) {
+    const bannerHtml = renderNewsBanner(item.banner, item.title);
+    const badgeHtml = item.badge ? `
+      <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:2px 8px;border:1px solid var(--line);border-radius:6px;color:var(--accent);background:rgba(var(--accent-rgb, 240, 240, 242), 0.08);font-weight:700;">
+        ${formatNewsText(item.badge)}
+      </span>` : '';
+
+    const dateHtml = item.date ? `<span>${formatNewsText(item.date)}</span>` : '';
+
+    let sectionsHtml = '';
+    if (Array.isArray(item.sections)) {
+      sectionsHtml = item.sections.map(sec => {
+        let secHtml = `<div style="margin-top:24px;">`;
+        if (sec.title) {
+          secHtml += `<div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">${formatNewsText(sec.title)}</div>`;
+        }
+        if (sec.desc || sec.text) {
+          secHtml += `<div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">${formatNewsText(sec.desc || sec.text)}</div>`;
+        }
+        if (Array.isArray(sec.items) && sec.items.length > 0) {
+          secHtml += `<div>` + sec.items.map(it => `
+            <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;line-height:1.6;">
+              <span style="position:absolute;left:0;color:var(--line);">—</span>${formatNewsText(it)}
+            </div>
+          `).join('') + `</div>`;
+        }
+        if (sec.note) {
+          secHtml += `
+            <div class="ncard-note" style="margin-top:12px;margin-bottom:12px;">
+              ${formatNewsText(sec.note)}
+            </div>`;
+        }
+        if (sec.media) {
+          secHtml += renderNewsMedia(sec.media, sec.title || item.title);
+        }
+        if (Array.isArray(sec.subsections)) {
+          secHtml += sec.subsections.map(sub => {
+            let subHtml = `<div style="margin-left:8px;padding-left:14px;border-left:2px solid var(--line);margin-top:16px;margin-bottom:16px;">`;
+            if (sub.title) {
+              subHtml += `<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">${formatNewsText(sub.title)}</div>`;
+            }
+            if (sub.desc || sub.text) {
+              subHtml += `<div style="font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:6px;">${formatNewsText(sub.desc || sub.text)}</div>`;
+            }
+            if (Array.isArray(sub.items) && sub.items.length > 0) {
+              subHtml += `<div>` + sub.items.map(it => `
+                <div style="font-size:13px;color:var(--dim);padding:2px 0 2px 14px;position:relative;line-height:1.6;">
+                  <span style="position:absolute;left:0;color:var(--line);font-size:10px;">•</span>${formatNewsText(it)}
+                </div>
+              `).join('') + `</div>`;
+            }
+            subHtml += `</div>`;
+            if (sub.media) {
+              subHtml += renderNewsMedia(sub.media, sub.title);
+            }
+            return subHtml;
+          }).join('');
+        }
+        secHtml += `</div>`;
+        return secHtml;
+      }).join('');
+    }
+
+    const collapseId = `newsCollapseWrap_${index}`;
+    const btnId = `btnToggleNews_${index}`;
+    const isExpanded = !!item.defaultExpanded;
+
+    return `
+      <div class="news-card" id="newsCard_${index}">
+        ${bannerHtml}
+        <div class="news-content-collapse ${isExpanded ? 'expanded' : ''}" id="${collapseId}">
+          <div style="padding:22px 24px 24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:12px;color:var(--dim);letter-spacing:.5px;">
+              ${badgeHtml}
+              ${dateHtml}
+            </div>
+            <div class="news-card-title" style="font-size:18px;letter-spacing:1.5px;color:var(--text);margin-bottom:12px;font-weight:700;">
+              ${formatNewsText(item.title || '')}
+            </div>
+            ${item.subtitle ? `
+              <div style="font-size:14px;color:var(--muted);line-height:1.75;margin-bottom:20px;">
+                ${formatNewsText(item.subtitle)}
+              </div>
+            ` : ''}
+            ${sectionsHtml}
+          </div>
+        </div>
+        <div class="news-card-footer">
+          <button class="changelog-more-link" id="${btnId}" onclick="toggleNewsCardIndex(${index})">
+            ${isExpanded ? 'Свернуть' : 'Развернуть'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderAllNews(list) {
+    const container = document.getElementById('newsContent');
+    const emptyEl = document.getElementById('newsEmpty');
+    if (!container) return;
+
+    if (!list || !list.length) {
+      container.innerHTML = '';
+      if (emptyEl) emptyEl.style.display = 'flex';
+      container.style.display = 'none';
+      return;
+    }
+
+    if (emptyEl) emptyEl.style.display = 'none';
+    container.style.display = 'block';
+    container.innerHTML = list.map((item, idx) => renderNewsCard(item, idx)).join('');
+  }
+
+  async function loadAndRenderNews() {
+    try {
+      const res = await fetch('/api/news');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          currentNewsData = data;
+          renderAllNews(currentNewsData);
+          return;
+        }
+      }
+    } catch (e) { }
+
+    try {
+      const res = await fetch('news.json');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          currentNewsData = data;
+          renderAllNews(currentNewsData);
+          return;
+        }
+      }
+    } catch (e) { }
+
+    currentNewsData = (typeof DEFAULT_NEWS !== 'undefined' && Array.isArray(DEFAULT_NEWS)) ? DEFAULT_NEWS : [];
+    renderAllNews(currentNewsData);
+  }
+
+  function toggleNewsCardIndex(index) {
+    const wrap = document.getElementById(`newsCollapseWrap_${index}`);
+    const btn = document.getElementById(`btnToggleNews_${index}`);
+    if (!wrap || !btn) return;
+    const isExpanded = wrap.classList.toggle('expanded');
+    btn.textContent = isExpanded ? 'Свернуть' : 'Развернуть';
+    if (!isExpanded) {
+      const card = document.getElementById(`newsCard_${index}`);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function toggleNewsCard() {
+    toggleNewsCardIndex(0);
+  }
+
+  function setNewsEmpty(empty) {
     const emptyEl = document.getElementById('newsEmpty');
     const contentEl = document.getElementById('newsContent');
-    if(emptyEl) emptyEl.style.display = empty ? 'flex' : 'none';
-    if(contentEl) contentEl.style.display = empty ? 'none' : 'block';
+    if (emptyEl) emptyEl.style.display = empty ? 'flex' : 'none';
+    if (contentEl) contentEl.style.display = empty ? 'none' : 'block';
   }
-  function toggleNewsEmptyDemo(){
+
+  function toggleNewsEmptyDemo() {
     const emptyEl = document.getElementById('newsEmpty');
     const isCurrentlyEmpty = emptyEl && emptyEl.style.display !== 'none';
     setNewsEmpty(!isCurrentlyEmpty);
@@ -3745,25 +3979,18 @@
     document.getElementById('viewNews').style.display = 'flex';
     document.getElementById('btnNews').classList.add('active');
     document.getElementById('pageTitle').textContent = 'НОВОСТИ';
-    if(autoExpand === true){
-      const wrap = document.getElementById('newsCollapseWrap');
-      const btn = document.getElementById('btnToggleNews');
-      if(wrap && !wrap.classList.contains('expanded')){
-        wrap.classList.add('expanded');
-        if(btn) btn.textContent = 'Свернуть ↑';
-      }
+    if (!currentNewsData || currentNewsData.length === 0) {
+      loadAndRenderNews();
     }
-  }
-
-  function toggleNewsCard(){
-    const wrap = document.getElementById('newsCollapseWrap');
-    const btn = document.getElementById('btnToggleNews');
-    if(!wrap || !btn) return;
-    const isExpanded = wrap.classList.toggle('expanded');
-    btn.textContent = isExpanded ? 'Свернуть' : 'Узнать больше';
-    if(!isExpanded){
-      const view = document.getElementById('viewNews');
-      if(view) view.scrollTo({ top: 0, behavior: 'smooth' });
+    if (autoExpand === true) {
+      setTimeout(() => {
+        const wrap = document.getElementById('newsCollapseWrap_0');
+        const btn = document.getElementById('btnToggleNews_0');
+        if (wrap && !wrap.classList.contains('expanded')) {
+          wrap.classList.add('expanded');
+          if (btn) btn.textContent = 'Свернуть';
+        }
+      }, 50);
     }
   }
 
@@ -3838,6 +4065,7 @@
   updateServerStatus(null);
   checkServerStatus();
   setInterval(checkServerStatus, 30000);
+  loadAndRenderNews();
 </script>
 </body>
 </html>
