@@ -2429,10 +2429,18 @@
     const moreWrap = document.getElementById('moreWrap');
     const moreBtn = document.getElementById('btnMore');
 
-    // Бейдж: только два состояния — «Установлено» и «Не установлено»
+    // Бейдж: «Не установлено», «Доступно обновление» или «Установлено»
     if(badge){
-      badge.className = ok ? 'banner-badge installed' : 'banner-badge not-installed';
-      if(badgeText) badgeText.textContent = ok ? 'Установлено' : 'Не установлено';
+      if(!ok){
+        badge.className = 'banner-badge not-installed';
+        if(badgeText) badgeText.textContent = 'Не установлено';
+      } else if(updateAvailable){
+        badge.className = 'banner-badge installed';
+        if(badgeText) badgeText.textContent = 'Доступно обновление';
+      } else {
+        badge.className = 'banner-badge installed';
+        if(badgeText) badgeText.textContent = 'Установлено';
+      }
     }
 
     // Кнопка настроек (шестерёнка) доступна всегда, кроме активного процесса установки/обновления
@@ -2535,6 +2543,7 @@
     } catch(e) {}
   }
 
+  let statusPollTimer = null;
   async function checkBackendStatus(){
     if(!isBackend) return;
     try {
@@ -2542,15 +2551,26 @@
       if(res.ok){
         const data = await res.json();
         if(data.mcDir) updatePathDisplay(data.mcDir);
+        const prevUpdate = updateAvailable;
         updateAvailable = !data.installed ? false : (data.updateAvailable || false);
         setStatus(data.installed);
+        if(!prevUpdate && updateAvailable){
+          toast('Доступно обновление сборки Civilization!');
+        }
       }
       await checkGameStatus();
       if(!gamePollTimer){
         gamePollTimer = setInterval(checkGameStatus, 3000);
       }
+      if(!statusPollTimer){
+        statusPollTimer = setInterval(checkBackendStatus, 15000);
+      }
     } catch(e) {}
   }
+
+  window.addEventListener('focus', () => {
+    checkBackendStatus();
+  });
 
   let pollingInterval = null;
   async function run(action){

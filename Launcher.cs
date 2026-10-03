@@ -266,6 +266,7 @@ namespace CivilizationLauncher
             AppDomain.CurrentDomain.UnhandledException += (s, e) => Log("Unhandled: " + (e.ExceptionObject != null ? e.ExceptionObject.ToString() : "unknown"));
             appDir = AppDomain.CurrentDomain.BaseDirectory;
             LogSystemDiagnostics();
+            ThreadPool.QueueUserWorkItem((s) => FetchRemoteShaInBackground());
             try
             {
                 Process current = Process.GetCurrentProcess();
@@ -870,10 +871,26 @@ namespace CivilizationLauncher
                 if (string.IsNullOrEmpty(mcDir)) mcDir = GetDetectedMcDir();
 
                 string installedAt = "";
+                string localSha = "";
                 var state = LoadState();
-                if (state != null && state.ContainsKey("installedAt"))
+                if (state != null)
                 {
-                    installedAt = (string)state["installedAt"];
+                    if (state.ContainsKey("installedAt")) installedAt = (string)state["installedAt"];
+                    if (state.ContainsKey("commitSha")) localSha = (string)state["commitSha"];
+                }
+
+                string remoteSha = installed ? GetCachedOrFetchRemoteSha() : null;
+                bool updateAvailable = false;
+                if (installed && !string.IsNullOrEmpty(remoteSha))
+                {
+                    if (string.IsNullOrEmpty(localSha))
+                    {
+                        updateAvailable = true;
+                    }
+                    else if (!localSha.Equals(remoteSha, StringComparison.OrdinalIgnoreCase))
+                    {
+                        updateAvailable = true;
+                    }
                 }
 
                 int jMaj = 0;
@@ -888,11 +905,32 @@ namespace CivilizationLauncher
 
                 SendJson(ctx, new Dictionary<string, object> {
                     { "installed", installed },
+                    { "updateAvailable", updateAvailable },
+                    { "localSha", localSha ?? "" },
+                    { "remoteSha", remoteSha ?? "" },
                     { "mcDir", mcDir ?? "" },
                     { "installedAt", installedAt },
                     { "javaMajor", jMaj },
                     { "javaNeed", jNeed },
                     { "javaOk", jMaj >= jNeed }
+                });
+                return;
+            }
+
+            if (endpoint == "check-update")
+            {
+                string mcDir = GetInstalledMcDir();
+                bool installed = !string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir);
+                string remoteSha = FetchRemoteShaSynchronous();
+                string localSha = "";
+                var state = LoadState();
+                if (state != null && state.ContainsKey("commitSha")) localSha = (string)state["commitSha"];
+                bool updateAvailable = installed && !string.IsNullOrEmpty(remoteSha) && (string.IsNullOrEmpty(localSha) || !localSha.Equals(remoteSha, StringComparison.OrdinalIgnoreCase));
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "installed", installed },
+                    { "updateAvailable", updateAvailable },
+                    { "localSha", localSha ?? "" },
+                    { "remoteSha", remoteSha ?? "" }
                 });
                 return;
             }
@@ -1903,16 +1941,123 @@ namespace CivilizationLauncher
             return null;
         }
 
-        static void SaveState(string mcDir, List<string> files)
+        private static string cachedRemoteSha = null;
+        private static DateTime lastRemoteCheck = DateTime.MinValue;
+        private static bool isCheckingUpdate = false;
+        private static object updateCheckLock = new object();
+
+        static string GetCachedOrFetchRemoteSha()
+        {
+            lock (updateCheckLock)
+            {
+                if (cachedRemoteSha != null && (DateTime.Now - lastRemoteCheck).TotalSeconds < 30)
+                {
+                    return cachedRemoteSha;
+                }
+            }
+
+            if (!isCheckingUpdate)
+            {
+                ThreadPool.QueueUserWorkItem((s) => FetchRemoteShaInBackground());
+            }
+
+            return cachedRemoteSha;
+        }
+
+        static string FetchRemoteShaSynchronous()
+        {
+            try
+            {
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/civilkaserver-sketch/Civilka-version/commits/main");
+                req.UserAgent = "CivilizationLauncher";
+                req.Timeout = 6000;
+                req.Headers.Add("Authorization", "Bearer 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");
+                using (var resp = req.GetResponse())
+                using (var sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    string json = sr.ReadToEnd();
+                    var dict = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
+                    if (dict != null && dict.ContainsKey("sha"))
+                    {
+                        string sha = dict["sha"].ToString().Trim();
+                        lock (updateCheckLock)
+                        {
+                            cachedRemoteSha = sha;
+                            lastRemoteCheck = DateTime.Now;
+                        }
+                        return sha;
+                    }
+                }
+            }
+            catch { }
+
+            try
+            {
+                var psi = new ProcessStartInfo("git", "ls-remote https://github.com/civilkaserver-sketch/Civilka-version.git refs/heads/main");
+                psi.CreateNoWindow = true;
+                psi.UseShellExecute = false;
+                psi.RedirectStandardOutput = true;
+                using (var p = Process.Start(psi))
+                {
+                    string outStr = p.StandardOutput.ReadToEnd();
+                    p.WaitForExit(6000);
+                    if (!string.IsNullOrEmpty(outStr))
+                    {
+                        var parts = outStr.Split(new char[] { '\t', ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0 && parts[0].Length >= 20)
+                        {
+                            string sha = parts[0].Trim();
+                            lock (updateCheckLock)
+                            {
+                                cachedRemoteSha = sha;
+                                lastRemoteCheck = DateTime.Now;
+                            }
+                            return sha;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return cachedRemoteSha;
+        }
+
+        static void FetchRemoteShaInBackground()
+        {
+            if (isCheckingUpdate) return;
+            isCheckingUpdate = true;
+            try
+            {
+                string sha = FetchRemoteShaSynchronous();
+                if (!string.IsNullOrEmpty(sha))
+                {
+                    Log("Remote version SHA detected: " + sha);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("FetchRemoteShaInBackground error: " + ex.Message);
+            }
+            finally
+            {
+                isCheckingUpdate = false;
+            }
+        }
+
+        static void SaveState(string mcDir, List<string> files, string commitSha = null)
         {
             try
             {
                 if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
-                var dict = new Dictionary<string, object> {
-                    { "mcDir", mcDir },
-                    { "installedAt", DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") },
-                    { "files", files }
-                };
+                var dict = LoadState() ?? new Dictionary<string, object>();
+                dict["mcDir"] = mcDir;
+                dict["installedAt"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                dict["files"] = files;
+                if (!string.IsNullOrEmpty(commitSha))
+                {
+                    dict["commitSha"] = commitSha;
+                }
                 string json = new JavaScriptSerializer().Serialize(dict);
                 File.WriteAllText(StateFile, json, Encoding.UTF8);
             }
@@ -2652,8 +2797,9 @@ namespace CivilizationLauncher
                 CheckCancelled();
                 SetProgress(82, "Регистрация профиля Civilization...", true, false, null);
                 RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
-                SaveState(mcDir, files);
-                Log("Profile registered and state saved.");
+                string currentSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
+                SaveState(mcDir, files, currentSha);
+                Log("Profile registered and state saved (SHA: " + currentSha + ").");
 
                 CheckCancelled();
                 EnsureJava(mcDir, sourceDir);
@@ -2712,7 +2858,9 @@ namespace CivilizationLauncher
 
                 SetProgress(94, "Обновление профиля игры...", true, false, null);
                 RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
-                SaveState(mcDir, files);
+                string currentSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
+                SaveState(mcDir, files, currentSha);
+                Log("Profile registered and state saved (SHA: " + currentSha + ").");
 
                 EnsureJava(mcDir, sourceDir);
 
