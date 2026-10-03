@@ -3046,14 +3046,15 @@
     if (btnToggle) btnToggle.textContent = 'Скрыть снимки';
     count.textContent = 'Всего снимков: ' + playerScreenshots.length;
 
+    function esc(s){ if(!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
     grid.innerHTML = playerScreenshots.map((item, idx) => `
       <div class="screenshot-card" onclick="openLightbox(${idx})">
         <div class="screenshot-thumb">
-          <img src="${item.src}" alt="${item.name}">
+          <img src="${item.src}" alt="${esc(item.name)}">
         </div>
         <div class="screenshot-meta">
-          <span class="screenshot-name" title="${item.name}">${item.name}</span>
-          <small class="screenshot-date">${item.date}</small>
+          <span class="screenshot-name" title="${esc(item.name)}">${esc(item.name)}</span>
+          <small class="screenshot-date">${esc(item.date)}</small>
         </div>
       </div>
     `).join('');
@@ -3212,7 +3213,7 @@
       try {
         await fetch('/api/delete-screenshot', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
           body: JSON.stringify({ name: item.name })
         });
       } catch(e) {}

@@ -820,7 +820,16 @@ namespace CivilizationLauncher
 
         static string ReadBody(HttpListenerContext ctx)
         {
-            using (var reader = new StreamReader(ctx.Request.InputStream, ctx.Request.ContentEncoding))
+            Encoding enc = Encoding.UTF8;
+            try
+            {
+                if (ctx.Request.ContentEncoding != null && !ctx.Request.ContentEncoding.Equals(Encoding.Default))
+                {
+                    enc = ctx.Request.ContentEncoding;
+                }
+            }
+            catch { }
+            using (var reader = new StreamReader(ctx.Request.InputStream, enc))
             {
                 return reader.ReadToEnd();
             }
@@ -1254,11 +1263,12 @@ namespace CivilizationLauncher
 
                     foreach (var fi in sorted)
                     {
+                        string b64 = Convert.ToBase64String(Encoding.UTF8.GetBytes(fi.FullName));
                         list.Add(new Dictionary<string, object> {
                             { "name", fi.Name },
                             { "date", fi.LastWriteTime.ToString("dd MMM yyyy, HH:mm") },
                             { "meta", string.Format("{0:0.#} MB", fi.Length / (1024.0 * 1024.0)) },
-                            { "src", "/api/screenshot-file?path=" + Uri.EscapeDataString(fi.FullName) }
+                            { "src", "/api/screenshot-file?b64=" + Uri.EscapeDataString(b64) + "&name=" + Uri.EscapeDataString(fi.Name) }
                         });
                     }
                 }
@@ -1280,28 +1290,21 @@ namespace CivilizationLauncher
                 Dictionary<string, object> data = null;
                 try { data = jss.Deserialize<Dictionary<string, object>>(body); } catch { }
                 string name = null;
-                if (data != null && data.ContainsKey("name")) name = (string)data["name"];
+                if (data != null && data.ContainsKey("name")) name = data["name"].ToString();
                 if (!string.IsNullOrEmpty(name))
                 {
-                    string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
-                    if (!string.IsNullOrEmpty(mcDir))
+                    string target = FindScreenshotByName(name);
+                    if (target != null && File.Exists(target))
                     {
-                        string[] candidates = new string[] {
-                            Path.Combine(mcDir, @"versions\Civilization\screenshots"),
-                            Path.Combine(mcDir, "screenshots")
-                        };
-                        foreach (string c in candidates)
+                        try
                         {
-                            string target = Path.Combine(c, name);
-                            if (File.Exists(target))
-                            {
-                                try
-                                {
-                                    File.Delete(target);
-                                    Interlocked.Increment(ref screenshotsRevision);
-                                }
-                                catch { }
-                            }
+                            File.Delete(target);
+                            Interlocked.Increment(ref screenshotsRevision);
+                            Log("Deleted screenshot file: " + target);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log("Error deleting screenshot: " + ex.Message);
                         }
                     }
                 }
@@ -1311,12 +1314,93 @@ namespace CivilizationLauncher
 
             if (endpoint.StartsWith("screenshot-file"))
             {
-                string rawPath = ctx.Request.QueryString["path"];
-                if (!string.IsNullOrEmpty(rawPath) && File.Exists(rawPath))
+                string targetFile = null;
+
+                // 1. Try Base64 path parameter ("b64")
+                string b64 = ctx.Request.QueryString["b64"];
+                if (!string.IsNullOrEmpty(b64))
                 {
-                    ServeFile(ctx, rawPath, "image/png");
+                    try
+                    {
+                        byte[] bytes = Convert.FromBase64String(b64);
+                        string decoded = Encoding.UTF8.GetString(bytes);
+                        if (File.Exists(decoded))
+                        {
+                            targetFile = decoded;
+                        }
+                    }
+                    catch { }
+                }
+
+                // 2. Try file name parameter ("name" or "file")
+                if (targetFile == null)
+                {
+                    string nameParam = ctx.Request.QueryString["name"] ?? ctx.Request.QueryString["file"];
+                    if (!string.IsNullOrEmpty(nameParam))
+                    {
+                        targetFile = FindScreenshotByName(nameParam);
+                    }
+                }
+
+                // 3. Try raw "path" parameter
+                if (targetFile == null)
+                {
+                    string rawPath = ctx.Request.QueryString["path"];
+                    if (!string.IsNullOrEmpty(rawPath))
+                    {
+                        if (File.Exists(rawPath))
+                        {
+                            targetFile = rawPath;
+                        }
+                        else
+                        {
+                            string fileName = Path.GetFileName(rawPath);
+                            if (!string.IsNullOrEmpty(fileName))
+                            {
+                                targetFile = FindScreenshotByName(fileName);
+                            }
+                        }
+                    }
+                }
+
+                // 4. RawUrl fallback for query strings with percent-encoding or pluses
+                if (targetFile == null)
+                {
+                    try
+                    {
+                        string rawUrl = ctx.Request.RawUrl;
+                        int qIdx = rawUrl.IndexOf('?');
+                        if (qIdx >= 0)
+                        {
+                            string query = rawUrl.Substring(qIdx + 1);
+                            var pairs = query.Split('&');
+                            foreach (var pair in pairs)
+                            {
+                                int eq = pair.IndexOf('=');
+                                if (eq > 0)
+                                {
+                                    string key = pair.Substring(0, eq);
+                                    string val = pair.Substring(eq + 1);
+                                    if (key == "name" || key == "file" || key == "path")
+                                    {
+                                        string unescaped = Uri.UnescapeDataString(val);
+                                        if (File.Exists(unescaped)) { targetFile = unescaped; break; }
+                                        string found = FindScreenshotByName(Path.GetFileName(unescaped));
+                                        if (found != null && File.Exists(found)) { targetFile = found; break; }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch { }
+                }
+
+                if (targetFile != null && File.Exists(targetFile))
+                {
+                    ServeFile(ctx, targetFile, "image/png");
                     return;
                 }
+
                 ctx.Response.StatusCode = 404;
                 ctx.Response.Close();
                 return;
@@ -1601,6 +1685,54 @@ namespace CivilizationLauncher
             {
                 return screenshotsRevision.ToString();
             }
+        }
+
+        static string FindScreenshotByName(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return null;
+
+            string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
+            if (string.IsNullOrEmpty(mcDir)) return null;
+
+            string[] candidates = new string[] {
+                Path.Combine(mcDir, @"versions\Civilization\screenshots"),
+                Path.Combine(mcDir, "screenshots")
+            };
+
+            var namesToTry = new List<string>();
+            namesToTry.Add(fileName);
+            try
+            {
+                string unescaped = Uri.UnescapeDataString(fileName);
+                if (!namesToTry.Contains(unescaped)) namesToTry.Add(unescaped);
+            }
+            catch { }
+
+            foreach (string dir in candidates)
+            {
+                if (!Directory.Exists(dir)) continue;
+
+                foreach (string n in namesToTry)
+                {
+                    string direct = Path.Combine(dir, n);
+                    if (File.Exists(direct)) return direct;
+                }
+
+                try
+                {
+                    foreach (string f in Directory.GetFiles(dir, "*.png"))
+                    {
+                        string fn = Path.GetFileName(f);
+                        foreach (string n in namesToTry)
+                        {
+                            if (string.Equals(fn, n, StringComparison.OrdinalIgnoreCase)) return f;
+                            if (string.Equals(fn.Replace("+", " "), n.Replace("+", " "), StringComparison.OrdinalIgnoreCase)) return f;
+                        }
+                    }
+                }
+                catch { }
+            }
+            return null;
         }
 
         static string FindTLauncherExe(string mcDir)
