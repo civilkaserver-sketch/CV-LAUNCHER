@@ -2,3 +2,4 @@ launcher.log
 bin/
 obj/
 *.tmp
+RunAndCatch.*
