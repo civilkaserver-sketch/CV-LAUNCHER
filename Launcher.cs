@@ -291,6 +291,8 @@ namespace CivilizationLauncher
 
             try { SetCurrentProcessExplicitAppUserModelID("Civilization.Launcher.CV"); } catch { }
 
+            EnsureDefaultFiles();
+
             // Найти свободный порт для локального сервера
             for (int p = 52140; p < 52250; p++)
             {
@@ -618,6 +620,11 @@ namespace CivilizationLauncher
                     Thread.Sleep(300);
                     if (!IsWindow(mainHwnd))
                     {
+                        if (browserProcess != null && !browserProcess.HasExited)
+                        {
+                            Thread.Sleep(500);
+                            if (browserProcess != null && !browserProcess.HasExited) continue;
+                        }
                         Log("Target window was closed by user");
                         break;
                     }
@@ -702,6 +709,166 @@ namespace CivilizationLauncher
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
 
+        static byte[] GetEmbeddedResource(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return null;
+            try
+            {
+                var asm = System.Reflection.Assembly.GetExecutingAssembly();
+                string norm = name.Replace('\\', '/').TrimStart('/');
+
+                using (var stream = asm.GetManifestResourceStream(norm))
+                {
+                    if (stream != null)
+                    {
+                        using (var ms = new MemoryStream())
+                        {
+                            stream.CopyTo(ms);
+                            return ms.ToArray();
+                        }
+                    }
+                }
+
+                string dotNorm = norm.Replace('/', '.');
+                string[] allRes = asm.GetManifestResourceNames();
+                foreach (string res in allRes)
+                {
+                    if (res.Equals(norm, StringComparison.OrdinalIgnoreCase) ||
+                        res.Equals(dotNorm, StringComparison.OrdinalIgnoreCase) ||
+                        res.EndsWith("." + dotNorm, StringComparison.OrdinalIgnoreCase) ||
+                        res.EndsWith("." + norm, StringComparison.OrdinalIgnoreCase))
+                    {
+                        using (var stream = asm.GetManifestResourceStream(res))
+                        {
+                            if (stream != null)
+                            {
+                                using (var ms = new MemoryStream())
+                                {
+                                    stream.CopyTo(ms);
+                                    return ms.ToArray();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        static bool CreateDesktopShortcut()
+        {
+            try
+            {
+                string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+                string shortcutPath = Path.Combine(desktop, "CV Launcher.lnk");
+                string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath)) return false;
+
+                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType != null)
+                {
+                    dynamic shell = Activator.CreateInstance(shellType);
+                    dynamic shortcut = shell.CreateShortcut(shortcutPath);
+                    shortcut.TargetPath = exePath;
+                    shortcut.WorkingDirectory = Path.GetDirectoryName(exePath);
+                    shortcut.Description = "Civilization Reborn Launcher";
+                    shortcut.IconLocation = exePath + ",0";
+                    shortcut.Save();
+                    Log("Created desktop shortcut: " + shortcutPath);
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("CreateDesktopShortcut error: " + ex.Message);
+            }
+            return false;
+        }
+
+        static void EnsureDefaultFiles()
+        {
+            try
+            {
+                string uiPath = Path.Combine(appDir, "ui.html");
+                if (!File.Exists(uiPath))
+                {
+                    byte[] ui = GetEmbeddedResource("ui.html");
+                    if (ui != null && ui.Length > 0)
+                    {
+                        File.WriteAllBytes(uiPath, ui);
+                        Log("Extracted embedded ui.html to disk.");
+                    }
+                }
+
+                string assetsDir = Path.Combine(appDir, "assets");
+                if (!Directory.Exists(assetsDir))
+                {
+                    try { Directory.CreateDirectory(assetsDir); } catch { }
+                }
+
+                string[] essentialAssets = new string[] {
+                    "assets/icon.png",
+                    "assets/minecraft-rus.ttf",
+                    "assets/news_banner_1.svg",
+                    "assets/news_banner_1.png",
+                    "assets/bg.png"
+                };
+
+                foreach (string asset in essentialAssets)
+                {
+                    string localPath = Path.Combine(appDir, asset.Replace('/', '\\'));
+                    if (!File.Exists(localPath))
+                    {
+                        byte[] data = GetEmbeddedResource(asset);
+                        if (data != null && data.Length > 0)
+                        {
+                            string dir = Path.GetDirectoryName(localPath);
+                            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                            File.WriteAllBytes(localPath, data);
+                            Log("Extracted embedded asset: " + asset);
+                        }
+                    }
+                }
+
+                string manifestPath = Path.Combine(appDir, "manifest.json");
+                if (!File.Exists(manifestPath))
+                {
+                    byte[] mf = GetEmbeddedResource("manifest.json");
+                    if (mf != null && mf.Length > 0) File.WriteAllBytes(manifestPath, mf);
+                }
+
+                string icoPath = Path.Combine(appDir, "icon.ico");
+                if (!File.Exists(icoPath))
+                {
+                    byte[] ico = GetEmbeddedResource("icon.ico");
+                    if (ico != null && ico.Length > 0) File.WriteAllBytes(icoPath, ico);
+                }
+
+                try
+                {
+                    if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
+                    var state = LoadState() ?? new Dictionary<string, object>();
+                    if (!state.ContainsKey("desktopShortcutCreated"))
+                    {
+                        string desktopLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "CV Launcher.lnk");
+                        if (!File.Exists(desktopLnk))
+                        {
+                            CreateDesktopShortcut();
+                        }
+                        state["desktopShortcutCreated"] = true;
+                        string json = new JavaScriptSerializer().Serialize(state);
+                        File.WriteAllText(StateFile, json, Encoding.UTF8);
+                    }
+                }
+                catch { }
+            }
+            catch (Exception ex)
+            {
+                Log("EnsureDefaultFiles warning: " + ex.Message);
+            }
+        }
+
         static void HandleRequest(HttpListenerContext ctx)
         {
             try
@@ -709,7 +876,7 @@ namespace CivilizationLauncher
                 string path = ctx.Request.Url.AbsolutePath.TrimStart('/');
                 if (string.IsNullOrEmpty(path) || path == "ui.html")
                 {
-                    ServeFile(ctx, Path.Combine(appDir, "ui.html"), "text/html; charset=utf-8");
+                    ServeFile(ctx, Path.Combine(appDir, "ui.html"), "text/html; charset=utf-8", "ui.html");
                     return;
                 }
 
@@ -721,10 +888,22 @@ namespace CivilizationLauncher
                         ServeBytes(ctx, File.ReadAllBytes(icoFile), "image/x-icon");
                         return;
                     }
+                    byte[] embIco = GetEmbeddedResource("icon.ico");
+                    if (embIco != null)
+                    {
+                        ServeBytes(ctx, embIco, "image/x-icon");
+                        return;
+                    }
                     string pngFile = Path.Combine(appDir, "assets", "icon.png");
                     if (File.Exists(pngFile))
                     {
                         ServeBytes(ctx, File.ReadAllBytes(pngFile), "image/png");
+                        return;
+                    }
+                    byte[] embPng = GetEmbeddedResource("assets/icon.png");
+                    if (embPng != null)
+                    {
+                        ServeBytes(ctx, embPng, "image/png");
                         return;
                     }
                     ServeBytes(ctx, TransparentIco, "image/x-icon");
@@ -733,7 +912,7 @@ namespace CivilizationLauncher
 
                 if (path.Equals("manifest.json", StringComparison.OrdinalIgnoreCase))
                 {
-                    ServeFile(ctx, Path.Combine(appDir, "manifest.json"), "application/manifest+json; charset=utf-8");
+                    ServeFile(ctx, Path.Combine(appDir, "manifest.json"), "application/manifest+json; charset=utf-8", "manifest.json");
                     return;
                 }
 
@@ -747,7 +926,7 @@ namespace CivilizationLauncher
                     else if (path.EndsWith(".ttf", StringComparison.OrdinalIgnoreCase)) mime = "font/ttf";
                     else if (path.EndsWith(".css", StringComparison.OrdinalIgnoreCase)) mime = "text/css; charset=utf-8";
                     else if (path.EndsWith(".js", StringComparison.OrdinalIgnoreCase)) mime = "application/javascript; charset=utf-8";
-                    ServeFile(ctx, filePath, mime);
+                    ServeFile(ctx, filePath, mime, path);
                     return;
                 }
 
@@ -764,9 +943,30 @@ namespace CivilizationLauncher
             catch { }
         }
 
-        static void ServeFile(HttpListenerContext ctx, string filePath, string contentType)
+        static void ServeFile(HttpListenerContext ctx, string filePath, string contentType, string resName = null)
         {
-            if (!File.Exists(filePath))
+            byte[] bytes = null;
+            if (File.Exists(filePath))
+            {
+                try { bytes = File.ReadAllBytes(filePath); } catch { }
+            }
+
+            if (bytes == null && !string.IsNullOrEmpty(resName))
+            {
+                bytes = GetEmbeddedResource(resName);
+                if (bytes != null)
+                {
+                    try
+                    {
+                        string dir = Path.GetDirectoryName(filePath);
+                        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                        File.WriteAllBytes(filePath, bytes);
+                    }
+                    catch { }
+                }
+            }
+
+            if (bytes == null)
             {
                 ctx.Response.StatusCode = 404;
                 ctx.Response.Close();
@@ -775,7 +975,6 @@ namespace CivilizationLauncher
 
             try
             {
-                byte[] bytes = File.ReadAllBytes(filePath);
                 ctx.Response.ContentType = contentType;
                 ctx.Response.ContentLength64 = bytes.Length;
                 ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
@@ -784,8 +983,7 @@ namespace CivilizationLauncher
             }
             catch
             {
-                ctx.Response.StatusCode = 500;
-                ctx.Response.Close();
+                try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
             }
         }
 
@@ -1461,6 +1659,16 @@ namespace CivilizationLauncher
                     { "ok", true },
                     { "stopped", stopped },
                     { "msg", stopped ? "Игра закрыта" : "Процесс игры не найден" }
+                });
+                return;
+            }
+
+            if (endpoint == "create-desktop-shortcut")
+            {
+                bool created = CreateDesktopShortcut();
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "ok", created },
+                    { "msg", created ? "Ярлык успешно создан на Рабочем столе!" : "Не удалось создать ярлык" }
                 });
                 return;
             }

@@ -2163,6 +2163,13 @@
               <span class="slider"></span>
             </label>
           </div>
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Ярлык на Рабочем столе</div>
+              <div class="settings-toggle-desc">Создать удобный ярлык для быстрого запуска лаунчера</div>
+            </div>
+            <button class="btn line" onclick="createDesktopShortcut()" style="padding:6px 14px;font-size:12px;height:32px;cursor:pointer;flex-shrink:0;">Создать ярлык</button>
+          </div>
         </div>
       </div>
 
@@ -3615,6 +3622,24 @@
     saveLauncherSettingsToStorage();
     toast('Настройки сохранены');
     closeSettingsModal();
+  }
+
+  async function createDesktopShortcut() {
+    if (!isBackend) {
+      toast('Недоступно в демо-режиме');
+      return;
+    }
+    try {
+      const res = await fetch('/api/create-desktop-shortcut');
+      const data = await res.json();
+      if (data && data.ok) {
+        toast(data.msg || 'Ярлык успешно создан на Рабочем столе!');
+      } else {
+        toast((data && data.msg) || 'Не удалось создать ярлык');
+      }
+    } catch (e) {
+      toast('Ошибка запроса на создание ярлыка');
+    }
   }
 
   async function loadLogInfo() {
