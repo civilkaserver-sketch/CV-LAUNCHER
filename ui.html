@@ -1174,6 +1174,32 @@
     animation: none !important;
   }
 
+  @keyframes cv-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .cv-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: cv-spin 0.8s linear infinite;
+  }
+  .launcher-update-banner {
+    display: none;
+    margin-bottom: 16px;
+    background: linear-gradient(90deg, rgba(235,94,40,0.18) 0%, rgba(255,255,255,0.03) 100%);
+    border: 1px solid var(--accent);
+    border-radius: var(--r);
+    padding: 12px 18px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    animation: fadeIn .3s ease;
+  }
+
   /* Пресеты фона (мини-превьюшки) */
   .bg-presets-grid{
     display:grid;
@@ -1580,6 +1606,26 @@
 
     <div class="content" id="viewMain">
       <div class="inner">
+
+        <!-- БАННЕР ОБНОВЛЕНИЯ ЛАУНЧЕРА -->
+        <div id="launcherUpdateBanner" class="launcher-update-banner">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+            <div style="width:34px;height:34px;border-radius:8px;background:rgba(235,94,40,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </div>
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:#fff;">Доступно обновление оболочки лаунчера!</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;" id="launcherUpdateBannerSub">Нажмите «Обновить лаунчер», чтобы скачать новую версию и перезапустить.</div>
+            </div>
+          </div>
+          <button class="btn primary sm" id="btnUpdateLauncherTop" onclick="updateLauncherNow()" style="padding:7px 16px;font-size:12px;white-space:nowrap;flex-shrink:0;">
+            Обновить лаунчер
+          </button>
+        </div>
 
         <!-- БАННЕР -->
         <div class="card" id="bannerCard">
@@ -2145,6 +2191,30 @@
           </div>
         </div>
       </div>
+
+      <!-- 6. ВЕРСИЯ И ОБНОВЛЕНИЕ ЛАУНЧЕРА -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Обновление лаунчера</div>
+          <div class="settings-desc">Проверка актуальной версии лаунчера и оболочки</div>
+        </div>
+        <div class="settings-card-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                <span>Версия:</span>
+                <span id="launcherVersionBadge" style="font-family:monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--accent);">7698d7a</span>
+                <span id="launcherVersionStatus" style="font-size:12px;color:var(--muted);font-weight:normal;">(актуальная версия)</span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="launcherUpdateHint">Лаунчер проверяет обновления при запуске</div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn line" id="btnCheckLauncherUpdate" onclick="manualCheckLauncherUpdate()" style="font-size:12px;padding:6px 14px;">Проверить</button>
+              <button class="btn primary" id="btnModalUpdateLauncher" onclick="updateLauncherNow()" style="display:none;font-size:12px;padding:6px 14px;">Обновить лаунчер</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="modal-footer">
@@ -2557,6 +2627,7 @@
         if(!prevUpdate && updateAvailable){
           toast('Доступно обновление сборки Civilization!');
         }
+        handleLauncherUpdateUI(data.launcherUpdateAvailable, data.currentLauncherSha, data.remoteLauncherSha);
       }
       await checkGameStatus();
       if(!gamePollTimer){
@@ -2566,6 +2637,149 @@
         statusPollTimer = setInterval(checkBackendStatus, 15000);
       }
     } catch(e) {}
+  }
+
+  let currentLauncherSha = '7698d7a';
+  let launcherUpdateAvailable = false;
+
+  function handleLauncherUpdateUI(available, curSha, remoteSha){
+    launcherUpdateAvailable = !!available;
+    if(curSha) currentLauncherSha = curSha;
+
+    const banner = document.getElementById('launcherUpdateBanner');
+    const badge = document.getElementById('launcherVersionBadge');
+    const st = document.getElementById('launcherVersionStatus');
+    const modalBtn = document.getElementById('btnModalUpdateLauncher');
+    const bannerSub = document.getElementById('launcherUpdateBannerSub');
+
+    if(badge){
+      badge.textContent = currentLauncherSha ? currentLauncherSha.substring(0, 7) : '7698d7a';
+    }
+
+    if(banner){
+      banner.style.display = launcherUpdateAvailable ? 'flex' : 'none';
+      if(bannerSub && remoteSha){
+        bannerSub.textContent = 'Новая версия ' + remoteSha.substring(0, 7) + ' готова к установке в один клик.';
+      }
+    }
+
+    if(st){
+      if(launcherUpdateAvailable){
+        st.textContent = '(доступна версия ' + (remoteSha ? remoteSha.substring(0, 7) : '') + ')';
+        st.style.color = 'var(--accent)';
+      } else {
+        st.textContent = '(актуальная версия)';
+        st.style.color = 'var(--muted)';
+      }
+    }
+
+    if(modalBtn){
+      modalBtn.style.display = launcherUpdateAvailable ? 'inline-flex' : 'none';
+    }
+  }
+
+  async function manualCheckLauncherUpdate(){
+    const btn = document.getElementById('btnCheckLauncherUpdate');
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = 'Проверка...';
+    }
+    try {
+      const res = await fetch('/api/check-launcher-update');
+      if(res.ok){
+        const data = await res.json();
+        handleLauncherUpdateUI(data.updateAvailable, data.currentSha, data.remoteSha);
+        if(data.updateAvailable){
+          toast('Найдено обновление лаунчера!');
+        } else {
+          toast('У вас установлена последняя версия лаунчера');
+        }
+      }
+    } catch(e) {
+      toast('Не удалось проверить обновление');
+    } finally {
+      if(btn){
+        btn.disabled = false;
+        btn.textContent = 'Проверить';
+      }
+    }
+  }
+
+  let isUpdatingLauncher = false;
+  async function updateLauncherNow(){
+    if(isUpdatingLauncher) return;
+    isUpdatingLauncher = true;
+
+    const topBtn = document.getElementById('btnUpdateLauncherTop');
+    const modalBtn = document.getElementById('btnModalUpdateLauncher');
+    if(topBtn){ topBtn.disabled = true; topBtn.textContent = 'Загрузка...'; }
+    if(modalBtn){ modalBtn.disabled = true; modalBtn.textContent = 'Загрузка...'; }
+
+    toast('Загрузка обновления лаунчера...');
+    showLauncherRestartOverlay('Обновление лаунчера', 'Новая версия загружается, подождите несколько секунд...');
+
+    try {
+      const res = await fetch('/api/update-launcher', { method: 'POST' });
+      if(res.ok){
+        setTimeout(() => {
+          checkLauncherRestart();
+        }, 2000);
+      } else {
+        toast('Ошибка при запросе обновления лаунчера');
+        hideLauncherRestartOverlay();
+        isUpdatingLauncher = false;
+        if(topBtn){ topBtn.disabled = false; topBtn.textContent = 'Обновить лаунчер'; }
+        if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить лаунчер'; }
+      }
+    } catch(e) {
+      setTimeout(() => {
+        checkLauncherRestart();
+      }, 2000);
+    }
+  }
+
+  function showLauncherRestartOverlay(title, text){
+    let ov = document.getElementById('launcherRestartOverlay');
+    if(!ov){
+      ov = document.createElement('div');
+      ov.id = 'launcherRestartOverlay';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,12,0.92);backdrop-filter:blur(10px);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px;';
+      ov.innerHTML = `
+        <div class="cv-spinner"></div>
+        <div id="restartOverlayTitle" style="font-size:18px;font-weight:700;color:#fff;">${title}</div>
+        <div id="restartOverlayText" style="font-size:13px;color:rgba(255,255,255,0.7);max-width:340px;">${text}</div>
+      `;
+      document.body.appendChild(ov);
+    } else {
+      document.getElementById('restartOverlayTitle').textContent = title;
+      document.getElementById('restartOverlayText').textContent = text;
+      ov.style.display = 'flex';
+    }
+  }
+
+  function hideLauncherRestartOverlay(){
+    const ov = document.getElementById('launcherRestartOverlay');
+    if(ov) ov.style.display = 'none';
+  }
+
+  function checkLauncherRestart(){
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await fetch('/api/status', { cache: 'no-store' });
+        if(res.ok){
+          clearInterval(interval);
+          location.reload();
+        }
+      } catch(e) {
+        if(attempts > 30){
+          clearInterval(interval);
+          const t = document.getElementById('restartOverlayText');
+          if(t) t.textContent = 'Если лаунчер не перезапустился автоматически, запустите его вручную.';
+        }
+      }
+    }, 1000);
   }
 
   window.addEventListener('focus', () => {

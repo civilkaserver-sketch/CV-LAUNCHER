@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -267,6 +267,7 @@ namespace CivilizationLauncher
             appDir = AppDomain.CurrentDomain.BaseDirectory;
             LogSystemDiagnostics();
             ThreadPool.QueueUserWorkItem((s) => FetchRemoteShaInBackground());
+            ThreadPool.QueueUserWorkItem((s) => FetchLauncherRemoteShaInBackground());
             try
             {
                 Process current = Process.GetCurrentProcess();
@@ -903,11 +904,18 @@ namespace CivilizationLauncher
                     jMaj = GetJavaMajor(jExe);
                 }
 
+                string curLauncherSha = GetCurrentLauncherSha();
+                string remoteLauncherSha = GetCachedOrFetchLauncherRemoteSha();
+                bool launcherUpdateAvailable = !string.IsNullOrEmpty(remoteLauncherSha) && !remoteLauncherSha.StartsWith(curLauncherSha, StringComparison.OrdinalIgnoreCase);
+
                 SendJson(ctx, new Dictionary<string, object> {
                     { "installed", installed },
                     { "updateAvailable", updateAvailable },
                     { "localSha", localSha ?? "" },
                     { "remoteSha", remoteSha ?? "" },
+                    { "launcherUpdateAvailable", launcherUpdateAvailable },
+                    { "currentLauncherSha", curLauncherSha ?? "" },
+                    { "remoteLauncherSha", remoteLauncherSha ?? "" },
                     { "mcDir", mcDir ?? "" },
                     { "installedAt", installedAt },
                     { "javaMajor", jMaj },
@@ -931,6 +939,62 @@ namespace CivilizationLauncher
                     { "updateAvailable", updateAvailable },
                     { "localSha", localSha ?? "" },
                     { "remoteSha", remoteSha ?? "" }
+                });
+                return;
+            }
+
+            if (endpoint == "check-launcher-update")
+            {
+                string curSha = GetCurrentLauncherSha();
+                lock (launcherCheckLock) { lastLauncherCheck = DateTime.MinValue; }
+                string remoteSha = FetchLauncherRemoteShaSynchronous();
+                bool updateAvail = !string.IsNullOrEmpty(remoteSha) && !remoteSha.StartsWith(curSha, StringComparison.OrdinalIgnoreCase);
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "updateAvailable", updateAvail },
+                    { "currentSha", curSha ?? "" },
+                    { "remoteSha", remoteSha ?? "" }
+                });
+                return;
+            }
+
+            if (endpoint == "update-launcher")
+            {
+                ThreadPool.QueueUserWorkItem((s) => {
+                    try
+                    {
+                        Log("=== Starting self-update for launcher ===");
+                        string tempDir = Path.GetTempPath();
+                        string newExePath = Path.Combine(tempDir, "CV_Launcher_new.exe");
+                        string newUiPath = Path.Combine(tempDir, "ui_new.html");
+
+                        string remoteSha = FetchLauncherRemoteShaSynchronous();
+                        Log("Downloading new launcher binary from GitHub...");
+                        bool okExe = DownloadFileFromRepo("CV Launcher.exe", newExePath);
+                        if (!okExe)
+                        {
+                            Log("Failed to download CV Launcher.exe");
+                            return;
+                        }
+
+                        Log("Downloading new ui.html from GitHub...");
+                        bool okUi = DownloadFileFromRepo("ui.html", newUiPath);
+                        if (!okUi)
+                        {
+                            Log("Warning: failed to download ui.html");
+                        }
+
+                        Log("Files downloaded successfully, triggering updater batch...");
+                        ExecuteLauncherUpdate(newExePath, newUiPath, remoteSha);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("update-launcher error: " + ex.ToString());
+                    }
+                });
+
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "ok", true },
+                    { "message", "Загрузка обновления начата..." }
                 });
                 return;
             }
@@ -2042,6 +2106,233 @@ namespace CivilizationLauncher
             finally
             {
                 isCheckingUpdate = false;
+            }
+        }
+
+        private static string CurrentLauncherSha = "7698d7a";
+        private static string cachedLauncherRemoteSha = null;
+        private static DateTime lastLauncherCheck = DateTime.MinValue;
+        private static bool isCheckingLauncherUpdate = false;
+        private static object launcherCheckLock = new object();
+
+        static string GetCurrentLauncherSha()
+        {
+            try
+            {
+                string p = Path.Combine(appDir ?? AppDomain.CurrentDomain.BaseDirectory, "version.sha");
+                if (File.Exists(p))
+                {
+                    string s = File.ReadAllText(p).Trim();
+                    if (!string.IsNullOrEmpty(s)) return s;
+                }
+            }
+            catch { }
+            return CurrentLauncherSha;
+        }
+
+        static string GetCachedOrFetchLauncherRemoteSha()
+        {
+            lock (launcherCheckLock)
+            {
+                if (cachedLauncherRemoteSha != null && (DateTime.Now - lastLauncherCheck).TotalSeconds < 30)
+                {
+                    return cachedLauncherRemoteSha;
+                }
+            }
+
+            if (!isCheckingLauncherUpdate)
+            {
+                ThreadPool.QueueUserWorkItem((s) => FetchLauncherRemoteShaInBackground());
+            }
+
+            return cachedLauncherRemoteSha;
+        }
+
+        static string FetchLauncherRemoteShaSynchronous()
+        {
+            try
+            {
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/civilkaserver-sketch/CV-LAUNCHER/commits/main");
+                req.UserAgent = "CV-Launcher";
+                req.Timeout = 6000;
+                req.Headers.Add("Authorization", "Bearer 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");
+                using (var resp = req.GetResponse())
+                using (var sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    string json = sr.ReadToEnd();
+                    var dict = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
+                    if (dict != null && dict.ContainsKey("sha"))
+                    {
+                        string sha = dict["sha"].ToString().Trim();
+                        lock (launcherCheckLock)
+                        {
+                            cachedLauncherRemoteSha = sha;
+                            lastLauncherCheck = DateTime.Now;
+                        }
+                        return sha;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("FetchLauncherRemoteSha error: " + ex.Message);
+            }
+
+            try
+            {
+                var psi = new ProcessStartInfo("git", "ls-remote https://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@github.com/civilkaserver-sketch/CV-LAUNCHER.git refs/heads/main");
+                psi.CreateNoWindow = true;
+                psi.UseShellExecute = false;
+                psi.RedirectStandardOutput = true;
+                using (var p = Process.Start(psi))
+                {
+                    string outStr = p.StandardOutput.ReadToEnd();
+                    p.WaitForExit(6000);
+                    if (!string.IsNullOrEmpty(outStr))
+                    {
+                        var parts = outStr.Split(new char[] { '\t', ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length > 0 && parts[0].Length >= 20)
+                        {
+                            string sha = parts[0].Trim();
+                            lock (launcherCheckLock)
+                            {
+                                cachedLauncherRemoteSha = sha;
+                                lastLauncherCheck = DateTime.Now;
+                            }
+                            return sha;
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            return cachedLauncherRemoteSha;
+        }
+
+        static void FetchLauncherRemoteShaInBackground()
+        {
+            if (isCheckingLauncherUpdate) return;
+            isCheckingLauncherUpdate = true;
+            try
+            {
+                string sha = FetchLauncherRemoteShaSynchronous();
+                if (!string.IsNullOrEmpty(sha))
+                {
+                    Log("Remote launcher SHA detected: " + sha);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("FetchLauncherRemoteShaInBackground error: " + ex.Message);
+            }
+            finally
+            {
+                isCheckingLauncherUpdate = false;
+            }
+        }
+
+        static bool DownloadFileFromRepo(string repoFileName, string destinationPath)
+        {
+            try
+            {
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                string url = "https://api.github.com/repos/civilkaserver-sketch/CV-LAUNCHER/contents/" + Uri.EscapeDataString(repoFileName) + "?ref=main";
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.UserAgent = "CV-Launcher";
+                req.Timeout = 60000;
+                req.Headers.Add("Authorization", "Bearer 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");
+                req.Accept = "application/vnd.github.v3.raw";
+
+                using (var resp = req.GetResponse())
+                using (var stream = resp.GetResponseStream())
+                using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    byte[] buffer = new byte[65536];
+                    int read;
+                    while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        fs.Write(buffer, 0, read);
+                    }
+                }
+
+                var fi = new FileInfo(destinationPath);
+                if (fi.Exists && fi.Length > 1024)
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("DownloadFileFromRepo (" + repoFileName + ") error: " + ex.Message);
+            }
+            return false;
+        }
+
+        static void ExecuteLauncherUpdate(string newExePath, string newUiPath, string remoteSha)
+        {
+            try
+            {
+                string currentExe = Process.GetCurrentProcess().MainModule.FileName;
+                string currentDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
+                string currentUi = Path.Combine(currentDir, "ui.html");
+                string versionShaFile = Path.Combine(currentDir, "version.sha");
+
+                string tempDir = Path.GetTempPath();
+                string batPath = Path.Combine(tempDir, "cv_launcher_updater.bat");
+
+                string newShaFile = Path.Combine(tempDir, "version_new.sha");
+                if (!string.IsNullOrEmpty(remoteSha))
+                {
+                    File.WriteAllText(newShaFile, remoteSha);
+                }
+
+                var sb = new StringBuilder();
+                sb.AppendLine("@echo off");
+                sb.AppendLine("chcp 65001 > nul");
+                sb.AppendLine("timeout /t 1 /nobreak > nul");
+                sb.AppendLine("taskkill /f /im \"CV Launcher.exe\" > nul 2>&1");
+                sb.AppendLine(":retry_copy_exe");
+                sb.AppendLine(string.Format("copy /y \"{0}\" \"{1}\" > nul 2>&1", newExePath, currentExe));
+                sb.AppendLine("if errorlevel 1 (");
+                sb.AppendLine("    timeout /t 1 /nobreak > nul");
+                sb.AppendLine("    goto retry_copy_exe");
+                sb.AppendLine(")");
+                sb.AppendLine(string.Format("if exist \"{0}\" (", newUiPath));
+                sb.AppendLine(string.Format("    copy /y \"{0}\" \"{1}\" > nul 2>&1", newUiPath, currentUi));
+                sb.AppendLine(string.Format("    del /f /q \"{0}\" > nul 2>&1", newUiPath));
+                sb.AppendLine(")");
+                sb.AppendLine(string.Format("if exist \"{0}\" (", newShaFile));
+                sb.AppendLine(string.Format("    copy /y \"{0}\" \"{1}\" > nul 2>&1", newShaFile, versionShaFile));
+                sb.AppendLine(string.Format("    del /f /q \"{0}\" > nul 2>&1", newShaFile));
+                sb.AppendLine(")");
+                sb.AppendLine(string.Format("del /f /q \"{0}\" > nul 2>&1", newExePath));
+                sb.AppendLine(string.Format("cd /d \"{0}\"", currentDir));
+                sb.AppendLine(string.Format("start \"\" \"{0}\"", currentExe));
+                sb.AppendLine("del \"%~f0\" & exit");
+
+                File.WriteAllText(batPath, sb.ToString(), Encoding.GetEncoding(65001));
+
+                Log("Launching updater batch: " + batPath);
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = "/c \"" + batPath + "\"",
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+
+                ThreadPool.QueueUserWorkItem((s) => {
+                    Thread.Sleep(600);
+                    Log("Terminating process for updater restart...");
+                    Environment.Exit(0);
+                });
+            }
+            catch (Exception ex)
+            {
+                Log("ExecuteLauncherUpdate error: " + ex.Message);
+                throw;
             }
         }
 
