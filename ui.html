@@ -27,6 +27,7 @@
     --muted:#8E8E8E;
     --dim:#5E5E5E;
     --accent:#f0f0f2;
+    --accent-rgb:240, 240, 242;
     --accent-text:#0b0b0d;
     --banner-bg:url('assets/bg.png');
     --banner-blur:0px;
@@ -1192,15 +1193,31 @@
   .launcher-update-banner {
     display: none;
     margin-bottom: 16px;
-    background: linear-gradient(90deg, rgba(235,94,40,0.18) 0%, rgba(255,255,255,0.03) 100%);
-    border: 1px solid var(--accent);
+    background: linear-gradient(90deg, rgba(var(--accent-rgb, 240, 240, 242), 0.16) 0%, rgba(var(--accent-rgb, 240, 240, 242), 0.05) 50%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(var(--accent-rgb, 240, 240, 242), 0.45);
     border-radius: var(--r);
     padding: 12px 18px;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25), 0 0 25px rgba(var(--accent-rgb, 240, 240, 242), 0.08);
+    transition: background .25s ease, border-color .25s ease, box-shadow .25s ease;
     animation: fadeIn .3s ease;
+  }
+  .launcher-update-banner:hover {
+    border-color: rgba(var(--accent-rgb, 240, 240, 242), 0.65);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.3), 0 0 30px rgba(var(--accent-rgb, 240, 240, 242), 0.14);
+  }
+  .launcher-update-icon-box {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(var(--accent-rgb, 240, 240, 242), 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .25s ease;
   }
 
   /* Пресеты фона (мини-превьюшки) */
@@ -1613,7 +1630,7 @@
         <!-- БАННЕР ОБНОВЛЕНИЯ ЛАУНЧЕРА -->
         <div id="launcherUpdateBanner" class="launcher-update-banner">
           <div style="display:flex;align-items:center;gap:12px;min-width:0;">
-            <div style="width:34px;height:34px;border-radius:8px;background:rgba(235,94,40,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+            <div class="launcher-update-icon-box">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
@@ -3309,6 +3326,17 @@
     return (yiq >= 150) ? '#0b0b0d' : '#ffffff';
   }
 
+  function hexToRgb(hex) {
+    if (!hex) return '240, 240, 242';
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    if (h.length !== 6) return '240, 240, 242';
+    const r = parseInt(h.substring(0, 2), 16) || 0;
+    const g = parseInt(h.substring(2, 4), 16) || 0;
+    const b = parseInt(h.substring(4, 6), 16) || 0;
+    return `${r}, ${g}, ${b}`;
+  }
+
   const BANNER_POOL = [
     'assets/pool/pool_1.png',
     'assets/pool/pool_2.png',
@@ -3397,6 +3425,7 @@
     // 1. Акцентный цвет
     const accent = settings.accentColor || '#f0f0f2';
     document.documentElement.style.setProperty('--accent', accent);
+    document.documentElement.style.setProperty('--accent-rgb', hexToRgb(accent));
     document.documentElement.style.setProperty('--accent-text', getContrastColor(accent));
 
     // 2. Фон баннера (#bannerCard / пул картинок)
@@ -3564,6 +3593,7 @@
     if (el) el.classList.add('active');
 
     document.documentElement.style.setProperty('--accent', color);
+    document.documentElement.style.setProperty('--accent-rgb', hexToRgb(color));
     document.documentElement.style.setProperty('--accent-text', getContrastColor(color));
     saveLauncherSettingsToStorage();
   }
