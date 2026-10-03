@@ -48,21 +48,216 @@ namespace CivilizationLauncher
         private static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
 
         private static object logLock = new object();
+        private static string activeLogPath = null;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private class MEMORYSTATUSEX
+        {
+            public uint dwLength;
+            public uint dwMemoryLoad;
+            public ulong ullTotalPhys;
+            public ulong ullAvailPhys;
+            public ulong ullTotalPageFile;
+            public ulong ullAvailPageFile;
+            public ulong ullTotalVirtual;
+            public ulong ullAvailVirtual;
+            public ulong ullAvailExtendedVirtual;
+            public MEMORYSTATUSEX() { this.dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX)); }
+        }
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool GlobalMemoryStatusEx([In, Out] MEMORYSTATUSEX lpBuffer);
+
+        public static string GetLogPath()
+        {
+            if (activeLogPath != null) return activeLogPath;
+
+            try
+            {
+                string local = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launcher.log");
+                using (var fs = new FileStream(local, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
+                {
+                    // can write
+                }
+                activeLogPath = local;
+                return activeLogPath;
+            }
+            catch { }
+
+            try
+            {
+                string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CivilizationLauncher");
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                activeLogPath = Path.Combine(dir, "launcher.log");
+                return activeLogPath;
+            }
+            catch { }
+
+            activeLogPath = Path.Combine(Path.GetTempPath(), "civilization_launcher.log");
+            return activeLogPath;
+        }
+
         public static void Log(string msg)
         {
             try
             {
                 lock (logLock)
                 {
-                    string p = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launcher.log");
+                    string p = GetLogPath();
+                    try
+                    {
+                        var fi = new FileInfo(p);
+                        if (fi.Exists && fi.Length > 5 * 1024 * 1024)
+                        {
+                            string old = p + ".old";
+                            if (File.Exists(old)) File.Delete(old);
+                            File.Move(p, old);
+                        }
+                    }
+                    catch { }
+
                     using (var fs = new FileStream(p, FileMode.Append, FileAccess.Write, FileShare.ReadWrite))
                     using (var sw = new StreamWriter(fs, Encoding.UTF8))
                     {
-                        sw.WriteLine(DateTime.Now.ToString("HH:mm:ss.fff") + " " + msg);
+                        sw.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff") + " " + msg);
                     }
                 }
             }
             catch { }
+        }
+
+        static void LogSystemDiagnostics()
+        {
+            try
+            {
+                Log("================================================================================");
+                Log("Civilization Launcher Diagnostics Session");
+                Log("Time: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                Log("OS: " + Environment.OSVersion.VersionString + (Environment.Is64BitOperatingSystem ? " (64-bit)" : " (32-bit)"));
+                Log("Process: " + (Environment.Is64BitProcess ? "64-bit" : "32-bit") + " PID=" + Process.GetCurrentProcess().Id);
+                Log("CLR Version: " + Environment.Version.ToString());
+                Log("Machine: " + Environment.MachineName + " | User: " + Environment.UserName);
+                Log("Base Dir: " + AppDomain.CurrentDomain.BaseDirectory);
+                Log("Log File: " + GetLogPath());
+
+                try
+                {
+                    var mem = new MEMORYSTATUSEX();
+                    if (GlobalMemoryStatusEx(mem))
+                    {
+                        Log(string.Format("Physical RAM: {0:F1} GB total, {1:F1} GB free", mem.ullTotalPhys / (1024.0 * 1024 * 1024), mem.ullAvailPhys / (1024.0 * 1024 * 1024)));
+                    }
+                }
+                catch { }
+                Log("Processors: " + Environment.ProcessorCount);
+
+                try
+                {
+                    string defMc = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft");
+                    string detected = GetDetectedMcDir();
+                    string installed = GetInstalledMcDir();
+                    Log(string.Format("MC Paths: default='{0}' (exists={1}), detected='{2}', installed='{3}'", defMc, Directory.Exists(defMc), detected ?? "null", installed ?? "null"));
+                    string java = FindJavaExe(detected ?? defMc);
+                    Log("Java runtime: " + (java ?? "not found"));
+                }
+                catch (Exception ex)
+                {
+                    Log("Diagnostics error: " + ex.Message);
+                }
+                Log("================================================================================");
+            }
+            catch { }
+        }
+
+        static void CheckAndLogMinecraftCrash(string mcDir)
+        {
+            try
+            {
+                Log("--- Scanning for Minecraft crash details ---");
+                string[] crashDirs = new string[] {
+                    Path.Combine(mcDir, @"versions\Civilization\crash-reports"),
+                    Path.Combine(mcDir, "crash-reports")
+                };
+
+                FileInfo latestCrash = null;
+                foreach (var cd in crashDirs)
+                {
+                    if (Directory.Exists(cd))
+                    {
+                        var dirInfo = new DirectoryInfo(cd);
+                        foreach (var f in dirInfo.GetFiles("crash-*.txt"))
+                        {
+                            if ((DateTime.Now - f.LastWriteTime).TotalMinutes < 15)
+                            {
+                                if (latestCrash == null || f.LastWriteTime > latestCrash.LastWriteTime)
+                                    latestCrash = f;
+                            }
+                        }
+                    }
+                }
+
+                if (latestCrash != null)
+                {
+                    Log("Found recent Minecraft crash report: " + latestCrash.FullName);
+                    try
+                    {
+                        string[] lines = File.ReadAllLines(latestCrash.FullName, Encoding.UTF8);
+                        int count = Math.Min(60, lines.Length);
+                        Log("=== Crash Report Summary (Top " + count + " lines) ===");
+                        for (int i = 0; i < count; i++)
+                        {
+                            Log("  " + lines[i]);
+                        }
+                        Log("=== End of Crash Report Summary ===");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("Failed to read crash report: " + ex.Message);
+                    }
+                    return;
+                }
+
+                string[] logCandidates = new string[] {
+                    Path.Combine(mcDir, @"versions\Civilization\logs\latest.log"),
+                    Path.Combine(mcDir, @"logs\latest.log")
+                };
+                foreach (var lp in logCandidates)
+                {
+                    if (File.Exists(lp))
+                    {
+                        var fi = new FileInfo(lp);
+                        if ((DateTime.Now - fi.LastWriteTime).TotalMinutes < 15)
+                        {
+                            Log("Reading tail of Minecraft log: " + lp);
+                            try
+                            {
+                                using (var fs = new FileStream(lp, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                                using (var sr = new StreamReader(fs, Encoding.UTF8))
+                                {
+                                    var q = new Queue<string>();
+                                    string line;
+                                    while ((line = sr.ReadLine()) != null)
+                                    {
+                                        q.Enqueue(line);
+                                        if (q.Count > 40) q.Dequeue();
+                                    }
+                                    Log("=== Minecraft latest.log Tail (Last " + q.Count + " lines) ===");
+                                    foreach (var l in q) Log("  " + l);
+                                    Log("=== End of latest.log Tail ===");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                Log("Failed to read latest.log: " + ex.Message);
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("CheckAndLogMinecraftCrash error: " + ex.Message);
+            }
         }
 
         [STAThread]
@@ -70,7 +265,7 @@ namespace CivilizationLauncher
         {
             AppDomain.CurrentDomain.UnhandledException += (s, e) => Log("Unhandled: " + (e.ExceptionObject != null ? e.ExceptionObject.ToString() : "unknown"));
             appDir = AppDomain.CurrentDomain.BaseDirectory;
-            Log("=== Launcher started ===");
+            LogSystemDiagnostics();
             try
             {
                 Process current = Process.GetCurrentProcess();
@@ -801,6 +996,83 @@ namespace CivilizationLauncher
                 return;
             }
 
+            if (endpoint == "open-log")
+            {
+                string logPath = GetLogPath();
+                try
+                {
+                    if (!File.Exists(logPath))
+                    {
+                        File.WriteAllText(logPath, "Log initialized\r\n", Encoding.UTF8);
+                    }
+                    Process.Start("notepad.exe", logPath);
+                    SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", logPath } });
+                }
+                catch (Exception ex)
+                {
+                    SendJson(ctx, new Dictionary<string, object> { { "ok", false }, { "error", ex.Message } });
+                }
+                return;
+            }
+
+            if (endpoint == "get-log")
+            {
+                string logPath = GetLogPath();
+                string content = "";
+                try
+                {
+                    if (File.Exists(logPath))
+                    {
+                        using (var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (var sr = new StreamReader(fs, Encoding.UTF8))
+                        {
+                            var q = new Queue<string>();
+                            string line;
+                            while ((line = sr.ReadLine()) != null)
+                            {
+                                q.Enqueue(line);
+                                if (q.Count > 600) q.Dequeue();
+                            }
+                            content = string.Join("\r\n", q.ToArray());
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    content = "Error reading log: " + ex.Message;
+                }
+                SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", logPath }, { "content", content } });
+                return;
+            }
+
+            if (endpoint == "log-info")
+            {
+                string logPath = GetLogPath();
+                long size = 0;
+                try { if (File.Exists(logPath)) size = new FileInfo(logPath).Length; } catch { }
+                SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", logPath }, { "size", size } });
+                return;
+            }
+
+            if (endpoint == "log")
+            {
+                string body = ReadBody(ctx);
+                try
+                {
+                    var data = jss.Deserialize<Dictionary<string, object>>(body);
+                    string lvl = data.ContainsKey("level") ? data["level"].ToString() : "UI";
+                    string msg = data.ContainsKey("msg") ? data["msg"].ToString() : "";
+                    string stack = data.ContainsKey("stack") ? data["stack"].ToString() : "";
+                    string file = data.ContainsKey("file") ? data["file"].ToString() : "";
+                    string line = data.ContainsKey("line") ? data["line"].ToString() : "";
+                    string loc = (!string.IsNullOrEmpty(file) || !string.IsNullOrEmpty(line)) ? (" (" + file + ":" + line + ")") : "";
+                    Log(string.Format("[{0}] {1}{2} {3}", lvl, msg, loc, stack).Trim());
+                }
+                catch { }
+                SendJson(ctx, new Dictionary<string, object> { { "ok", true } });
+                return;
+            }
+
             if (endpoint == "open-screenshots")
             {
                 string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
@@ -1469,6 +1741,7 @@ namespace CivilizationLauncher
                 // Если javaw не найден или classpath пуст, запасной вариант — TLauncher в фоне / свернуто
                 if (string.IsNullOrEmpty(javaExe) || !File.Exists(javaExe) || cpList.Count == 0)
                 {
+                    Log(string.Format("Direct launch not possible (javaExe='{0}', cpCount={1}). Trying TLauncher...", javaExe, cpList.Count));
                     string tlExe = FindTLauncherExe(mcDir);
                     if (!string.IsNullOrEmpty(tlExe) && File.Exists(tlExe))
                     {
@@ -1476,9 +1749,11 @@ namespace CivilizationLauncher
                         psiTl.WorkingDirectory = Path.GetDirectoryName(tlExe);
                         psiTl.WindowStyle = ProcessWindowStyle.Minimized;
                         activeGameProcess = Process.Start(psiTl);
+                        Log("Started TLauncher as fallback PID: " + (activeGameProcess != null ? activeGameProcess.Id.ToString() : "null"));
                         return true;
                     }
                     error = "Не найден Java 21 и TLauncher.exe для запуска игры";
+                    Log("Launch error: " + error);
                     return false;
                 }
 
@@ -1533,6 +1808,14 @@ namespace CivilizationLauncher
                 args.Append("--height 530 ");
                 args.Append("--launchTarget \"forge_client\"");
 
+                Log("Launching game directly:");
+                Log(string.Format("  Target Dir: {0}", civDir));
+                Log(string.Format("  Java Exe:   {0}", javaExe));
+                Log(string.Format("  RAM:        {0} MB", ramMb));
+                Log(string.Format("  Player:     {0} (UUID: {1})", username, uuid));
+                Log(string.Format("  Classpath:  {0} libraries", cpList.Count));
+                Log(string.Format("  Arguments:  {0}", args.ToString()));
+
                 var psi = new ProcessStartInfo();
                 psi.FileName = javaExe;
                 psi.Arguments = args.ToString();
@@ -1540,16 +1823,43 @@ namespace CivilizationLauncher
                 psi.UseShellExecute = false;
 
                 activeGameProcess = Process.Start(psi);
+                if (activeGameProcess != null)
+                {
+                    int pid = activeGameProcess.Id;
+                    Log(string.Format("Game process spawned successfully! PID: {0}", pid));
+                    ThreadPool.QueueUserWorkItem(state =>
+                    {
+                        try
+                        {
+                            Process proc = (Process)state;
+                            proc.WaitForExit();
+                            int exitCode = -1;
+                            try { exitCode = proc.ExitCode; } catch { }
+                            Log(string.Format("Game process (PID: {0}) exited with code: {1}", pid, exitCode));
+                            if (exitCode != 0)
+                            {
+                                Log(string.Format("Non-zero exit code detected ({0}). Checking for crash reports...", exitCode));
+                                Thread.Sleep(1000);
+                                CheckAndLogMinecraftCrash(mcDir);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log("Game monitor thread exception: " + ex.Message);
+                        }
+                    }, activeGameProcess);
+                }
                 return true;
             }
             catch (Exception ex)
             {
-                Log("Launch error: " + ex.Message);
+                Log("Launch failed with exception: " + ex.ToString());
                 try
                 {
                     string tlExe = FindTLauncherExe(mcDir);
                     if (!string.IsNullOrEmpty(tlExe) && File.Exists(tlExe))
                     {
+                        Log("Attempting fallback to TLauncher after launch exception: " + tlExe);
                         var psiTl = new ProcessStartInfo(tlExe);
                         psiTl.WorkingDirectory = Path.GetDirectoryName(tlExe);
                         psiTl.WindowStyle = ProcessWindowStyle.Minimized;
@@ -1557,7 +1867,10 @@ namespace CivilizationLauncher
                         return true;
                     }
                 }
-                catch { }
+                catch (Exception exTl)
+                {
+                    Log("Fallback to TLauncher failed: " + exTl.Message);
+                }
                 error = ex.Message;
                 return false;
             }
@@ -1862,29 +2175,41 @@ namespace CivilizationLauncher
             string runtimeDir = Path.Combine(mcDir, string.Format(@"runtime\{0}\windows\{0}", comp));
             string runtimeJava = Path.Combine(runtimeDir, @"bin\java.exe");
             int major = GetJavaMajor(runtimeJava);
+            Log(string.Format("EnsureJava: required major={0} ({1}). Current runtime Java: '{2}' (detected major: {3})", need, comp, runtimeJava, major));
             if (major >= need) return true;
 
+            Log("Searching installed Java installations on system...");
             foreach (string jh in FindJavaHomes(mcDir))
             {
                 int m = GetJavaMajor(Path.Combine(jh, @"bin\java.exe"));
                 if (m >= need)
                 {
+                    Log(string.Format("Found compatible Java in '{0}' (major {1}). Copying to runtime...", jh, m));
                     SetProgress(92, "Копирование Java 21 в лаунчер...", true, false, null);
-                    if (InstallJavaHome(jh, runtimeDir, comp, need)) return true;
+                    if (InstallJavaHome(jh, runtimeDir, comp, need))
+                    {
+                        Log("Successfully installed Java from " + jh);
+                        return true;
+                    }
                 }
             }
 
             // Скачивание
+            Log(string.Format("No suitable local Java found. Downloading Eclipse Temurin Java {0}...", need));
             SetProgress(90, "Загрузка Java 21 (Eclipse Temurin)...", true, false, null);
             try
             {
                 string downloaded = DownloadJava(need);
+                Log("Downloaded Java into " + downloaded + ", installing into runtime...");
                 SetProgress(97, "Установка Java 21...", true, false, null);
-                return InstallJavaHome(downloaded, runtimeDir, comp, need);
+                bool res = InstallJavaHome(downloaded, runtimeDir, comp, need);
+                Log("Java installation result: " + res);
+                return res;
             }
             catch (OperationCancelled) { throw; }
             catch (Exception ex)
             {
+                Log("EnsureJava download/install error: " + ex.ToString());
                 SetProgress(97, "Предупреждение: Java не установлена: " + ex.Message, true, false, null);
                 return false;
             }
@@ -2043,6 +2368,7 @@ namespace CivilizationLauncher
 
         static string DownloadBuild(bool isUpdate = false)
         {
+            Log(string.Format("DownloadBuild started (isUpdate={0})", isUpdate));
             string labelPrep = isUpdate ? "Подготовка к загрузке обновления..." : "Подготовка к загрузке сборки...";
             int initialPct = isUpdate ? 25 : 5;
             SetProgress(initialPct, labelPrep, true, false, null);
@@ -2051,6 +2377,7 @@ namespace CivilizationLauncher
             // Пробуем git
             try
             {
+                Log("Attempting git clone from https://github.com/civilkaserver-sketch/Civilka-version.git...");
                 var psi = new ProcessStartInfo("git", string.Format("clone --depth 1 \"https://github.com/civilkaserver-sketch/Civilka-version.git\" \"{0}\"", CacheDir));
                 psi.CreateNoWindow = true;
                 psi.UseShellExecute = false;
@@ -2071,12 +2398,20 @@ namespace CivilizationLauncher
                     }
                     if (exited && p.ExitCode == 0 && File.Exists(Path.Combine(CacheDir, @"versions\Civilization\Civilization.json")))
                     {
+                        Log("Git clone succeeded into " + CacheDir);
                         return CacheDir;
+                    }
+                    else
+                    {
+                        Log(string.Format("Git clone not usable (exited={0}, code={1})", exited, exited ? p.ExitCode : -1));
                     }
                 }
             }
             catch (OperationCancelled) { throw; }
-            catch { }
+            catch (Exception ex)
+            {
+                Log("Git clone skipped or failed: " + ex.Message);
+            }
 
             // Загрузка через zip
             CheckCancelled();
@@ -2084,6 +2419,7 @@ namespace CivilizationLauncher
             if (File.Exists(zipPath)) File.Delete(zipPath);
             if (Directory.Exists(ExtractDir)) Directory.Delete(ExtractDir, true);
 
+            Log("Downloading zip archive from " + RepoZip + " to " + zipPath);
             DownloadFileCancellable(RepoZip, zipPath, (pct) =>
             {
                 int p = isUpdate ? (25 + (int)(pct * 0.45)) : (10 + (int)(pct * 0.4));
@@ -2093,10 +2429,16 @@ namespace CivilizationLauncher
                 SetProgress(p, txt, true, false, null);
             });
 
-            if (!File.Exists(zipPath)) throw new Exception("Не удалось скачать архив сборки с GitHub.");
+            if (!File.Exists(zipPath))
+            {
+                Log("Zip archive was not found after download");
+                throw new Exception("Не удалось скачать архив сборки с GitHub.");
+            }
 
+            Log(string.Format("Zip archive downloaded successfully, size: {0} bytes", new FileInfo(zipPath).Length));
             CheckCancelled();
             SetProgress(isUpdate ? 72 : 52, isUpdate ? "Распаковка обновления..." : "Распаковка сборки...", true, false, null);
+            Log("Extracting zip to: " + ExtractDir);
             ZipFile.ExtractToDirectory(zipPath, ExtractDir);
             File.Delete(zipPath);
             CheckCancelled();
@@ -2116,8 +2458,10 @@ namespace CivilizationLauncher
 
             if (File.Exists(Path.Combine(unpacked, @"versions\Civilization\Civilization.json")))
             {
+                Log("Build extracted and verified in " + unpacked);
                 return unpacked;
             }
+            Log("Civilization.json was not found in unpacked directory: " + unpacked);
             throw new Exception("В архиве отсутствует файл сборки Civilization.json");
         }
 
@@ -2167,38 +2511,46 @@ namespace CivilizationLauncher
 
         static void DoInstall(string mcDir)
         {
+            Log("=== Starting Installation: mcDir=" + mcDir + " ===");
             try
             {
                 if (!Directory.Exists(mcDir)) Directory.CreateDirectory(mcDir);
 
                 string sourceDir = DownloadBuild(false);
                 CheckCancelled();
+                Log("Copying files from: " + sourceDir);
                 var files = InstallFiles(sourceDir, mcDir);
+                Log(string.Format("Copied {0} files", files.Count));
 
                 CheckCancelled();
                 SetProgress(82, "Регистрация профиля Civilization...", true, false, null);
                 RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
                 SaveState(mcDir, files);
+                Log("Profile registered and state saved.");
 
                 CheckCancelled();
                 EnsureJava(mcDir, sourceDir);
 
                 SetProgress(100, "Установка успешно завершена!", false, true, null);
+                Log("=== Installation completed successfully ===");
             }
             catch (OperationCancelled)
             {
                 cancelRequested = false;
+                Log("Installation was cancelled by user.");
                 SetCancelledProgress("Установка остановлена");
             }
             catch (Exception ex)
             {
                 cancelRequested = false;
+                Log("Installation error: " + ex.ToString());
                 SetProgress(0, "Ошибка установки: " + ex.Message, false, false, ex.Message);
             }
         }
 
         static void DoUpdate(string mcDir)
         {
+            Log("=== Starting Update: mcDir=" + mcDir + " ===");
             try
             {
                 SetProgress(10, "Проверяем наличие обновлений...", true, false, null);
@@ -2223,8 +2575,10 @@ namespace CivilizationLauncher
                         foreach (var it in arr) oldFiles.Add(it.ToString());
                     }
                 }
+                Log(string.Format("Previous state had {0} files", oldFiles.Count));
 
                 var files = InstallFiles(sourceDir, mcDir);
+                Log(string.Format("Copied {0} new files", files.Count));
 
                 SetProgress(88, "Очистка устаревших файлов...", true, false, null);
                 RemoveStale(mcDir, oldFiles, files);
@@ -2236,21 +2590,25 @@ namespace CivilizationLauncher
                 EnsureJava(mcDir, sourceDir);
 
                 SetProgress(100, "Обновление успешно завершено!", false, true, null);
+                Log("=== Update completed successfully ===");
             }
             catch (OperationCancelled)
             {
                 cancelRequested = false;
+                Log("Update was cancelled by user.");
                 SetCancelledProgress("Обновление остановлено");
             }
             catch (Exception ex)
             {
                 cancelRequested = false;
+                Log("Update error: " + ex.ToString());
                 SetProgress(0, "Ошибка обновления: " + ex.Message, false, false, ex.Message);
             }
         }
 
         static void DoUninstall(string mcDir)
         {
+            Log("=== Starting Uninstall: mcDir=" + mcDir + " ===");
             try
             {
                 SetProgress(10, "Удаление профиля Civilization...", true, false, null);
@@ -2268,19 +2626,21 @@ namespace CivilizationLauncher
                 }
 
                 SetProgress(30, "Удаление установленных файлов...", true, false, null);
+                int delCount = 0;
                 foreach (string rel in files)
                 {
                     string p = Path.Combine(mcDir, rel);
                     if (File.Exists(p))
                     {
-                        try { File.Delete(p); } catch { }
+                        try { File.Delete(p); delCount++; } catch { }
                     }
                 }
+                Log(string.Format("Deleted {0} of {1} tracked files", delCount, files.Count));
 
                 string civDst = Path.Combine(mcDir, @"versions\Civilization");
                 if (Directory.Exists(civDst))
                 {
-                    try { Directory.Delete(civDst, true); } catch { }
+                    try { Directory.Delete(civDst, true); Log("Deleted versions/Civilization directory"); } catch (Exception ex) { Log("Failed to delete civDst: " + ex.Message); }
                 }
 
                 string libRoot = Path.Combine(mcDir, "libraries");
@@ -2291,9 +2651,11 @@ namespace CivilizationLauncher
 
                 ClearState();
                 SetProgress(100, "Сборка успешно удалена.", false, true, null);
+                Log("=== Uninstall completed successfully ===");
             }
             catch (Exception ex)
             {
+                Log("Uninstall error: " + ex.ToString());
                 SetProgress(0, "Ошибка удаления: " + ex.Message, false, false, ex.Message);
             }
         }

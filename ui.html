@@ -2128,6 +2128,23 @@
           </div>
         </div>
       </div>
+
+      <!-- 5. ЛОГИ И ДИАГНОСТИКА -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Логи и диагностика</div>
+          <div class="settings-desc">Журнал работы лаунчера для решения проблем и крашей</div>
+        </div>
+        <div class="settings-card-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:12px;color:var(--muted);flex:1;min-width:180px;word-break:break-all;" id="logPathDisplay">launcher.log</div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn line" onclick="copyLogContent()" style="font-size:12px;padding:6px 14px;">Скопировать лог</button>
+              <button class="btn line" onclick="openLogFile()" style="font-size:12px;padding:6px 14px;">Открыть файл</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="modal-footer">
@@ -2172,6 +2189,37 @@
 <div class="toast" id="toast"></div>
 
 <script>
+  // Логирование ошибок интерфейса на бэкенд
+  window.addEventListener('error', function(e) {
+    try {
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'UI_ERROR',
+          msg: e.message || 'Script error',
+          file: e.filename || '',
+          line: e.lineno ? e.lineno.toString() : '',
+          stack: (e.error && e.error.stack) ? e.error.stack : ''
+        })
+      });
+    } catch(err) {}
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    try {
+      var reason = e.reason || 'Unhandled Promise Rejection';
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'UI_REJECTION',
+          msg: typeof reason === 'object' ? (reason.message || JSON.stringify(reason)) : String(reason),
+          stack: (reason && reason.stack) ? reason.stack : ''
+        })
+      });
+    } catch(err) {}
+  });
+
   let toastTimer;
   function toast(msg){
     const t = document.getElementById('toast');
@@ -3298,8 +3346,61 @@
     closeSettingsModal();
   }
 
+  async function loadLogInfo() {
+    if (!isBackend) return;
+    try {
+      const res = await fetch('/api/log-info');
+      const data = await res.json();
+      const el = document.getElementById('logPathDisplay');
+      if (el && data && data.path) {
+        const sizeStr = data.size ? ' (' + (data.size > 1024 * 1024 ? (data.size / (1024*1024)).toFixed(1) + ' MB' : Math.round(data.size / 1024) + ' KB') + ')' : '';
+        el.textContent = data.path + sizeStr;
+        el.title = data.path;
+      }
+    } catch(e) {}
+  }
+
+  async function openLogFile() {
+    if (!isBackend) { toast('Логи доступны только в приложении'); return; }
+    try {
+      const res = await fetch('/api/open-log', { method: 'POST' });
+      const data = await res.json();
+      if (data && data.ok) toast('Лог открыт в Notepad');
+      else toast('Не удалось открыть лог: ' + (data && data.error ? data.error : 'ошибка'));
+    } catch(e) {
+      toast('Ошибка вызова: ' + e.message);
+    }
+  }
+
+  async function copyLogContent() {
+    if (!isBackend) { toast('Логи доступны только в приложении'); return; }
+    try {
+      const res = await fetch('/api/get-log');
+      const data = await res.json();
+      if (data && data.content) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(data.content);
+          toast('Лог скопирован в буфер обмена');
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = data.content;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          toast('Лог скопирован в буфер обмена');
+        }
+      } else {
+        toast('Файл лога пуст');
+      }
+    } catch(e) {
+      toast('Ошибка копирования лога: ' + e.message);
+    }
+  }
+
   function openSettingsModal() {
     syncSettingsUI(launcherSettings);
+    loadLogInfo();
     const m = document.getElementById('settingsModal');
     if (m) m.classList.add('show');
   }
