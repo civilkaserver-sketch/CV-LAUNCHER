@@ -915,7 +915,18 @@ namespace CivilizationLauncher
                 t.Start();
                 t.Join();
 
-                SendJson(ctx, new Dictionary<string, object> { { "path", chosen ?? "" } });
+                bool isInst = false;
+                if (!string.IsNullOrEmpty(chosen))
+                {
+                    isInst = TestIsInstalled(chosen);
+                    SaveCustomMcDir(chosen);
+                    Log(string.Format("User selected custom Minecraft folder: '{0}' (Civilization detected: {1})", chosen, isInst));
+                }
+
+                SendJson(ctx, new Dictionary<string, object> { 
+                    { "path", chosen ?? "" },
+                    { "installed", isInst }
+                });
                 return;
             }
 
@@ -1917,18 +1928,56 @@ namespace CivilizationLauncher
             catch { }
         }
 
+        static void SaveCustomMcDir(string mcDir)
+        {
+            try
+            {
+                if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
+                var dict = LoadState() ?? new Dictionary<string, object>();
+                dict["mcDir"] = mcDir;
+                if (!dict.ContainsKey("installedAt")) dict["installedAt"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+                string json = new JavaScriptSerializer().Serialize(dict);
+                File.WriteAllText(StateFile, json, Encoding.UTF8);
+            }
+            catch { }
+        }
+
         static bool TestIsInstalled(string mcDir)
         {
             if (string.IsNullOrEmpty(mcDir)) return false;
             return File.Exists(Path.Combine(mcDir, @"versions\Civilization\Civilization.json"));
         }
 
-        static string GetDetectedMcDir()
+        static List<string> GetAllPotentialMcDirs()
         {
-            string tlProps = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".tlauncher\tlauncher-2.0.properties");
-            if (File.Exists(tlProps))
+            var list = new List<string>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            Action<string> add = (p) =>
             {
-                try
+                if (!string.IsNullOrEmpty(p))
+                {
+                    string trimmed = p.Trim().TrimEnd('\\', '/');
+                    if (trimmed.Length > 0 && !seen.Contains(trimmed))
+                    {
+                        seen.Add(trimmed);
+                        list.Add(trimmed);
+                    }
+                }
+            };
+
+            // 1. Saved state mcDir
+            var state = LoadState();
+            if (state != null && state.ContainsKey("mcDir"))
+            {
+                add((string)state["mcDir"]);
+            }
+
+            // 2. TLauncher properties
+            try
+            {
+                string tlProps = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".tlauncher\tlauncher-2.0.properties");
+                if (File.Exists(tlProps))
                 {
                     string[] lines = File.ReadAllLines(tlProps, Encoding.UTF8);
                     foreach (string l in lines)
@@ -1937,39 +1986,117 @@ namespace CivilizationLauncher
                         if (m.Success)
                         {
                             string raw = m.Groups[1].Value.Replace(@"\:", ":").Replace(@"\\", @"\").Trim();
-                            if (Directory.Exists(raw)) return raw;
+                            add(raw);
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            // 3. Official AppData .minecraft
+            string appDataMc = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft");
+            add(appDataMc);
+
+            // 4. Common locations across all drive letters
+            string[] subPaths = new string[] {
+                @".minecraft",
+                @"Games\.minecraft",
+                @"Games\Minecraft\.minecraft"
+            };
+
+            try
+            {
+                foreach (var drive in DriveInfo.GetDrives())
+                {
+                    if (drive.IsReady && (drive.DriveType == DriveType.Fixed || drive.DriveType == DriveType.Removable))
+                    {
+                        foreach (string sub in subPaths)
+                        {
+                            try
+                            {
+                                string candidate = Path.Combine(drive.RootDirectory.FullName, sub);
+                                add(candidate);
+                            }
+                            catch { }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                add(@"C:\Games\.minecraft");
+                add(@"D:\Games\.minecraft");
+                add(@"E:\Games\.minecraft");
+                add(@"C:\.minecraft");
+                add(@"D:\.minecraft");
+                add(@"E:\.minecraft");
+            }
+
+            // 5. Check launcher_profiles.json in found directories for gameDir
+            var currentList = new List<string>(list);
+            foreach (string dir in currentList)
+            {
+                try
+                {
+                    if (!Directory.Exists(dir)) continue;
+                    string lp = Path.Combine(dir, "launcher_profiles.json");
+                    if (File.Exists(lp))
+                    {
+                        string txt = File.ReadAllText(lp, Encoding.UTF8);
+                        var root = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(txt);
+                        if (root != null && root.ContainsKey("profiles") && root["profiles"] is Dictionary<string, object>)
+                        {
+                            var profiles = (Dictionary<string, object>)root["profiles"];
+                            foreach (var kvp in profiles)
+                            {
+                                var pObj = kvp.Value as Dictionary<string, object>;
+                                if (pObj != null && pObj.ContainsKey("gameDir"))
+                                {
+                                    string gd = (string)pObj["gameDir"];
+                                    add(gd);
+                                    if (gd.EndsWith(@"versions\Civilization", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        string parent = Path.GetDirectoryName(Path.GetDirectoryName(gd));
+                                        add(parent);
+                                    }
+                                }
+                            }
                         }
                     }
                 }
                 catch { }
             }
 
-            string[] candidates = new string[] {
-                @"E:\Games\.minecraft",
-                @"D:\Games\.minecraft",
-                @"C:\Games\.minecraft",
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft"),
-                @"D:\.minecraft",
-                @"E:\.minecraft"
-            };
-            foreach (string c in candidates)
-            {
-                if (Directory.Exists(c)) return c;
-            }
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft");
+            return list;
         }
 
         static string GetInstalledMcDir()
         {
-            var state = LoadState();
-            if (state != null && state.ContainsKey("mcDir"))
+            var potential = GetAllPotentialMcDirs();
+            foreach (string dir in potential)
             {
-                string s = (string)state["mcDir"];
-                if (TestIsInstalled(s)) return s;
+                if (Directory.Exists(dir) && TestIsInstalled(dir))
+                {
+                    return dir;
+                }
             }
-            string detected = GetDetectedMcDir();
-            if (TestIsInstalled(detected)) return detected;
             return null;
+        }
+
+        static string GetDetectedMcDir()
+        {
+            // First check if already installed somewhere
+            string inst = GetInstalledMcDir();
+            if (!string.IsNullOrEmpty(inst)) return inst;
+
+            // Otherwise, find first existing .minecraft candidate
+            var potential = GetAllPotentialMcDirs();
+            foreach (string dir in potential)
+            {
+                if (Directory.Exists(dir)) return dir;
+            }
+
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft");
         }
 
         static string GetTargetMcDir()
