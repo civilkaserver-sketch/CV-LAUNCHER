@@ -315,6 +315,12 @@ namespace CivilizationLauncher
         [DllImport("user32.dll")]
         private static extern bool IsWindow(IntPtr hWnd);
 
+        [DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
         private static System.Drawing.Icon appIconBig = null;
         private static System.Drawing.Icon appIconSmall = null;
 
@@ -409,6 +415,7 @@ namespace CivilizationLauncher
             if (mainHwnd != IntPtr.Zero)
             {
                 Log("Monitoring window HWND " + mainHwnd);
+                bool wasGameRunning = false;
                 while (isRunning)
                 {
                     Thread.Sleep(300);
@@ -417,6 +424,19 @@ namespace CivilizationLauncher
                         Log("Target window was closed by user");
                         break;
                     }
+
+                    bool gameRunningNow = IsGameRunning();
+                    if (wasGameRunning && !gameRunningNow)
+                    {
+                        Log("Minecraft exited while launcher window was open, restoring launcher focus");
+                        try
+                        {
+                            ShowWindow(mainHwnd, 9); // SW_RESTORE
+                            SetForegroundWindow(mainHwnd);
+                        }
+                        catch { }
+                    }
+                    wasGameRunning = gameRunningNow;
                 }
             }
             else if (browserProcess != null && !browserProcess.HasExited)
@@ -429,7 +449,28 @@ namespace CivilizationLauncher
                 Log("Neither target window nor running browser process was found.");
             }
 
-            Log("Browser window closed, terminating launcher");
+            // Фишка лаунчера: если игра запущена в момент закрытия окна лаунчера,
+            // не завершаем процесс лаунчера, а ждём в фоне закрытия Minecraft и заново открываем окно лаунчера!
+            if (isRunning && IsGameRunning())
+            {
+                Log("Launcher window closed while Minecraft is running! Waiting in background until Minecraft exits...");
+                KillStaleBrowserProcesses();
+
+                while (isRunning && IsGameRunning())
+                {
+                    Thread.Sleep(1000);
+                }
+
+                if (isRunning)
+                {
+                    Log("Minecraft has exited! Re-opening launcher window...");
+                    Thread.Sleep(600);
+                    LaunchBrowser();
+                    return; // LaunchBrowser стартует новый поток StyleWindowLoop
+                }
+            }
+
+            Log("Browser window closed and Minecraft not running, terminating launcher");
             isRunning = false;
             }
             catch (Exception ex)
@@ -1040,29 +1081,40 @@ namespace CivilizationLauncher
         {
             try
             {
-                if (activeGameProcess != null && !activeGameProcess.HasExited)
-                    return true;
-            }
-            catch { }
-
-            try
-            {
-                var procs = Process.GetProcessesByName("javaw");
-                foreach (var p in procs)
+                if (activeGameProcess != null)
                 {
-                    try
-                    {
-                        if (!p.HasExited && (p.MainWindowTitle.IndexOf("Civilization", StringComparison.OrdinalIgnoreCase) >= 0 ||
-                                             p.MainWindowTitle.IndexOf("Minecraft", StringComparison.OrdinalIgnoreCase) >= 0))
-                        {
-                            activeGameProcess = p;
-                            return true;
-                        }
-                    }
-                    catch { }
+                    if (!activeGameProcess.HasExited) return true;
+                    activeGameProcess = null;
                 }
             }
             catch { }
+
+            string[] procNames = new string[] { "javaw", "java" };
+            foreach (string name in procNames)
+            {
+                try
+                {
+                    var procs = Process.GetProcessesByName(name);
+                    foreach (var p in procs)
+                    {
+                        try
+                        {
+                            if (!p.HasExited)
+                            {
+                                string title = p.MainWindowTitle ?? "";
+                                if (title.IndexOf("Civilization", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                    title.IndexOf("Minecraft", StringComparison.OrdinalIgnoreCase) >= 0)
+                                {
+                                    activeGameProcess = p;
+                                    return true;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }
 
             return false;
         }
