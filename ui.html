@@ -1041,6 +1041,24 @@
     display:flex;align-items:center;justify-content:space-between;
     padding:0 28px;
   }
+  .lightbox.news-mode .lightbox-nav,
+  .lightbox.news-mode .btn-delete,
+  .lightbox.news-mode #lightboxCounter {
+    display: none !important;
+  }
+  .lightbox.news-mode .lightbox-footer {
+    justify-content: flex-end;
+  }
+  .news-badge {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb, 240, 240, 242), 0.08);
+    font-weight: 700;
+  }
   .btn.copied{
     background:#f0f0f2 !important;
     color:#0b0b0d !important;
@@ -3101,21 +3119,21 @@
     return out;
   }
 
+  let lightboxMode = 'gallery'; // 'gallery' | 'news'
+
   function openMediaPreview(src, title) {
     if (!src) return;
+    lightboxMode = 'news';
+    const lb = document.getElementById('lightbox');
+    if (lb) lb.classList.add('news-mode');
     const img = document.getElementById('lightboxImg');
     const titleEl = document.getElementById('lightboxTitle');
     const metaEl = document.getElementById('lightboxMeta');
     const counterEl = document.getElementById('lightboxCounter');
-    const prevBtn = document.querySelector('.lightbox-prev');
-    const nextBtn = document.querySelector('.lightbox-next');
     if (img) img.src = src;
-    if (titleEl) titleEl.textContent = title || 'Изображение к новости';
+    if (titleEl) titleEl.textContent = title || 'Изображение из новости';
     if (metaEl) metaEl.textContent = 'Civilization Reborn';
     if (counterEl) counterEl.textContent = '';
-    if (prevBtn) prevBtn.disabled = true;
-    if (nextBtn) nextBtn.disabled = true;
-    const lb = document.getElementById('lightbox');
     if (lb) lb.classList.add('show');
   }
 
@@ -3219,7 +3237,7 @@
   function renderNewsCard(item, index) {
     const bannerHtml = renderNewsBanner(item.banner, item.title);
     const badgeHtml = item.badge ? `
-      <span style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:2px 8px;border:1px solid var(--line);border-radius:6px;color:var(--accent);background:rgba(var(--accent-rgb, 240, 240, 242), 0.08);font-weight:700;">
+      <span class="news-badge" style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;color:var(--accent);background:rgba(var(--accent-rgb, 240, 240, 242), 0.08);font-weight:700;">
         ${formatNewsText(item.badge)}
       </span>` : '';
 
@@ -3485,6 +3503,9 @@
   // --- Лайтбокс просмотрщика скриншотов ---
   function openLightbox(idx){
     if (idx < 0 || idx >= playerScreenshots.length) return;
+    lightboxMode = 'gallery';
+    const lb = document.getElementById('lightbox');
+    if (lb) lb.classList.remove('news-mode');
     currentScreenshotIdx = idx;
     const item = playerScreenshots[idx];
     document.getElementById('lightboxTitle').textContent = item.name;
@@ -3497,14 +3518,20 @@
     if (prevBtn) prevBtn.disabled = (idx <= 0);
     if (nextBtn) nextBtn.disabled = (idx >= playerScreenshots.length - 1);
 
-    document.getElementById('lightbox').classList.add('show');
+    if (lb) lb.classList.add('show');
   }
 
   function closeLightbox(){
-    document.getElementById('lightbox').classList.remove('show');
+    const lb = document.getElementById('lightbox');
+    if (lb) {
+      lb.classList.remove('show');
+      lb.classList.remove('news-mode');
+    }
+    lightboxMode = 'gallery';
   }
 
   function prevScreenshot(e){
+    if (lightboxMode !== 'gallery') return;
     if (e) e.stopPropagation();
     if (!playerScreenshots.length) return;
     if (currentScreenshotIdx <= 0) return;
@@ -3513,6 +3540,7 @@
   }
 
   function nextScreenshot(e){
+    if (lightboxMode !== 'gallery') return;
     if (e) e.stopPropagation();
     if (!playerScreenshots.length) return;
     if (currentScreenshotIdx >= playerScreenshots.length - 1) return;
@@ -3535,8 +3563,10 @@
     const lb = document.getElementById('lightbox');
     if (!lb || !lb.classList.contains('show')) return;
     if (e.key === 'Escape') closeLightbox();
-    if (e.key === 'ArrowLeft') prevScreenshot();
-    if (e.key === 'ArrowRight') nextScreenshot();
+    if (lightboxMode === 'gallery') {
+      if (e.key === 'ArrowLeft') prevScreenshot();
+      if (e.key === 'ArrowRight') nextScreenshot();
+    }
   });
 
   // --- Настройки лаунчера (модальное окно) ---
