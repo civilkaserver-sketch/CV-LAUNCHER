@@ -1992,6 +1992,13 @@
             </div>
             <button class="btn line" onclick="createDesktopShortcut()" style="padding:6px 14px;font-size:12px;height:32px;cursor:pointer;flex-shrink:0;">Создать ярлык</button>
           </div>
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Очистка рекламы серверов (TLauncher)</div>
+              <div class="settings-toggle-desc">Автоудаление рекламных серверов (DexLand, BigCraft, VimeMC, HypeMC и др.) из списка сетевой игры</div>
+            </div>
+            <button class="btn line" id="btnCleanServers" onclick="cleanAdServersNow()" style="padding:6px 14px;font-size:12px;height:32px;cursor:pointer;flex-shrink:0;">Очистить сервера</button>
+          </div>
         </div>
       </div>
 
@@ -3903,6 +3910,34 @@
       }
     } catch (e) {
       toast('Ошибка запроса на создание ярлыка');
+    }
+  }
+
+  async function cleanAdServersNow() {
+    if (!isBackend) {
+      toast('Недоступно в демо-режиме');
+      return;
+    }
+    const btn = document.getElementById('btnCleanServers');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Очистка...';
+    }
+    try {
+      const res = await fetch('/api/clean-servers');
+      const data = await res.json();
+      if (data && data.ok) {
+        toast(data.msg || 'Список серверов очищен');
+      } else {
+        toast((data && data.msg) || 'Не удалось очистить сервера');
+      }
+    } catch (e) {
+      toast('Ошибка при очистке списка серверов');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Очистить сервера';
+      }
     }
   }
 

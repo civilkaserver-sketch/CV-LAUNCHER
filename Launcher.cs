@@ -336,6 +336,8 @@ namespace CivilizationLauncher
             Log("Server started and ready");
 
             try { SetupScreenshotWatchers(); } catch { }
+            try { AdServerBlocker.CleanAll(); } catch { }
+            try { AdServerBlocker.SetupWatchers(); } catch { }
 
             // Запуск окна приложения
             LaunchBrowser();
@@ -1090,6 +1092,7 @@ namespace CivilizationLauncher
                 string mcDir = GetInstalledMcDir();
                 bool installed = !string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir);
                 if (string.IsNullOrEmpty(mcDir)) mcDir = GetDetectedMcDir();
+                ThreadPool.QueueUserWorkItem((s) => { try { AdServerBlocker.CleanAll(mcDir); } catch { } });
 
                 string installedAt = "";
                 string localSha = "";
@@ -1704,6 +1707,18 @@ namespace CivilizationLauncher
                 return;
             }
 
+            if (endpoint == "clean-servers")
+            {
+                string mcDir = GetTargetMcDir();
+                int count = AdServerBlocker.CleanAll(mcDir);
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "ok", true },
+                    { "removed", count },
+                    { "msg", count > 0 ? string.Format("Удалено рекламных серверов: {0}", count) : "Список серверов чист (реклама не найдена)" }
+                });
+                return;
+            }
+
             ctx.Response.StatusCode = 404;
             ctx.Response.Close();
         }
@@ -2079,6 +2094,7 @@ namespace CivilizationLauncher
             error = null;
             try
             {
+                try { AdServerBlocker.CleanAll(mcDir); } catch { }
                 string civDir = Path.Combine(mcDir, @"versions\Civilization");
                 string jsonPath = Path.Combine(civDir, "Civilization.json");
                 if (!File.Exists(jsonPath))
@@ -2877,7 +2893,7 @@ namespace CivilizationLauncher
             return list;
         }
 
-        static string GetInstalledMcDir()
+        public static string GetInstalledMcDir()
         {
             var potential = GetAllPotentialMcDirs();
             foreach (string dir in potential)
@@ -2890,7 +2906,7 @@ namespace CivilizationLauncher
             return null;
         }
 
-        static string GetDetectedMcDir()
+        public static string GetDetectedMcDir()
         {
             // First check if already installed somewhere
             string inst = GetInstalledMcDir();
@@ -3725,6 +3741,570 @@ namespace CivilizationLauncher
             void GetDisplayName(uint sigdnName, [MarshalAs(UnmanagedType.LPWStr)] out string ppszName);
             void GetAttributes(uint sfgaoMask, out uint psfgaoAttribs);
             void Compare(IShellItem psi, uint hint, out int piOrder);
+        }
+    }
+
+    public static class AdServerBlocker
+    {
+        private static readonly HashSet<string> BlockedIps = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "mc.dexland.org:25565", "mc.dexland.org",
+            "mc.masedworld.net:25565", "mc.masedworld.net",
+            "mc.skycave.pro:25565", "mc.skycave.pro",
+            "mc.hypemc.pro:25565", "mc.hypemc.pro",
+            "mc.vimemc.net:25565", "mc.vimemc.net",
+            "go.bigcraft.pro:25565", "go.bigcraft.pro",
+            "mc.mineblaze.net:25565", "mc.mineblaze.net"
+        };
+
+        private static readonly string[] BlockedKeywords = new string[]
+        {
+            "dexland", "masedworld", "skycave", "hypemc", "vimemc", "bigcraft", "mineblaze"
+        };
+
+        private static List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
+        private static object cleanLock = new object();
+        private static System.Threading.Timer debounceTimer = null;
+
+        public static bool IsBlocked(string ip, string name)
+        {
+            if (!string.IsNullOrEmpty(ip))
+            {
+                string cleanIp = ip.Trim().ToLowerInvariant();
+                if (BlockedIps.Contains(cleanIp)) return true;
+                foreach (var kw in BlockedKeywords)
+                {
+                    if (cleanIp.Contains(kw)) return true;
+                }
+            }
+            if (!string.IsNullOrEmpty(name))
+            {
+                string cleanName = name.Trim().ToLowerInvariant();
+                foreach (var kw in BlockedKeywords)
+                {
+                    if (cleanName.Contains(kw)) return true;
+                }
+            }
+            return false;
+        }
+
+        public static int CleanServersDat(string filePath)
+        {
+            if (!File.Exists(filePath)) return 0;
+            try
+            {
+                byte[] bytes;
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                {
+                    bytes = new byte[fs.Length];
+                    fs.Read(bytes, 0, bytes.Length);
+                }
+                if (bytes == null || bytes.Length < 10) return 0;
+
+                bool isGzip = (bytes.Length >= 2 && bytes[0] == 0x1f && bytes[1] == 0x8b);
+                byte[] rawBytes = bytes;
+                if (isGzip)
+                {
+                    using (var msIn = new MemoryStream(bytes))
+                    using (var gz = new GZipStream(msIn, CompressionMode.Decompress))
+                    using (var msOut = new MemoryStream())
+                    {
+                        gz.CopyTo(msOut);
+                        rawBytes = msOut.ToArray();
+                    }
+                }
+
+                using (var inMs = new MemoryStream(rawBytes))
+                using (var br = new BinaryReader(inMs))
+                {
+                    byte rootType = br.ReadByte();
+                    if (rootType != 10) return 0;
+                    string rootName = ReadNbtString(br);
+
+                    using (var outMs = new MemoryStream())
+                    using (var bw = new BinaryWriter(outMs))
+                    {
+                        bw.Write(rootType);
+                        WriteNbtString(bw, rootName);
+
+                        int removedCount = 0;
+                        while (inMs.Position < inMs.Length)
+                        {
+                            byte tagType = br.ReadByte();
+                            if (tagType == 0)
+                            {
+                                bw.Write((byte)0);
+                                break;
+                            }
+
+                            string tagName = ReadNbtString(br);
+                            if (tagType == 9 && tagName == "servers")
+                            {
+                                byte listElemType = br.ReadByte();
+                                int count = ReadNbtInt(br);
+
+                                var keptCompounds = new List<byte[]>();
+                                for (int i = 0; i < count; i++)
+                                {
+                                    long startPos = inMs.Position;
+                                    string sIp = null;
+                                    string sName = null;
+
+                                    while (true)
+                                    {
+                                        byte fType = br.ReadByte();
+                                        if (fType == 0) break;
+                                        string fName = ReadNbtString(br);
+                                        object val = ReadNbtTagValue(fType, br);
+                                        if (fName == "ip" && val is string) sIp = (string)val;
+                                        if (fName == "name" && val is string) sName = (string)val;
+                                    }
+                                    long endPos = inMs.Position;
+                                    int cLen = (int)(endPos - startPos);
+
+                                    if (IsBlocked(sIp, sName))
+                                    {
+                                        removedCount++;
+                                        Program.Log(string.Format("AdServerBlocker: removing ad server: ip='{0}', name='{1}' from {2}", sIp, sName, filePath));
+                                    }
+                                    else
+                                    {
+                                        byte[] cBytes = new byte[cLen];
+                                        Array.Copy(rawBytes, (int)startPos, cBytes, 0, cLen);
+                                        keptCompounds.Add(cBytes);
+                                    }
+                                }
+
+                                bw.Write(tagType);
+                                WriteNbtString(bw, tagName);
+                                bw.Write(listElemType);
+                                WriteNbtInt(bw, keptCompounds.Count);
+                                foreach (var cb in keptCompounds)
+                                {
+                                    bw.Write(cb);
+                                }
+                            }
+                            else
+                            {
+                                bw.Write(tagType);
+                                WriteNbtString(bw, tagName);
+                                CopyNbtTagValue(tagType, br, bw);
+                            }
+                        }
+
+                        if (removedCount > 0)
+                        {
+                            bw.Flush();
+                            byte[] outBytes = outMs.ToArray();
+                            if (isGzip)
+                            {
+                                using (var gzMs = new MemoryStream())
+                                {
+                                    using (var gz = new GZipStream(gzMs, CompressionMode.Compress, true))
+                                    {
+                                        gz.Write(outBytes, 0, outBytes.Length);
+                                    }
+                                    outBytes = gzMs.ToArray();
+                                }
+                            }
+
+                            try { File.WriteAllBytes(filePath + ".bak", bytes); } catch { }
+                            File.WriteAllBytes(filePath, outBytes);
+                            Program.Log(string.Format("AdServerBlocker: purged {0} ad servers from {1}", removedCount, filePath));
+                        }
+                        return removedCount;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.Log("AdServerBlocker CleanServersDat error (" + filePath + "): " + ex.Message);
+                return 0;
+            }
+        }
+
+        public static int CleanInnerStateJson(string filePath)
+        {
+            if (!File.Exists(filePath)) return 0;
+            try
+            {
+                string json;
+                using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (var sr = new StreamReader(fs, Encoding.UTF8))
+                {
+                    json = sr.ReadToEnd();
+                }
+                if (string.IsNullOrEmpty(json)) return 0;
+
+                var jss = new JavaScriptSerializer();
+                var list = jss.Deserialize<ArrayList>(json);
+                if (list == null || list.Count == 0) return 0;
+
+                var kept = new ArrayList();
+                int removed = 0;
+                foreach (object item in list)
+                {
+                    var dict = item as Dictionary<string, object>;
+                    if (dict == null) continue;
+                    string addr = dict.ContainsKey("address") ? (string)dict["address"] : null;
+                    string name = dict.ContainsKey("name") ? (string)dict["name"] : null;
+                    if (IsBlocked(addr, name))
+                    {
+                        removed++;
+                        Program.Log(string.Format("AdServerBlocker: removing InnerState ad server: {0} ({1}) from {2}", name, addr, filePath));
+                    }
+                    else
+                    {
+                        kept.Add(dict);
+                    }
+                }
+
+                if (removed > 0)
+                {
+                    try { File.WriteAllText(filePath + ".bak", json, Encoding.UTF8); } catch { }
+                    string newJson = jss.Serialize(kept);
+                    File.WriteAllText(filePath, newJson, Encoding.UTF8);
+                    Program.Log(string.Format("AdServerBlocker: cleaned InnerState {0}, purged {1} ad servers.", filePath, removed));
+                }
+                return removed;
+            }
+            catch (Exception ex)
+            {
+                Program.Log("AdServerBlocker CleanInnerStateJson error (" + filePath + "): " + ex.Message);
+                return 0;
+            }
+        }
+
+        public static bool TryBlockHosts()
+        {
+            try
+            {
+                string sysDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
+                string hostsPath = Path.Combine(sysDir, @"drivers\etc\hosts");
+                if (!File.Exists(hostsPath)) return false;
+
+                string content = File.ReadAllText(hostsPath, Encoding.UTF8);
+                string[] domains = new string[] {
+                    "mc.dexland.org",
+                    "mc.masedworld.net",
+                    "mc.skycave.pro",
+                    "mc.hypemc.pro",
+                    "mc.vimemc.net",
+                    "go.bigcraft.pro",
+                    "mc.mineblaze.net"
+                };
+
+                var missing = new List<string>();
+                foreach (var d in domains)
+                {
+                    if (content.IndexOf(d, StringComparison.OrdinalIgnoreCase) < 0)
+                    {
+                        missing.Add("127.0.0.1 " + d);
+                    }
+                }
+
+                if (missing.Count > 0)
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine();
+                    sb.AppendLine("# Civilization Launcher - Blocked TLauncher Ad Servers");
+                    foreach (var m in missing) sb.AppendLine(m);
+                    File.AppendAllText(hostsPath, sb.ToString(), Encoding.UTF8);
+                    Program.Log("AdServerBlocker: successfully blocked ad domains in hosts file");
+                    return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
+        public static int CleanAll(string mcDir = null)
+        {
+            int totalRemoved = 0;
+            try
+            {
+                if (string.IsNullOrEmpty(mcDir)) mcDir = Program.GetInstalledMcDir();
+                if (string.IsNullOrEmpty(mcDir)) mcDir = Program.GetDetectedMcDir();
+
+                var candidates = new List<string>();
+                if (!string.IsNullOrEmpty(mcDir))
+                {
+                    candidates.Add(Path.Combine(mcDir, @"versions\Civilization\servers.dat"));
+                    candidates.Add(Path.Combine(mcDir, "servers.dat"));
+                    candidates.Add(Path.Combine(mcDir, "InnerStateServer-1.3.json"));
+                }
+
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                candidates.Add(Path.Combine(appData, @".minecraft\versions\Civilization\servers.dat"));
+                candidates.Add(Path.Combine(appData, @".minecraft\servers.dat"));
+                candidates.Add(Path.Combine(appData, @".minecraft\InnerStateServer-1.3.json"));
+                candidates.Add(Path.Combine(appData, @".tlauncher\InnerStateServer-1.3.json"));
+
+                var checkedSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var p in candidates)
+                {
+                    if (string.IsNullOrEmpty(p) || checkedSet.Contains(p) || !File.Exists(p)) continue;
+                    checkedSet.Add(p);
+
+                    if (p.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        totalRemoved += CleanInnerStateJson(p);
+                    }
+                    else if (p.EndsWith(".dat", StringComparison.OrdinalIgnoreCase))
+                    {
+                        totalRemoved += CleanServersDat(p);
+                    }
+                }
+
+                TryBlockHosts();
+            }
+            catch (Exception ex)
+            {
+                Program.Log("AdServerBlocker CleanAll error: " + ex.Message);
+            }
+            return totalRemoved;
+        }
+
+        public static void SetupWatchers()
+        {
+            try
+            {
+                string mcDir = Program.GetInstalledMcDir() ?? Program.GetDetectedMcDir();
+                var dirs = new List<string>();
+
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string[] list = new string[] {
+                    mcDir,
+                    !string.IsNullOrEmpty(mcDir) ? Path.Combine(mcDir, @"versions\Civilization") : null,
+                    Path.Combine(appData, @".minecraft"),
+                    Path.Combine(appData, @".minecraft\versions\Civilization"),
+                    Path.Combine(appData, @".tlauncher")
+                };
+
+                foreach (var d in list)
+                {
+                    if (!string.IsNullOrEmpty(d) && Directory.Exists(d) && !dirs.Contains(d))
+                        dirs.Add(d);
+                }
+
+                foreach (var w in watchers)
+                {
+                    try { w.EnableRaisingEvents = false; w.Dispose(); } catch { }
+                }
+                watchers.Clear();
+
+                foreach (var dir in dirs)
+                {
+                    try
+                    {
+                        var fsw = new FileSystemWatcher(dir);
+                        fsw.IncludeSubdirectories = false;
+                        fsw.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size;
+                        FileSystemEventHandler onEv = (s, e) => {
+                            string fn = Path.GetFileName(e.FullPath);
+                            if (fn.Equals("servers.dat", StringComparison.OrdinalIgnoreCase) ||
+                                fn.StartsWith("InnerStateServer", StringComparison.OrdinalIgnoreCase))
+                            {
+                                TriggerDebounce(mcDir);
+                            }
+                        };
+                        fsw.Created += onEv;
+                        fsw.Changed += onEv;
+                        fsw.EnableRaisingEvents = true;
+                        watchers.Add(fsw);
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.Log("AdServerBlocker SetupWatchers error: " + ex.Message);
+            }
+        }
+
+        private static void TriggerDebounce(string mcDir)
+        {
+            lock (cleanLock)
+            {
+                if (debounceTimer != null)
+                {
+                    try { debounceTimer.Dispose(); } catch { }
+                    debounceTimer = null;
+                }
+                debounceTimer = new System.Threading.Timer(state => {
+                    try { CleanAll(mcDir); } catch { }
+                }, null, 600, System.Threading.Timeout.Infinite);
+            }
+        }
+
+        private static short ReadNbtShort(BinaryReader br)
+        {
+            byte[] b = br.ReadBytes(2);
+            Array.Reverse(b);
+            return BitConverter.ToInt16(b, 0);
+        }
+        private static void WriteNbtShort(BinaryWriter bw, short v)
+        {
+            byte[] b = BitConverter.GetBytes(v);
+            Array.Reverse(b);
+            bw.Write(b);
+        }
+        private static int ReadNbtInt(BinaryReader br)
+        {
+            byte[] b = br.ReadBytes(4);
+            Array.Reverse(b);
+            return BitConverter.ToInt32(b, 0);
+        }
+        private static void WriteNbtInt(BinaryWriter bw, int v)
+        {
+            byte[] b = BitConverter.GetBytes(v);
+            Array.Reverse(b);
+            bw.Write(b);
+        }
+        private static string ReadNbtString(BinaryReader br)
+        {
+            short len = ReadNbtShort(br);
+            if (len <= 0) return "";
+            byte[] b = br.ReadBytes(len);
+            return Encoding.UTF8.GetString(b);
+        }
+        private static void WriteNbtString(BinaryWriter bw, string s)
+        {
+            if (string.IsNullOrEmpty(s))
+            {
+                WriteNbtShort(bw, 0);
+                return;
+            }
+            byte[] b = Encoding.UTF8.GetBytes(s);
+            WriteNbtShort(bw, (short)b.Length);
+            bw.Write(b);
+        }
+
+        private static object ReadNbtTagValue(byte type, BinaryReader br)
+        {
+            switch (type)
+            {
+                case 1: return br.ReadByte();
+                case 2: return ReadNbtShort(br);
+                case 3: return ReadNbtInt(br);
+                case 4: {
+                    byte[] b = br.ReadBytes(8);
+                    Array.Reverse(b);
+                    return BitConverter.ToInt64(b, 0);
+                }
+                case 5: {
+                    byte[] b = br.ReadBytes(4);
+                    Array.Reverse(b);
+                    return BitConverter.ToSingle(b, 0);
+                }
+                case 6: {
+                    byte[] b = br.ReadBytes(8);
+                    Array.Reverse(b);
+                    return BitConverter.ToDouble(b, 0);
+                }
+                case 7: {
+                    int len = ReadNbtInt(br);
+                    return br.ReadBytes(len);
+                }
+                case 8: return ReadNbtString(br);
+                case 9: {
+                    byte subType = br.ReadByte();
+                    int len = ReadNbtInt(br);
+                    for (int i = 0; i < len; i++) ReadNbtTagValue(subType, br);
+                    return "[List]";
+                }
+                case 10: {
+                    while (true)
+                    {
+                        byte subType = br.ReadByte();
+                        if (subType == 0) break;
+                        ReadNbtString(br);
+                        ReadNbtTagValue(subType, br);
+                    }
+                    return "[Compound]";
+                }
+                case 11: {
+                    int len = ReadNbtInt(br);
+                    for (int i = 0; i < len; i++) ReadNbtInt(br);
+                    return "[IntArray]";
+                }
+                case 12: {
+                    int len = ReadNbtInt(br);
+                    for (int i = 0; i < len; i++) {
+                        byte[] b = br.ReadBytes(8);
+                    }
+                    return "[LongArray]";
+                }
+                default: return null;
+            }
+        }
+
+        private static void CopyNbtTagValue(byte type, BinaryReader br, BinaryWriter bw)
+        {
+            switch (type)
+            {
+                case 1: bw.Write(br.ReadByte()); break;
+                case 2: WriteNbtShort(bw, ReadNbtShort(br)); break;
+                case 3: WriteNbtInt(bw, ReadNbtInt(br)); break;
+                case 4: {
+                    byte[] b = br.ReadBytes(8);
+                    bw.Write(b);
+                    break;
+                }
+                case 5: {
+                    byte[] b = br.ReadBytes(4);
+                    bw.Write(b);
+                    break;
+                }
+                case 6: {
+                    byte[] b = br.ReadBytes(8);
+                    bw.Write(b);
+                    break;
+                }
+                case 7: {
+                    int len = ReadNbtInt(br);
+                    WriteNbtInt(bw, len);
+                    bw.Write(br.ReadBytes(len));
+                    break;
+                }
+                case 8: {
+                    string s = ReadNbtString(br);
+                    WriteNbtString(bw, s);
+                    break;
+                }
+                case 9: {
+                    byte subType = br.ReadByte();
+                    int len = ReadNbtInt(br);
+                    bw.Write(subType);
+                    WriteNbtInt(bw, len);
+                    for (int i = 0; i < len; i++) CopyNbtTagValue(subType, br, bw);
+                    break;
+                }
+                case 10: {
+                    while (true)
+                    {
+                        byte subType = br.ReadByte();
+                        bw.Write(subType);
+                        if (subType == 0) break;
+                        string name = ReadNbtString(br);
+                        WriteNbtString(bw, name);
+                        CopyNbtTagValue(subType, br, bw);
+                    }
+                    break;
+                }
+                case 11: {
+                    int len = ReadNbtInt(br);
+                    WriteNbtInt(bw, len);
+                    bw.Write(br.ReadBytes(len * 4));
+                    break;
+                }
+                case 12: {
+                    int len = ReadNbtInt(br);
+                    WriteNbtInt(bw, len);
+                    bw.Write(br.ReadBytes(len * 8));
+                    break;
+                }
+            }
         }
     }
 }
