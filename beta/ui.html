@@ -281,7 +281,21 @@
   }
   .inner{width:100%;max-width:900px;margin:0 auto}
 
-  /* карточки */
+  
+    /* БЕТА: Полное удаление баннера с карточки bannerCard */
+    #bannerCard{
+      min-height: auto !important;
+      padding: 26px 28px !important;
+      background: var(--card) !important;
+      justify-content: flex-start !important;
+    }
+    #bannerCard::before,
+    #bannerCard::after,
+    #bannerCard .banner-bg-layer{
+      display: none !important;
+    }
+
+    /* карточки */
   .card{
     background:var(--card);
     border:1px solid var(--line);
@@ -318,7 +332,7 @@
     content:'';
     position:absolute;
     inset:0;
-    background-image:var(--banner-bg, url('assets/bg.png'));
+    background-image:var(--banner-bg, url('assets/pool/pool_1.png'));
     background-position:center right;
     background-size:cover;
     background-repeat:no-repeat;
@@ -1663,9 +1677,8 @@
           </button>
         </div>
 
-                <!-- БАННЕР -->
+                <!-- КАРТОЧКА ЗАПУСКА (БЕЗ БАННЕРА ДЛЯ БЕТЫ) -->
         <div class="card" id="bannerCard">
-          <div class="banner-bg-layer" id="bannerBgA" style="opacity:1;background-image:url('assets/bg.png');"></div>
           <div class="banner-badge not-installed" id="bannerBadge"><span id="badgeText">Не установлено</span></div>
 
           <h1 class="banner-title">CIVILIZATION <span style="font-size:12px;color:var(--accent);vertical-align:middle;padding:2px 8px;border-radius:4px;background:rgba(var(--accent-rgb),0.12);font-weight:700;letter-spacing:1.5px;margin-left:6px;border:1px solid rgba(var(--accent-rgb),0.3);">BETA</span></h1>
@@ -1749,12 +1762,12 @@
       <div class="inner">
 
         <!-- EMPTY STATE (когда нет новостей) -->
-        <div class="empty-state" id="newsEmpty" style="display:none">
+        <div class="empty-state" id="newsEmpty" style="display:flex !important;">
           <div class="empty-title">НОВОСТЕЙ ПОКА НЕТ</div>
           <div class="empty-desc">Следите за событиями и анонсами на нашем сервере</div>
         </div>
 
-        <div id="newsContent" class="news-list-wrap">
+        <div id="newsContent" class="news-list-wrap" style="display:none !important;">
           <!-- Новости генерируются динамически через renderAllNews() -->
         </div>
       </div>
@@ -1858,7 +1871,7 @@
 
     <div class="modal-body">
       <!-- 1. ФОН БАННЕРА КАРТОЧКИ -->
-      <div class="settings-group">
+      <div class="settings-group" style="display:none !important;">
         <div class="settings-group-header">
           <div class="settings-title">Фон главного баннера</div>
           <div class="settings-desc">Выберите картинку из пресетов или загрузите свою</div>
@@ -3181,18 +3194,8 @@
   function renderAllNews(list) {
     const container = document.getElementById('newsContent');
     const emptyEl = document.getElementById('newsEmpty');
-    if (!container) return;
-
-    if (!list || !list.length) {
-      container.innerHTML = '';
-      if (emptyEl) emptyEl.style.display = 'flex';
-      container.style.display = 'none';
-      return;
-    }
-
-    if (emptyEl) emptyEl.style.display = 'none';
-    container.style.display = 'block';
-    container.innerHTML = list.map((item, idx) => renderNewsCard(item, idx)).join('');
+    if (container) { container.innerHTML = ''; container.style.display = 'none'; }
+    if (emptyEl) { emptyEl.style.display = 'flex'; }
   }
 
   async function loadAndRenderNews() {
@@ -3430,8 +3433,7 @@
     return `${r}, ${g}, ${b}`;
   }
 
-  const BANNER_POOL = ['assets/bg.png'];
-
+  const BANNER_POOL = [];
   let bannerSlideTimer = null;
   let bannerPoolIdx = 0;
   let activeBannerLayer = 'A';
@@ -3453,18 +3455,7 @@
     document.documentElement.style.setProperty('--banner-bg', 'url("' + dataUrl + '")');
   }
 
-  function resetBannerToDefault() {
-    const layerA = document.getElementById('bannerBgA');
-    const layerB = document.getElementById('bannerBgB');
-    if (layerA) {
-      layerA.style.backgroundImage = 'url("assets/bg.png")';
-      layerA.style.opacity = '1';
-    }
-    if (layerB) {
-      layerB.style.opacity = '0';
-    }
-    document.documentElement.style.setProperty('--banner-bg', 'url("assets/bg.png")');
-  }
+  function resetBannerToDefault() { }
 
   function applyLauncherSettings(settings, syncUI) {
     if (!settings) settings = launcherSettings;

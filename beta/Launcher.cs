@@ -870,7 +870,7 @@ namespace CivilizationLauncher
 
                 if (path.Equals("news.json", StringComparison.OrdinalIgnoreCase))
                 {
-                    ServeFile(ctx, Path.Combine(appDir, "news.json"), "application/json; charset=utf-8", "news.json");
+                    SendJson(ctx, new object[] { });
                     return;
                 }
 
@@ -1604,12 +1604,6 @@ namespace CivilizationLauncher
 
             if (endpoint == "news")
             {
-                byte[] emb = GetEmbeddedResource("news.json");
-                if (emb != null)
-                {
-                    ServeBytes(ctx, emb, "application/json; charset=utf-8");
-                    return;
-                }
                 SendJson(ctx, new object[] { });
                 return;
             }

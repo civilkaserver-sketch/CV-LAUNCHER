@@ -12,14 +12,27 @@ content = content.replace(
     '.launcher-update-banner{',
     '.launcher-update-banner{display:none !important;'
 )
-content = content.replace("url('assets/pool/pool_1.png')", "url('assets/bg.png')")
 
+# 2. Completely remove banner from bannerCard (NO banner background, NO banner layers, NO min-height)
+banner_css_override = '''
+    /* БЕТА: Полное удаление баннера с карточки bannerCard */
+    #bannerCard{
+      min-height: auto !important;
+      padding: 26px 28px !important;
+      background: var(--card) !important;
+      justify-content: flex-start !important;
+    }
+    #bannerCard::before,
+    #bannerCard::after,
+    #bannerCard .banner-bg-layer{
+      display: none !important;
+    }
+'''
+content = content.replace('/* карточки */', banner_css_override + '\n    /* карточки */')
 
-
-# 2. Update banner HTML
-banner_repl = '''        <!-- БАННЕР -->
+# Update banner HTML without ANY banner-bg-layer
+banner_repl = '''        <!-- КАРТОЧКА ЗАПУСКА (БЕЗ БАННЕРА ДЛЯ БЕТЫ) -->
         <div class="card" id="bannerCard">
-          <div class="banner-bg-layer" id="bannerBgA" style="opacity:1;background-image:url('assets/bg.png');"></div>
           <div class="banner-badge not-installed" id="bannerBadge"><span id="badgeText">Не установлено</span></div>
 
           <h1 class="banner-title">CIVILIZATION <span style="font-size:12px;color:var(--accent);vertical-align:middle;padding:2px 8px;border-radius:4px;background:rgba(var(--accent-rgb),0.12);font-weight:700;letter-spacing:1.5px;margin-left:6px;border:1px solid rgba(var(--accent-rgb),0.3);">BETA</span></h1>
@@ -31,7 +44,7 @@ content = re.sub(
     banner_repl,
     content
 )
-print('Banner HTML replaced')
+print('Banner HTML replaced (no banner layers)')
 
 # 3. Replace changelog card
 old_cl = '''        <!-- БЛОК «ЧТО НОВОГО» (НА ВСЮ ШИРИНУ) -->
@@ -106,7 +119,15 @@ if old_cl in content:
 else:
     print('WARNING: old_cl not found')
 
-# 4. News empty state
+# 4. News empty state and news container
+content = content.replace(
+    '<div class="empty-state" id="newsEmpty" style="display:none">',
+    '<div class="empty-state" id="newsEmpty" style="display:flex !important;">'
+)
+content = content.replace(
+    '<div id="newsContent" class="news-list-wrap">',
+    '<div id="newsContent" class="news-list-wrap" style="display:none !important;">'
+)
 content = content.replace(
     '<div class="empty-title">НОВОСТИ ОТСУТСТВУЮТ</div>\n          <div class="empty-desc">Свежие события и обновления сборки появятся здесь автоматически</div>',
     '<div class="empty-title">НОВОСТЕЙ ПОКА НЕТ</div>\n          <div class="empty-desc">Следите за событиями и анонсами на нашем сервере</div>'
@@ -116,10 +137,9 @@ content = content.replace(
 content = re.sub(r'const DEFAULT_NEWS = \[[\s\S]*?\];\s*let currentNewsData', 'const DEFAULT_NEWS = [];\n  let currentNewsData', content)
 print('DEFAULT_NEWS cleared')
 
-# 6. BANNER_POOL and Slideshow scripts (lines 3616 to 3670)
+# 6. BANNER_POOL and Slideshow scripts
 content = re.sub(r'const BANNER_POOL = \[[\s\S]*?function nextBannerSlide\(\) \{[\s\S]*?\n  \}', 
-'''const BANNER_POOL = ['assets/bg.png'];
-
+'''const BANNER_POOL = [];
   let bannerSlideTimer = null;
   let bannerPoolIdx = 0;
   let activeBannerLayer = 'A';
@@ -127,7 +147,7 @@ content = re.sub(r'const BANNER_POOL = \[[\s\S]*?function nextBannerSlide\(\) \{
   function startBannerSlideshow() { }
   function stopBannerSlideshow() { }
   function nextBannerSlide() { }''', content)
-print('BANNER_POOL and slideshow replaced')
+print('BANNER_POOL and slideshow removed')
 
 # 7. resetBannerToDefault
 old_reset = '''  function resetBannerToDefault() {
@@ -143,18 +163,7 @@ old_reset = '''  function resetBannerToDefault() {
     startBannerSlideshow();
   }'''
 
-new_reset = '''  function resetBannerToDefault() {
-    const layerA = document.getElementById('bannerBgA');
-    const layerB = document.getElementById('bannerBgB');
-    if (layerA) {
-      layerA.style.backgroundImage = 'url("assets/bg.png")';
-      layerA.style.opacity = '1';
-    }
-    if (layerB) {
-      layerB.style.opacity = '0';
-    }
-    document.documentElement.style.setProperty('--banner-bg', 'url("assets/bg.png")');
-  }'''
+new_reset = '''  function resetBannerToDefault() { }'''
 
 if old_reset in content:
     content = content.replace(old_reset, new_reset)
@@ -162,15 +171,32 @@ if old_reset in content:
 else:
     print('WARNING: old_reset not found')
 
-# 8. loadAndRenderNews -> always empty in beta
-content = re.sub(r'async function loadAndRenderNews\(\) \{[\s\S]*?renderAllNews\(currentNewsData\);\s*\}',
-'''async function loadAndRenderNews() {
+# 8. renderAllNews & loadAndRenderNews -> strictly empty in beta
+content = re.sub(
+    r'function renderAllNews\(list\) \{[\s\S]*?async function loadAndRenderNews\(\) \{[\s\S]*?renderAllNews\(currentNewsData\);\s*\}',
+    '''function renderAllNews(list) {
+    const container = document.getElementById('newsContent');
+    const emptyEl = document.getElementById('newsEmpty');
+    if (container) { container.innerHTML = ''; container.style.display = 'none'; }
+    if (emptyEl) { emptyEl.style.display = 'flex'; }
+  }
+
+  async function loadAndRenderNews() {
     currentNewsData = [];
     renderAllNews([]);
-  }''', content)
-print('loadAndRenderNews replaced')
+  }''',
+    content
+)
+print('renderAllNews & loadAndRenderNews replaced with strict empty handlers')
 
-# 9. Settings modal launcher version badge
+# 9. Settings modal: hide banner background preset group
+content = re.sub(
+    r'<!-- 1\. ФОН БАННЕРА КАРТОЧКИ -->\s*<div class="settings-group">',
+    '<!-- 1. ФОН БАННЕРА КАРТОЧКИ -->\n      <div class="settings-group" style="display:none !important;">',
+    content
+)
+
+# 10. Settings modal: launcher version badge
 content = content.replace(
     '<span id="launcherVersionBadge" style="font-family:monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;font-size:12px;">v1.0.0</span>',
     '<span id="launcherVersionBadge" style="font-family:monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--accent);">BETA</span>'
