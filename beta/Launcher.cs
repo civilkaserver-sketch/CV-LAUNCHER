@@ -432,6 +432,15 @@ namespace CivilizationLauncher
                     try { Directory.Delete(webAppDir, true); } catch { }
                 }
 
+                try
+                {
+                    string cacheDir = Path.Combine(tempProfile, "Default", "Cache");
+                    if (Directory.Exists(cacheDir)) Directory.Delete(cacheDir, true);
+                    string codeCacheDir = Path.Combine(tempProfile, "Default", "Code Cache");
+                    if (Directory.Exists(codeCacheDir)) Directory.Delete(codeCacheDir, true);
+                }
+                catch { }
+
                 string lockFile = Path.Combine(tempProfile, "lockfile");
                 if (File.Exists(lockFile))
                 {
@@ -460,7 +469,7 @@ namespace CivilizationLauncher
                 var psi = new ProcessStartInfo();
                 psi.FileName = exeToUse;
                 psi.Arguments = string.Format(
-                    "--app=\"{0}\" --window-size=1150,740 --user-data-dir=\"{1}\" " +
+                    "--app=\"{0}\" --window-size=1150,740 --user-data-dir=\"{1}\" --disable-http-cache " +
                     "--no-startup-boost --disable-features=WebAppIconInTitlebar,Translate --disable-background-mode " +
                     "--disable-background-networking --disable-component-update --disable-sync " +
                     "--no-first-run --no-default-browser-check",
@@ -792,83 +801,19 @@ namespace CivilizationLauncher
         {
             try
             {
-                string uiPath = Path.Combine(appDir, "ui.html");
-                if (!File.Exists(uiPath))
+                if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
+                var state = LoadState() ?? new Dictionary<string, object>();
+                if (!state.ContainsKey("desktopShortcutCreated"))
                 {
-                    byte[] ui = GetEmbeddedResource("ui.html");
-                    if (ui != null && ui.Length > 0)
+                    string desktopLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "CV Launcher Beta.lnk");
+                    if (!File.Exists(desktopLnk))
                     {
-                        File.WriteAllBytes(uiPath, ui);
-                        Log("Extracted embedded ui.html to disk.");
+                        CreateDesktopShortcut();
                     }
+                    state["desktopShortcutCreated"] = true;
+                    string json = new JavaScriptSerializer().Serialize(state);
+                    File.WriteAllText(StateFile, json, Encoding.UTF8);
                 }
-
-                string assetsDir = Path.Combine(appDir, "assets");
-                if (!Directory.Exists(assetsDir))
-                {
-                    try { Directory.CreateDirectory(assetsDir); } catch { }
-                }
-
-                string[] essentialAssets = new string[] {
-                    "assets/icon.png",
-                    "assets/minecraft-rus.ttf",
-                    "assets/bg.png"
-                };
-
-                foreach (string asset in essentialAssets)
-                {
-                    string localPath = Path.Combine(appDir, asset.Replace('/', '\\'));
-                    if (!File.Exists(localPath))
-                    {
-                        byte[] data = GetEmbeddedResource(asset);
-                        if (data != null && data.Length > 0)
-                        {
-                            string dir = Path.GetDirectoryName(localPath);
-                            if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                            File.WriteAllBytes(localPath, data);
-                            Log("Extracted embedded asset: " + asset);
-                        }
-                    }
-                }
-
-                string manifestPath = Path.Combine(appDir, "manifest.json");
-                if (!File.Exists(manifestPath))
-                {
-                    byte[] mf = GetEmbeddedResource("manifest.json");
-                    if (mf != null && mf.Length > 0) File.WriteAllBytes(manifestPath, mf);
-                }
-
-                string icoPath = Path.Combine(appDir, "icon.ico");
-                if (!File.Exists(icoPath))
-                {
-                    byte[] ico = GetEmbeddedResource("icon.ico");
-                    if (ico != null && ico.Length > 0) File.WriteAllBytes(icoPath, ico);
-                }
-
-                string newsPath = Path.Combine(appDir, "news.json");
-                if (!File.Exists(newsPath))
-                {
-                    byte[] nj = GetEmbeddedResource("news.json");
-                    if (nj != null && nj.Length > 0) File.WriteAllBytes(newsPath, nj);
-                }
-
-                try
-                {
-                    if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
-                    var state = LoadState() ?? new Dictionary<string, object>();
-                    if (!state.ContainsKey("desktopShortcutCreated"))
-                    {
-                        string desktopLnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), "CV Launcher.lnk");
-                        if (!File.Exists(desktopLnk))
-                        {
-                            CreateDesktopShortcut();
-                        }
-                        state["desktopShortcutCreated"] = true;
-                        string json = new JavaScriptSerializer().Serialize(state);
-                        File.WriteAllText(StateFile, json, Encoding.UTF8);
-                    }
-                }
-                catch { }
             }
             catch (Exception ex)
             {
@@ -929,6 +874,14 @@ namespace CivilizationLauncher
                     return;
                 }
 
+                if (path.StartsWith("assets/pool/", StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith("assets/news/", StringComparison.OrdinalIgnoreCase))
+                {
+                    ctx.Response.StatusCode = 404;
+                    ctx.Response.Close();
+                    return;
+                }
+
                 if (path.StartsWith("assets/", StringComparison.OrdinalIgnoreCase))
                 {
                     string filePath = Path.Combine(appDir, path.Replace('/', '\\'));
@@ -959,24 +912,14 @@ namespace CivilizationLauncher
         static void ServeFile(HttpListenerContext ctx, string filePath, string contentType, string resName = null)
         {
             byte[] bytes = null;
-            if (File.Exists(filePath))
-            {
-                try { bytes = File.ReadAllBytes(filePath); } catch { }
-            }
-
-            if (bytes == null && !string.IsNullOrEmpty(resName))
+            if (!string.IsNullOrEmpty(resName))
             {
                 bytes = GetEmbeddedResource(resName);
-                if (bytes != null)
-                {
-                    try
-                    {
-                        string dir = Path.GetDirectoryName(filePath);
-                        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                        File.WriteAllBytes(filePath, bytes);
-                    }
-                    catch { }
-                }
+            }
+
+            if (bytes == null && File.Exists(filePath))
+            {
+                try { bytes = File.ReadAllBytes(filePath); } catch { }
             }
 
             if (bytes == null)
@@ -990,6 +933,9 @@ namespace CivilizationLauncher
             {
                 ctx.Response.ContentType = contentType;
                 ctx.Response.ContentLength64 = bytes.Length;
+                ctx.Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+                ctx.Response.Headers.Add("Pragma", "no-cache");
+                ctx.Response.Headers.Add("Expires", "0");
                 ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
                 ctx.Response.OutputStream.Flush();
                 ctx.Response.Close();
@@ -1006,6 +952,9 @@ namespace CivilizationLauncher
             {
                 ctx.Response.ContentType = contentType;
                 ctx.Response.ContentLength64 = bytes.Length;
+                ctx.Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+                ctx.Response.Headers.Add("Pragma", "no-cache");
+                ctx.Response.Headers.Add("Expires", "0");
                 ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
                 ctx.Response.OutputStream.Flush();
                 ctx.Response.Close();
@@ -1024,6 +973,9 @@ namespace CivilizationLauncher
             ctx.Response.ContentType = "application/json; charset=utf-8";
             ctx.Response.ContentLength64 = bytes.Length;
             ctx.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            ctx.Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+            ctx.Response.Headers.Add("Pragma", "no-cache");
+            ctx.Response.Headers.Add("Expires", "0");
             ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
             ctx.Response.OutputStream.Flush();
             ctx.Response.Close();
@@ -1652,12 +1604,6 @@ namespace CivilizationLauncher
 
             if (endpoint == "news")
             {
-                string newsPath = Path.Combine(appDir, "news.json");
-                if (File.Exists(newsPath))
-                {
-                    ServeFile(ctx, newsPath, "application/json; charset=utf-8", "news.json");
-                    return;
-                }
                 byte[] emb = GetEmbeddedResource("news.json");
                 if (emb != null)
                 {
