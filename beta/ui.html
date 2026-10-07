@@ -1,0 +1,4073 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="theme-color" content="#0c0c0c">
+<meta name="theme-color" content="#0c0c0c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0c0c0c" media="(prefers-color-scheme: light)">
+<link rel="icon" type="image/png" href="assets/icon.png">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="manifest" href="manifest.json">
+<title>&#8203;</title>
+<style>
+  @font-face{
+    font-family:'Minecraft Rus';
+    src:url('assets/minecraft-rus.ttf') format('truetype');
+    font-display:swap;
+  }
+  :root{
+    --bg:#0e0e0e;
+    --side:#0c0c0c;
+    --card:#0c0c0c;
+    --card-hover:#161616;
+    --line:#242424;
+    --line-strong:#414040;
+    --text:#E2E2E2;
+    --text-hover:#FFFFFF;
+    --muted:#8E8E8E;
+    --dim:#5E5E5E;
+    --accent:#f0f0f2;
+    --accent-rgb:240, 240, 242;
+    --accent-text:#0b0b0d;
+    --banner-bg:url('assets/bg.png');
+    --banner-blur:0px;
+    --banner-dim:0;
+    --banner-scale:1;
+    --r:6px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Minecraft Rus','Courier New',monospace;
+    background:var(--bg);
+    color:var(--text);
+    font-size:15px;
+    letter-spacing:.3px;
+    line-height:1.65;
+    -webkit-font-smoothing:none;
+    overflow:hidden;
+  }
+  input{font-family:inherit}
+  ::selection{background:#fff;color:#000}
+
+  .app{display:flex;height:100vh}
+
+  /* ---------------- сайдбар ---------------- */
+  .side{
+    width: 258px;
+    flex: 0 0 258px;
+    background: var(--side);
+    display: flex;
+    flex-direction: column;
+    padding: 5px 18px 20px;
+    -webkit-app-region: drag;
+  }
+  button, input, a, .brand, .btn, .screenshot-card, .side-nav-item, .play-btn {
+    -webkit-app-region: no-drag;
+  }
+  .brand{
+    padding:4px 4px 0;line-height:1.3;
+    cursor:pointer;user-select:none;
+    transition:opacity .15s;
+  }
+  .brand:hover{opacity:.85}
+  .brand .t{font-size:17px;letter-spacing:3px;color:var(--accent,#f0f0f2);transition:color .2s ease}
+  .brand .t small{display:block;font-size:10px;letter-spacing:4px;color:var(--dim);margin-top:5px}
+
+  .play-btn{
+    margin-top:22px;
+    background:#f0f0f2;color:#0b0b0d;
+    border:none;border-radius:var(--r);cursor:pointer;
+    font-family:inherit;font-size:15px;letter-spacing:5px;
+    height:50px;width:100%;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .15s,opacity .15s;
+    font-weight:bold;
+  }
+  .play-btn:hover{background:#fff}
+  .play-btn:disabled{opacity:.35;cursor:not-allowed}
+
+  .side-section{
+    margin-top:28px;
+  }
+  .side-section-title{
+    font-size:11px;
+    letter-spacing:3px;
+    color:var(--dim);
+    padding:0 8px;
+    margin-bottom:8px;
+    text-transform:uppercase;
+  }
+  .side-nav{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .side-nav-item{
+    width:100%;
+    height:36px;
+    background:var(--card);
+    border: none;
+    border-radius:var(--r);
+    color:var(--text);
+    font-family:inherit;
+    font-size:13px;
+    letter-spacing:1.5px;
+    padding:0 12px;
+    display:flex;
+    align-items:center;
+    cursor:pointer;
+    transition:background .15s,border-color .15s,color .15s;
+    text-align:left;
+  }
+  .side-nav-item:hover,
+  .side-nav-item.active{
+    background:var(--card-hover);
+    border-color:var(--line-strong);
+    color:var(--text-hover);
+  }
+
+  .side-footer{
+    margin-top:auto;
+    padding-top:16px;
+  }
+  .side-toggle{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    cursor:pointer;
+    user-select:none;
+    padding:4px 0;
+  }
+  .side-toggle:hover .toggle-label{
+    color:var(--text);
+  }
+  .toggle-label{
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:.5px;
+    transition:color .15s;
+  }
+  .switch{
+    position:relative;
+    display:inline-block;
+    width:42px;
+    height:24px;
+    flex-shrink:0;
+  }
+  .switch input{
+    opacity:0;
+    width:0;
+    height:0;
+    position:absolute;
+  }
+  .slider{
+    position:absolute;
+    cursor:pointer;
+    inset:0;
+    background:rgba(255,255,255,.08);
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    transition:background .2s,border-color .2s;
+  }
+  .slider::before{
+    position:absolute;
+    content:"";
+    height:16px;
+    width:16px;
+    left:3px;
+    bottom:3px;
+    background:#8c8c96;
+    border-radius:50%;
+    transition:transform .2s,background .2s;
+  }
+  .switch input:checked + .slider{
+    background:var(--accent,#f0f0f2);
+    border-color:var(--accent,#f0f0f2);
+  }
+  .switch input:checked + .slider::before{
+    transform:translateX(18px);
+    background:var(--accent-text,#0b0b0d);
+  }
+  .switch input:focus-visible + .slider{
+    outline:2px solid #fff;
+    outline-offset:2px;
+  }
+
+  /* ---------------- контент ---------------- */
+  .main{
+    flex:1;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    background:#0c0c0c;
+  }
+  .main::before{
+    content:'';
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:42px;
+    background:var(--side);
+    border-radius:0;
+    z-index:1;
+  }
+  .main::after{
+    content:'';
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    height:56px;
+    background:#0c0c0c;
+    border-radius:0;
+    z-index:1;
+    pointer-events:none;
+  }
+  .top-bar{
+    position:relative;
+    height:42px;
+    flex:0 0 42px;
+    background:var(--side);
+    border-radius: 10px 0px 0px 0px;
+    border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line);
+    border-left:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 40px;
+    z-index:10;
+    -webkit-app-region: drag;
+  }
+  .top-title{
+    font-size:13px;
+    letter-spacing:5px;
+    color:var(--dim);
+    text-transform:uppercase;
+  }
+  .top-actions{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .content{
+    flex:1;
+    overflow-y:auto;
+    display:flex;
+    flex-direction:column;
+    border-left:1px solid var(--line);
+    border-radius: 0px 0px 0px 10px;
+    padding:30px 40px;
+    zoom:1.2;
+    position:relative;
+    z-index:2;
+    background:var(--bg);
+  }
+  #viewMain{
+    justify-content:center;
+  }
+  #viewGallery, #viewNews, #viewRating{
+    min-height:100%;
+  }
+  #viewGallery .inner, #viewNews .inner, #viewRating .inner{
+    display:flex;
+    flex-direction:column;
+    padding-bottom:40px;
+  }
+  .inner{width:100%;max-width:900px;margin:0 auto}
+
+  /* карточки */
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    padding:26px 28px;
+    transition:background .15s, border-color .15s;
+  }
+  .card h3{font-size:12px;font-weight:normal;letter-spacing:3px;color:var(--dim);margin-bottom:18px}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:stretch}
+  .grid .card{display:flex;flex-direction:column}
+
+  /* статус */
+  /* простая подпись страницы */
+  .page-tag{
+    font-size:13px;letter-spacing:5px;color:var(--dim);
+    margin-bottom:12px;
+  }
+
+  #bannerCard{
+    position:relative;
+    overflow:hidden;
+    margin-bottom:16px;
+    min-height:345px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding:34px 36px 30px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+  }
+  #launcherUpdateBanner{ display:none !important; }
+  #bannerCard::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background-image:var(--banner-bg, url('assets/bg.png'));
+    background-position:center right;
+    background-size:cover;
+    background-repeat:no-repeat;
+    pointer-events:none;
+    z-index:0;
+  }
+  #bannerCard .banner-bg-layer{
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    height:100% !important;
+    background-position:center right !important;
+    background-size:cover !important;
+    background-repeat:no-repeat !important;
+    transition:opacity 1.5s ease-in-out !important;
+    pointer-events:none !important;
+    z-index:0 !important;
+  }
+  #bannerCard::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to right, rgba(12,12,12,0.96) 0%, rgba(12,12,12,0.85) 42%, rgba(12,12,12,0.32) 75%, rgba(12,12,12,0.02) 100%),
+               linear-gradient(to top, rgba(12,12,12,0.65) 0%, transparent 45%);
+    pointer-events:none;
+    z-index:1;
+  }
+  #bannerCard > *:not(.banner-bg-layer){
+    position:relative;
+    z-index:2;
+  }
+
+  #bannerCard .banner-badge{
+    position:absolute !important;
+    top:16px !important;
+    left:18px !important;
+    display:inline-block;
+    padding:2px 8px;
+    font-size:10px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    border-radius:4px;
+    background:var(--card);
+    border:1px solid var(--line);
+    color:var(--dim);
+    width:fit-content;
+    z-index:10;
+    transition:all .2s;
+    user-select:none;
+    box-sizing:border-box;
+    white-space:nowrap;
+  }
+  #bannerCard .banner-badge span{
+    display:inline;
+  }
+  #bannerCard .banner-badge.not-installed{
+    color:var(--dim);
+    border-color:var(--line);
+    background:var(--card);
+  }
+  #bannerCard .banner-badge.installed{
+    display:none !important;
+  }
+  #bannerCard .banner-badge.update{
+    color:var(--accent);
+    border-color:rgba(235,94,40,.35);
+    background:var(--card);
+  }
+
+  .banner-title{
+    font-family:'Minecraft Rus', monospace;
+    font-size:36px;
+    letter-spacing:2px;
+    color:#fff;
+    margin:0 0 8px;
+    line-height:1.15;
+  }
+  .banner-sub{
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:1px;
+    margin-bottom:22px;
+  }
+
+  .banner-actions{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .banner-main-btn{
+    min-width:145px;
+    height:48px;
+    font-size:13px;
+    letter-spacing:2px;
+  }
+  .more-wrap{
+    position:relative;
+    display:inline-block;
+  }
+  .btn.more-btn,
+  .more-btn,
+  .menu-btn{
+    width:48px !important;
+    min-width:48px !important;
+    max-width:48px !important;
+    height:48px !important;
+    min-height:48px !important;
+    max-height:48px !important;
+    padding:0 !important;
+    line-height:1 !important;
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    letter-spacing:0 !important;
+    cursor:pointer !important;
+    color:var(--text) !important;
+    background:var(--card) !important;
+    border:1px solid var(--line) !important;
+    border-radius:var(--r) !important;
+    flex-shrink:0 !important;
+  }
+  .btn.more-btn svg,
+  .more-btn svg,
+  .menu-btn svg{
+    width:20px !important;
+    height:20px !important;
+    display:block !important;
+    stroke:currentColor !important;
+    color:inherit !important;
+    flex-shrink:0 !important;
+  }
+  .btn.more-btn:hover,
+  .more-btn:hover,
+  .menu-btn:hover{
+    background:var(--card-hover) !important;
+    border-color:var(--line-strong) !important;
+    color:var(--text-hover) !important;
+  }
+  .btn.more-btn:hover svg,
+  .more-btn:hover svg,
+  .menu-btn:hover svg{
+    stroke:var(--text-hover) !important;
+    color:var(--text-hover) !important;
+  }
+  .more-menu,
+  .folder-menu{
+    position:absolute;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    padding:4px;
+    display:none;
+    flex-direction:column;
+    gap:2px;
+    z-index:100;
+  }
+  .more-menu{
+    bottom:calc(100% + 8px);
+    left:0;
+    min-width:175px;
+  }
+  .folder-menu{
+    bottom:calc(100% + 8px);
+    right:0;
+    min-width:190px;
+  }
+  .more-menu.show,
+  .folder-menu.show{
+    display:flex;
+  }
+  .more-item{
+    background:transparent;
+    border:none;
+    color:var(--text);
+    padding:8px 12px;
+    font-size:12px;
+    letter-spacing:1px;
+    text-align:left;
+    cursor:pointer;
+    border-radius:4px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    transition:background .15s, color .15s;
+    font-family:inherit;
+    white-space:nowrap;
+  }
+  .more-item svg{
+    color:var(--dim);
+    transition:color .15s;
+    flex-shrink:0;
+  }
+  .more-item:hover{
+    background:var(--card-hover);
+    color:var(--text-hover);
+  }
+  .more-item:hover svg{
+    color:var(--text-hover);
+  }
+  .more-item.danger{
+    color:#e05252;
+  }
+  .more-item.danger svg{
+    color:#e05252;
+  }
+  .more-item.danger:hover{
+    background:rgba(224,82,82,.12);
+    color:#ff6b6b;
+  }
+  .more-item.danger:hover svg{
+    color:#ff6b6b;
+  }
+
+  /* Прогресс-бар баннера — виден ТОЛЬКО при установке/обновлении */
+  .banner-progress{
+    margin-top:18px;
+    max-width:520px;
+    width:100%;
+    display:none;
+  }
+  .banner-progress.show{
+    display:block;
+  }
+  .banner-progress-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    font-size:12px;
+    margin-bottom:8px;
+    letter-spacing:.5px;
+  }
+  .banner-progress-row .meta{
+    color:#d0d0d8;
+  }
+  .banner-progress-row .pct{
+    color:#fff;
+    font-weight:bold;
+    letter-spacing:1px;
+  }
+  .bar{
+    height:8px;
+    background:rgba(255,255,255,.09);
+    border-radius:4px;
+    overflow:hidden;
+  }
+  .bar i{
+    display:block;
+    height:100%;
+    background:#f0f0f2;
+    width:0%;
+    transition:width .3s linear;
+  }
+
+  /* Блок «Что нового» (на всю ширину) */
+  .changelog-card{
+    width:100%;
+    margin-top:16px;
+    padding:22px 26px 20px;
+  }
+  .changelog-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .changelog-head h3{
+    margin-bottom:0;
+    font-size:12px;
+    letter-spacing:3px;
+    color:var(--dim);
+  }
+  .changelog-ver{
+    font-size:10px;
+    letter-spacing:1.5px;
+    padding:2px 8px;
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    color:var(--dim);
+    background:rgba(255,255,255,.02);
+  }
+  .changelog-list-wrap{
+    position:relative;
+    height:80px;
+    overflow:hidden;
+  }
+  .changelog-list-wrap::after{
+    content:'';
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:36px;
+    background:linear-gradient(to bottom, rgba(12,12,12,0) 0%, var(--card) 100%);
+    pointer-events:none;
+    z-index:2;
+  }
+  .changelog-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .changelog-item{
+    font-size:13px;
+    color:var(--muted);
+    line-height:1.5;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    min-width:0;
+  }
+  .changelog-item .bullet{
+    color:var(--dim);
+    user-select:none;
+    flex-shrink:0;
+  }
+  .changelog-item .cl-text{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    min-width:0;
+  }
+  .changelog-item strong{
+    color:var(--text);
+    font-weight:bold;
+  }
+  .changelog-more-link{
+    background:none;
+    border:none;
+    color:var(--dim);
+    font-family:inherit;
+    font-size:12px;
+    letter-spacing:1px;
+    cursor:pointer;
+    padding:10px 0 2px;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    transition:color .15s;
+    width:fit-content;
+    white-space:nowrap;
+  }
+  .changelog-more-link:hover{
+    color:var(--text);
+  }
+  .changelog-latest{
+    font-size:13px;
+    color:var(--dim);
+    letter-spacing:1px;
+    padding:6px 0;
+  }
+
+  /* Статус-бар сервера */
+  .server-status-bar{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    height:52px;
+    padding:0 18px;
+    margin-top:14px;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:var(--card);
+    box-sizing:border-box;
+  }
+  .server-status-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:var(--dim);
+    flex-shrink:0;
+  }
+  .server-status-dot.online{ background:#2ecc71; box-shadow:0 0 6px rgba(46,204,113,.5); }
+  .server-status-dot.offline{ background:#e74c3c; }
+  .server-status-label{
+    font-size:10px;
+    letter-spacing:2px;
+    color:var(--dim);
+    text-transform:uppercase;
+    flex-shrink:0;
+  }
+  .server-status-value{
+    font-size:12px;
+    color:var(--text);
+    letter-spacing:.4px;
+  }
+  .server-status-players{
+    font-size:13px;
+    color:var(--text);
+    letter-spacing:.4px;
+    font-weight:bold;
+  }
+  .server-status-sep{
+    width:1px;
+    height:20px;
+    background:var(--line);
+    flex-shrink:0;
+  }
+  .server-status-addr{
+    font-size:11px;
+    color:var(--dim);
+    letter-spacing:.5px;
+    margin-left:auto;
+    white-space:nowrap;
+  }
+
+  /* Тонкая строка «Папка» (~52px) */
+  .folder-bar{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    height:52px;
+    padding:0 18px;
+    margin-top:14px;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:var(--card);
+    box-sizing:border-box;
+  }
+  .folder-bar-label{
+    font-size:11px;
+    letter-spacing:2px;
+    color:var(--dim);
+    font-weight:bold;
+    text-transform:uppercase;
+    flex-shrink:0;
+  }
+  .folder-bar-path{
+    flex:1;
+    min-width:0;
+    font-size:11px;
+    color:var(--muted);
+    font-family:'Minecraft Rus', monospace;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    letter-spacing:.5px;
+    cursor:pointer;
+    transition:color .15s;
+    user-select:none;
+  }
+  .folder-bar-path:hover{
+    color:var(--text);
+  }
+  .folder-change-wrap{
+    position:relative;
+    flex-shrink:0;
+  }
+  .folder-change-btn{
+    background:none;
+    border:none;
+    color:var(--dim);
+    font-family:inherit;
+    font-size:12px;
+    letter-spacing:1px;
+    cursor:pointer;
+    padding:6px 8px;
+    transition:color .15s;
+    white-space:nowrap;
+    display:inline-flex;
+    align-items:center;
+    user-select:none;
+  }
+  .folder-change-btn:hover{
+    color:var(--text);
+  }
+
+  .actions{display:flex;gap:12px;flex-wrap:wrap}
+  .btn{
+    font-family:inherit;font-size:15px;letter-spacing:1px;
+    padding:0 24px;height:48px;border-radius:var(--r);
+    border:1px solid transparent;cursor:pointer;
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    transition:background .15s,border-color .15s,opacity .15s,color .15s;
+    background:none;color:var(--text);
+    white-space:nowrap;
+    user-select:none;
+  }
+  .btn:focus-visible{outline:2px solid rgba(255,255,255,.4);outline-offset:2px}
+  .btn.primary{background:var(--accent,#f0f0f2);color:var(--accent-text,#0b0b0d);font-weight:bold}
+  .btn.primary:hover{filter:brightness(1.12)}
+  .btn.ghost{border-color:var(--line);background:var(--card);color:var(--text)}
+  .btn.ghost:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
+  .btn.line{border-color:var(--line);background:var(--card);color:var(--text)}
+  .btn.line:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
+  .btn.danger{border-color:rgba(235,87,87,.45);background:rgba(235,87,87,.12);color:#ff6b6b;font-weight:bold}
+  .btn.danger:hover{background:rgba(235,87,87,.22);border-color:rgba(235,87,87,.85);color:#fff}
+  .btn:disabled{opacity:.3;cursor:not-allowed}
+  .actions .btn{flex:1;min-width:130px}
+
+  /* поле пути */
+  .field input{
+    width:100%;height:48px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    color:var(--text);
+    padding:0 15px;font-size:14px;
+    outline:none;transition:border-color .15s,background .15s,color .15s;
+  }
+  .field input:focus{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
+  .field .actions,
+  .field + .actions{margin-top:14px}
+
+  /* инфо */
+  .info-line{
+    display:flex;justify-content:space-between;gap:10px;
+    font-size:14px;color:var(--muted);
+    padding:10px 0;border-bottom:1px solid var(--line);
+  }
+  .info-line:first-of-type{padding-top:0}
+  .info-line:last-child{border-bottom:none;padding-bottom:0}
+  .info-line b{font-weight:normal;color:var(--text)}
+
+  .toast{
+    position:fixed;right:26px;bottom:26px;
+    background:#f0f0f2;color:#0b0b0d;
+    padding:14px 20px;font-size:14px;letter-spacing:1px;
+    border-radius:var(--r);
+    opacity:0;transform:translateY(8px);
+    transition:opacity .2s,transform .2s;
+    pointer-events:none;z-index:10001;
+  }
+  .toast.show{opacity:1;transform:none}
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:5px;border:2px solid var(--bg)}
+  ::-webkit-scrollbar-thumb:hover{background:var(--dim)}
+  ::-webkit-scrollbar-thumb:active{background:var(--muted)}
+  .btn.sm{height:34px;padding:0 14px;font-size:12px;letter-spacing:1px;flex:none;min-width:auto}
+
+  /* ---------------- галерея игрока ---------------- */
+  .gallery-toolbar{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin-bottom:14px;
+  }
+  .gallery-count{
+    font-size:13px;color:var(--muted);letter-spacing:1px;
+  }
+  .gallery-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:18px;
+    padding-bottom:40px;
+    margin-bottom:20px;
+  }
+  .screenshot-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    overflow:hidden;
+    cursor:pointer;
+    transition:border-color .15s,transform .15s,background .15s;
+    display:flex;flex-direction:column;
+  }
+  .screenshot-card:hover{
+    background:var(--card-hover);
+    border-color:var(--line-strong);
+  }
+  .screenshot-thumb{
+    width:100%;
+    aspect-ratio:16 / 9;
+    background:#08080a;
+    position:relative;
+    overflow:hidden;
+  }
+  .screenshot-thumb img{
+    width:100%;height:100%;
+    object-fit:cover;
+    display:block;
+    transition:transform .2s ease,opacity .2s ease;
+  }
+  .screenshot-card:hover .screenshot-thumb img{
+    opacity:.92;
+  }
+  .screenshot-meta{
+    padding:11px 15px;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    font-size:12px;
+    border-top:1px solid var(--line);
+    background:inherit;
+    transition:background .15s;
+  }
+  .screenshot-name{
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    color:var(--text);letter-spacing:.5px;
+    transition:color .15s;
+  }
+  .screenshot-card:hover .screenshot-name{
+    color:var(--text-hover);
+  }
+  .screenshot-date{
+    color:var(--dim);white-space:nowrap;font-size:11px;
+  }
+
+  /* empty state */
+  .empty-state{
+    flex:1;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;
+    padding:40px 20px 140px;
+  }
+  .empty-tag{
+    font-size:12px;
+    letter-spacing:4px;
+    color:var(--dim);
+    margin-bottom:10px;
+  }
+  .empty-title{
+    font-size:16px;
+    letter-spacing:3px;
+    color:var(--text);
+    margin-bottom:8px;
+    font-weight:normal;
+  }
+  .empty-desc{
+    font-size:13px;
+    color:var(--muted);
+    letter-spacing:.5px;
+    max-width:380px;
+    line-height:1.75;
+  }
+  kbd{
+    display:inline-block;
+    font-family:inherit;
+    font-size:12px;
+    color:#fff;
+    background:rgba(255,255,255,.08);
+    border:1px solid var(--line-strong);
+    border-radius:4px;
+    padding:1px 6px;
+    letter-spacing:1px;
+    vertical-align:baseline;
+  }
+
+  /* лайтбокс просмотрщика */
+  .lightbox{
+    position:fixed;inset:0;
+    background:rgba(6,6,8,.94);
+    backdrop-filter:blur(8px);
+    z-index:999;
+    display:none;flex-direction:column;
+    opacity:0;transition:opacity .2s;
+  }
+  .lightbox.show{display:flex;opacity:1}
+  .lightbox-header{
+    height:56px;flex:0 0 56px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 24px;
+  }
+  .lightbox-title{font-size:13px;letter-spacing:2px;color:var(--text)}
+  .lightbox-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .lightbox-actions .btn-delete{
+    color:#e06c75;
+    border-color:rgba(224,108,117,.3);
+  }
+  .lightbox-actions .btn-delete:hover{
+    background:rgba(224,108,117,.12);
+    border-color:#e06c75;
+    color:#ff7b85;
+  }
+  .lightbox-close{
+    background:transparent;border:none;border-radius:var(--r);
+    color:var(--dim);width:34px;height:34px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:color .15s;
+    padding:0;
+  }
+  .lightbox-close:hover{
+    color:var(--text);border:none;background:transparent;
+  }
+  .lightbox-close svg{display:block}
+  .lightbox-body{
+    flex:1;display:flex;align-items:center;justify-content:center;
+    position:relative;padding:20px 40px;overflow:hidden;
+  }
+  .lightbox-img-wrap{
+    max-width:85vw;max-height:76vh;
+    display:flex;align-items:center;justify-content:center;
+    background:transparent;border:none;box-shadow:none;
+  }
+  .lightbox-img{
+    max-width:85vw;max-height:76vh;
+    width:auto;height:auto;
+    object-fit:contain;display:block;
+    border:none;box-shadow:none;
+  }
+  .lightbox-nav{
+    position:absolute;top:50%;transform:translateY(-50%);
+    background:transparent;border:none;
+    color:var(--dim);width:44px;height:44px;border-radius:var(--r);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    transition:color .15s;
+    user-select:none;padding:0;
+  }
+  .lightbox-nav:hover{
+    background:transparent;border:none;color:var(--text);
+  }
+  .lightbox-nav:disabled{
+    opacity:.15;
+    cursor:default;
+    pointer-events:none;
+  }
+  .lightbox-nav svg{display:block}
+  .lightbox-prev{left:24px}
+  .lightbox-next{right:24px}
+  .lightbox-footer{
+    height:50px;flex:0 0 50px;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 28px;
+  }
+  .lightbox.news-mode .lightbox-nav,
+  .lightbox.news-mode .btn-delete,
+  .lightbox.news-mode #lightboxCounter {
+    display: none !important;
+  }
+  .lightbox.news-mode .lightbox-footer {
+    justify-content: flex-end;
+  }
+  .news-badge {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb, 240, 240, 242), 0.08);
+    font-weight: 700;
+  }
+  .btn.copied{
+    background:#f0f0f2 !important;
+    color:#0b0b0d !important;
+    border-color:#f0f0f2 !important;
+    font-weight:bold;
+  }
+
+  /* Кнопка настроек в хедере */
+  .top-settings-btn{
+    background:transparent;
+    border:none;
+    outline:none;
+    color:var(--dim);
+    font-family:inherit;
+    font-size:11px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+    padding:4px 0;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .top-settings-btn:hover{
+    color:var(--text);
+  }
+  .top-settings-btn svg{
+    display:block;
+    opacity:.7;
+  }
+  .top-settings-btn:hover svg{
+    opacity:1;
+  }
+
+  /* ---------------- МОДАЛЬНОЕ ОКНО НАСТРОЕК ---------------- */
+  .modal-backdrop{
+    position:fixed;
+    inset:0;
+    background:rgba(6,6,8,.86);
+    backdrop-filter:blur(8px);
+    z-index:1000;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    opacity:0;
+    transition:opacity .2s ease;
+    padding:20px;
+    box-sizing:border-box;
+  }
+  .modal-backdrop.show{
+    display:flex;
+    opacity:1;
+  }
+  .modal-dialog{
+    background:var(--card);
+    border:1px solid var(--line-strong);
+    border-radius:12px;
+    width:100%;
+    max-width:580px;
+    max-height:88vh;
+    display:flex;
+    flex-direction:column;
+    box-shadow:none;
+    overflow:hidden;
+    transform:scale(.97);
+    transition:transform .2s ease;
+    box-sizing:border-box;
+  }
+  .modal-backdrop.show .modal-dialog{
+    transform:scale(1);
+  }
+  .modal-header{
+    height:64px;
+    flex:0 0 64px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 24px;
+    border-bottom:1px solid var(--line);
+    background:rgba(255,255,255,.015);
+  }
+  .modal-title{
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:2px;
+    color:var(--text);
+  }
+  .modal-sub{
+    font-size:11px;
+    color:var(--dim);
+    letter-spacing:.5px;
+    margin-top:2px;
+  }
+  .modal-body{
+    flex:1;
+    overflow-y:auto;
+    padding:22px 24px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  .settings-group{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .settings-group-header{
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+  }
+  .settings-title{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:2px;
+    color:var(--text);
+    text-transform:uppercase;
+  }
+  .settings-desc{
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.5;
+  }
+  .settings-card-box{
+    background:rgba(255,255,255,.02);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:16px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  body.no-transitions *{
+    transition: none !important;
+    animation: none !important;
+  }
+
+  @keyframes cv-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .cv-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid rgba(255,255,255,0.15);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: cv-spin 0.8s linear infinite;
+  }
+  .launcher-update-banner {
+    display: none;
+    margin-bottom: 16px;
+    background: linear-gradient(90deg, rgba(var(--accent-rgb, 240, 240, 242), 0.16) 0%, rgba(var(--accent-rgb, 240, 240, 242), 0.05) 50%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(var(--accent-rgb, 240, 240, 242), 0.45);
+    border-radius: var(--r);
+    padding: 12px 18px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    transition: background .25s ease, border-color .25s ease;
+    animation: fadeIn .3s ease;
+  }
+  .launcher-update-banner:hover {
+    border-color: rgba(var(--accent-rgb, 240, 240, 242), 0.65);
+  }
+  .launcher-update-icon-box {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(var(--accent-rgb, 240, 240, 242), 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background .25s ease;
+  }
+
+  /* Пресеты фона (мини-превьюшки) */
+  .bg-presets-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:12px;
+  }
+  .bg-presets-grid.custom-first #bgPresetCustom{
+    order:1;
+  }
+  .bg-presets-grid.custom-first #bgPresetDefault{
+    order:2;
+  }
+  .bg-preset-item{
+    height:80px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    cursor:pointer;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding:8px 10px;
+    user-select:none;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-color:rgba(255,255,255,.02);
+  }
+  .bg-preset-item:hover{
+    border-color:var(--line-strong);
+  }
+  .bg-preset-item.active{
+    border-color:var(--accent, #f0f0f2);
+    box-shadow:0 0 0 1px var(--accent, #f0f0f2);
+  }
+  .bg-preset-item.upload-btn{
+    align-items:center;
+    justify-content:center;
+    border-style:dashed;
+    gap:6px;
+  }
+  .bg-preset-item.upload-btn.has-image{
+    border-style:solid;
+    align-items:flex-start;
+    justify-content:flex-end;
+  }
+  .bg-preset-label{
+    font-size:10px;
+    letter-spacing:.6px;
+    color:#fff;
+    /* background: rgba(0, 0, 0, .75); */
+    padding:2px 6px;
+    border-radius:4px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    width:fit-content;
+    max-width:100%;
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+    text-shadow:0 1px 3px rgba(0,0,0,.8);
+    z-index:2;
+  }
+  .bg-preset-custom-icon{
+    color:var(--dim);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .bg-preset-item:hover .bg-preset-custom-icon{
+    color:var(--text);
+  }
+  .color-swatches{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .color-swatch{
+    width:32px;
+    height:32px;
+    border-radius:50%;
+    cursor:pointer;
+    border:2px solid transparent;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:0;
+    box-sizing:border-box;
+  }
+  .color-swatch:hover{
+    border-color:rgba(255,255,255,.4);
+  }
+  .color-swatch.active{
+    border-color:#fff;
+    box-shadow:0 0 0 2px rgba(255,255,255,.3);
+    outline:2px solid rgba(255,255,255,.15);
+    outline-offset:2px;
+  }
+  .color-custom-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:5px 10px;
+    font-size:11px;
+    letter-spacing:.5px;
+    color:var(--dim);
+    cursor:pointer;
+    transition:border-color .15s, color .15s;
+    position:relative;
+  }
+  .color-custom-btn:hover{
+    border-color:var(--line-strong);
+    color:var(--text);
+  }
+  .color-custom-input{
+    opacity:0;
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    cursor:pointer;
+  }
+  .settings-toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    padding:4px 0;
+  }
+  .settings-toggle-info{
+    display:flex;
+    flex-direction:column;
+  }
+  .settings-toggle-title{
+    font-size:12px;
+    color:var(--text);
+  }
+  .settings-toggle-desc{
+    font-size:11px;
+    color:var(--dim);
+  }
+  .modal-footer{
+    height: 60px;
+    flex: 0 0 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0px 24px 24px 24px;
+    margin-top: 24px;
+    background: linear-gradient(to top, var(--card, #0c0c0c) 75%, transparent 100%);
+  }
+
+  /* ---------------- новости ---------------- */
+  .news-list-wrap{width:100%;max-width:900px;margin:0 auto;padding-bottom:30px}
+  .news-card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    overflow:hidden;
+    margin-bottom:48px;
+  }
+  .news-card:last-child{margin-bottom:0}
+  .news-content-collapse{
+    position:relative;
+    max-height:220px;
+    overflow:hidden;
+    transition:max-height .3s ease;
+  }
+  .news-content-collapse::after{
+    content:'';
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:80px;
+    background:linear-gradient(to bottom, rgba(12,12,12,0) 0%, var(--card) 100%);
+    pointer-events:none;
+    z-index:2;
+  }
+  .news-content-collapse.expanded{
+    max-height:none;
+    overflow:visible;
+  }
+  .news-content-collapse.expanded::after{
+    display:none;
+  }
+  .news-card-footer{
+    padding:6px 24px 20px;
+    background:var(--card);
+    position:relative;
+    z-index:3;
+  }
+  .ncard-banner{
+    display:block;
+    width:100%;
+    height:120px;
+    overflow:hidden;
+    background:#060608;
+  }
+  .ncard-banner img{
+    display:block;
+    width:100%;
+    height:120px;
+    object-fit:cover;
+    filter:brightness(.5);
+  }
+  .ncard-body{
+    display:block;
+    padding:16px 20px 18px;
+  }
+  .ncard-meta{
+    display:block;
+    margin-bottom:8px;
+    font-size:11px;
+    color:var(--dim);
+    letter-spacing:.5px;
+  }
+  .ncard-tag{
+    display:inline-block;
+    font-size:10px;
+    letter-spacing:1.5px;
+    padding:1px 7px;
+    border:1px solid var(--line-strong);
+    border-radius:var(--r);
+    color:var(--dim);
+    margin-right:6px;
+    vertical-align:middle;
+  }
+  .ncard-tag.hl{
+    color:#f0f0f2;
+    border-color:rgba(240,240,242,.3);
+  }
+  .ncard-title{
+    display:block;
+    font-size:14px;
+    letter-spacing:2px;
+    color:#fff;
+    margin-bottom:8px;
+  }
+  .ncard-desc{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    line-height:1.7;
+    margin-bottom:12px;
+  }
+  .ncard-changes{
+    display:block;
+    margin-bottom:14px;
+  }
+  .ncard-item{
+    display:block;
+    font-size:12px;
+    color:var(--dim);
+    padding:3px 0 3px 14px;
+    position:relative;
+    line-height:1.6;
+  }
+  .ncard-item::before{content:'—';position:absolute;left:0;color:var(--line-strong)}
+  .ncard-item strong{color:var(--text)}
+  .ncard-code{
+    font-family:inherit;font-size:11px;
+    background:rgba(255,255,255,.05);border:1px solid var(--line);
+    color:#e0e0e2;padding:1px 5px;border-radius:4px;letter-spacing:.5px;
+  }
+  .ncard-note{
+    display:block;
+    border-left:2px solid var(--line-strong);
+    background:rgba(255,255,255,.025);
+    padding:9px 13px;
+    font-size:12px;
+    color:var(--muted);
+    border-radius:0 var(--r) var(--r) 0;
+  }
+  .ncard-note b{color:var(--text)}
+
+  .news-shot-plate{
+    margin:18px 0 22px;
+    width:100%;
+    aspect-ratio:16 / 9;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    background:rgba(255,255,255,.018);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    position:relative;
+    overflow:hidden;
+    box-sizing:border-box;
+  }
+  .news-shot-plate img{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    display:block;
+    aspect-ratio:16 / 9;
+  }
+  .news-shot-placeholder{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:24px 20px;
+    text-align:center;
+    user-select:none;
+  }
+  .news-shot-badge{
+    display:inline-block;
+    font-size:10px;
+    letter-spacing:1.5px;
+    padding:2px 8px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    color:var(--dim);
+    background:rgba(255,255,255,.03);
+    text-transform:uppercase;
+  }
+  .news-shot-icon{
+    width:36px;
+    height:36px;
+    stroke:currentColor;
+    color:var(--dim);
+    opacity:.55;
+    margin-bottom:2px;
+  }
+  .news-shot-title{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    color:var(--text);
+  }
+  .news-shot-caption{
+    font-size:12px;
+    color:var(--muted);
+    letter-spacing:.4px;
+    max-width:440px;
+    line-height:1.5;
+  }
+
+  /* рейтинг */
+  .rating-table{width:100%;border-collapse:collapse;font-size:13px}
+  .rating-table th{
+    text-align:left;font-size:11px;letter-spacing:2px;
+    color:var(--dim);padding:14px 18px;border-bottom:1px solid var(--line);
+    font-weight:normal;
+  }
+  .rating-table td{padding:16px 18px;border-bottom:1px solid var(--line);color:var(--muted)}
+  .rating-table tr:hover td{background:rgba(255,255,255,.02);color:var(--text)}
+  .rating-table tr:last-child td{border-bottom:none}
+  .rank-badge{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:24px;height:24px;border-radius:var(--r);
+    font-size:12px;background:rgba(255,255,255,.05);color:var(--text);
+  }
+  .rank-1{background:#f0f0f2;color:#0b0b0d;font-weight:bold}
+  .rank-2{background:rgba(255,255,255,.2);color:#fff}
+  .rank-3{background:rgba(255,255,255,.1);color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- САЙДБАР -->
+  <aside class="side">
+    <div class="brand" onclick="showMain()" title="На главную">
+      <div class="t">CIVILIZATION<small>LAUNCHER</small></div>
+    </div>
+
+    <div class="side-section" style="margin-top:20px">
+      <nav class="side-nav">
+        <button class="side-nav-item active" id="btnMain" onclick="showMain()">Главная</button>
+        <button class="side-nav-item" id="btnNews" onclick="showNews()">Новости</button>
+        <button class="side-nav-item" id="btnGallery" onclick="showGallery()">Галерея</button>
+        <button class="side-nav-item" id="btnRating" onclick="showRating()" style="display:none">Рейтинг</button>
+      </nav>
+    </div>
+
+    <div class="side-footer">
+      <button class="side-nav-item" onclick="openSettingsModal()" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+        Настройки
+      </button>
+    </div>
+
+  </aside>
+
+  <!-- КОНТЕНТ -->
+  <div class="main">
+
+    <header class="top-bar">
+      <div class="top-title" id="pageTitle">ГЛАВНАЯ</div>
+    </header>
+
+    <div class="content" id="viewMain">
+      <div class="inner">
+
+        <!-- БАННЕР ОБНОВЛЕНИЯ ЛАУНЧЕРА -->
+        <div id="launcherUpdateBanner" class="launcher-update-banner">
+          <div style="display:flex;align-items:center;gap:12px;min-width:0;">
+            <div class="launcher-update-icon-box">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </div>
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:#fff;">Доступно обновление оболочки лаунчера!</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;" id="launcherUpdateBannerSub">Нажмите «Обновить лаунчер», чтобы скачать новую версию и перезапустить.</div>
+            </div>
+          </div>
+          <button class="btn primary sm" id="btnUpdateLauncherTop" onclick="updateLauncherNow()" style="padding:7px 16px;font-size:12px;white-space:nowrap;flex-shrink:0;">
+            Обновить лаунчер
+          </button>
+        </div>
+
+        <!-- БАННЕР -->
+        <div class="card" id="bannerCard">
+          <div class="banner-bg-layer" id="bannerBgA" style="opacity:1;background-image:url('assets/bg.png');"></div>
+          <div class="banner-badge not-installed" id="bannerBadge"><span id="badgeText">Не установлено</span></div>
+
+          <h1 class="banner-title">CIVILIZATION <span style="font-size:13px;color:var(--accent);vertical-align:middle;padding:2px 8px;border-radius:4px;background:rgba(var(--accent-rgb),0.12);font-weight:700;letter-spacing:1.5px;margin-left:6px;">BETA</span></h1>
+
+          <div class="banner-sub">Бета-тест сборки · Minecraft 1.21.8 · Forge</div>
+
+          <div class="banner-actions">
+            <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
+            <div class="more-wrap" id="moreWrap">
+              <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" aria-label="Настройки" title="Настройки">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
+              </button>
+              <div class="more-menu" id="moreMenu">
+                <button class="more-item" onclick="openGameFolder(event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  Открыть папку игры
+                </button>
+                <button class="more-item danger" onclick="confirmUninstall(event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  Удалить сборку…
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- ПРОГРЕСС-БАР: виден ТОЛЬКО во время установки или обновления -->
+          <div class="banner-progress" id="bannerProgress">
+            <div class="banner-progress-row">
+              <span class="meta" id="statusMeta">Подготовка к установке...</span>
+              <span class="pct" id="barPct">0%</span>
+            </div>
+            <div class="bar">
+              <i id="barFill" style="width:0%"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- БЛОК «ЧТО НОВОГО» (НА ВСЮ ШИРИНУ) -->
+        <div class="card changelog-card">
+          <div class="changelog-head">
+            <h3>ЧТО НОВОГО</h3>
+          </div>
+          <div class="changelog-list-wrap">
+            <div class="changelog-list" id="changelogList">
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>1. Главное меню (M)</strong>: быстрый доступ ко всем разделам без команд (Банк, Рынок, Хранилище, Трейды)</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>2. Безопасные Трейды</strong>: двусторонний обмен предметами с защитой от скама и сбросом подтверждения</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>3. Обновленная экономика</strong>: конвертация в Банке, ротация Рынка каждые 12ч и Хранилище до 162 слотов</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>4. Продажа предметов</strong>: выставление товаров на общий рынок игрокам и раздел «Мои лоты»</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>5. NPC и «Восьмёрка»</strong>: 8 секретных NPC по миру, уникальные события и коллекция артефактов</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>6. Таверна в Аду</strong>: Бармен с напитками и эффектами, сеть защищённых рельсов и вагонетки за $10</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>7. Союзы</strong>: система альянсов между игроками с полным отключением урона (без тимкилла)</div>
+              </div>
+            </div>
+          </div>
+          <div class="changelog-latest" id="changelogLatest" style="display:none">
+            Вы на последней версии v1.21.8 · проверено сегодня
+          </div>
+          <button class="changelog-more-link" onclick="showNews(true)">Узнать больше</button>
+        </div>
+
+        <!-- СТАТУС СЕРВЕРА -->
+        <div class="server-status-bar" id="serverStatusBar">
+          <div class="server-status-dot" id="serverStatusDot"></div>
+          <div class="server-status-label" id="serverStatusLabel">СЕРВЕР</div>
+          <div class="server-status-value" id="serverStatusValue">Проверка...</div>
+          <div class="server-status-sep"></div>
+          <div class="server-status-label">ОНЛАЙН</div>
+          <div class="server-status-players" id="serverStatusPlayers">—</div>
+          <div class="server-status-sep"></div>
+          <div class="server-status-addr">civilization.server.ru : 25565</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ЭКРАН: НОВОСТИ -->
+    <div class="content" id="viewNews" style="display:none">
+      <div class="inner">
+
+        <!-- EMPTY STATE (когда нет новостей) -->
+        <div class="empty-state" id="newsEmpty" style="display:flex">
+          <div class="empty-title">НОВОСТЕЙ ПОКА НЕТ</div>
+          <div class="empty-desc">Следите за событиями и анонсами на нашем сервере</div>
+        </div>
+
+        <div id="newsContent" class="news-list-wrap">
+          <!-- Новости генерируются динамически через renderAllNews() -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ЭКРАН: ГАЛЕРЕЯ -->
+    <div class="content" id="viewGallery" style="display:none">
+      <div class="inner">
+
+        <!-- EMPTY STATE (когда нет скриншотов) -->
+        <div class="empty-state" id="galleryEmpty" style="display:none">
+          <div class="empty-title">НЕТ СКРИНШОТОВ</div>
+          <div class="empty-desc">Нажми F2 во время игры — снимки появятся здесь автоматически</div>
+        </div>
+
+        <!-- СЕТКА СКРИНШОТОВ 16:9 -->
+        <div id="galleryContent">
+          <div class="gallery-toolbar">
+            <div class="gallery-count" id="galleryCount">Всего снимков: 3</div>
+            <button class="btn line sm" id="btnOpenFolder" onclick="openScreenshotsFolder()">Открыть папку</button>
+          </div>
+          <div class="gallery-grid" id="galleryGrid"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ЭКРАН: РЕЙТИНГ -->
+    <div class="content" id="viewRating" style="display:none">
+      <div class="inner">
+        <div class="card" style="padding:0;overflow:hidden">
+          <table class="rating-table">
+            <thead>
+              <tr>
+                <th style="width:50px">#</th>
+                <th>Цивилизация / Лидер</th>
+                <th>Города</th>
+                <th>Сила</th>
+                <th>Эпоха</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><span class="rank-badge rank-1">1</span></td>
+                <td><b style="color:var(--text)">Imperium Romanum</b> <small style="color:var(--dim)">[Caesar]</small></td>
+                <td>6</td>
+                <td>48,920</td>
+                <td>Античность</td>
+              </tr>
+              <tr>
+                <td><span class="rank-badge rank-2">2</span></td>
+                <td><b style="color:var(--text)">Nordheim</b> <small style="color:var(--dim)">[Ragnar]</small></td>
+                <td>4</td>
+                <td>37,410</td>
+                <td>Средневековье</td>
+              </tr>
+              <tr>
+                <td><span class="rank-badge rank-3">3</span></td>
+                <td><b style="color:var(--text)">Sparta</b> <small style="color:var(--dim)">[Leonidas]</small></td>
+                <td>3</td>
+                <td>31,180</td>
+                <td>Античность</td>
+              </tr>
+              <tr>
+                <td><span class="rank-badge">4</span></td>
+                <td><b style="color:var(--text)">Kyiv Rus</b> <small style="color:var(--dim)">[Yaroslav]</small></td>
+                <td>4</td>
+                <td>28,450</td>
+                <td>Средневековье</td>
+              </tr>
+              <tr>
+                <td><span class="rank-badge">5</span></td>
+                <td><b style="color:var(--text)">Yamato</b> <small style="color:var(--dim)">[Oda]</small></td>
+                <td>3</td>
+                <td>24,900</td>
+                <td>Феодализм</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО: НАСТРОЙКИ ЛАУНЧЕРА -->
+<div class="modal-backdrop" id="settingsModal" onclick="handleSettingsBackdrop(event)">
+  <div class="modal-dialog">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">НАСТРОЙКИ ЛАУНЧЕРА</div>
+        <div class="modal-sub">Персонализация внешнего вида и параметров интерфейса</div>
+      </div>
+      <button class="lightbox-close" onclick="closeSettingsModal()" title="Закрыть (Esc)">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- 1. ФОН БАННЕРА КАРТОЧКИ -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Фон главного баннера</div>
+          <div class="settings-desc">Выберите картинку из пресетов или загрузите свою</div>
+        </div>
+
+        <div class="settings-card-box">
+          <input type="file" id="bgFileInput" accept="image/*" style="display:none;" onchange="onBgFileSelected(this)">
+
+          <!-- Пресеты фонов (мини-превьюшки) -->
+          <div class="bg-presets-grid">
+            <!-- 1. По умолчанию -->
+            <div class="bg-preset-item active" id="bgPresetDefault" onclick="selectBgPreset('default')" style="background-image:url('assets/bg.png');" title="По умолчанию">
+              <span class="bg-preset-label">По умолчанию</span>
+            </div>
+
+            <!-- 2. Свой фон (кнопка аплоад) -->
+            <div class="bg-preset-item upload-btn" id="bgPresetCustom" onclick="onCustomCardClick()" title="Загрузить фон">
+              <div class="bg-preset-custom-icon" id="bgPresetCustomIcon">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <span class="bg-preset-label" id="bgPresetCustomLabel">Загрузить фон</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. ВЫБОР АКЦЕНТНОГО ЦВЕТА -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Акцентный цвет интерфейса</div>
+          <div class="settings-desc">Цветовая палитра кнопок действий, индикаторов, рамок и бейджей</div>
+        </div>
+
+        <div class="settings-card-box">
+          <div class="color-swatches">
+            <!-- 1. Базовый (По умолчанию) -->
+            <button class="color-swatch active" id="swatchDefault" onclick="selectAccentColor('#f0f0f2', this)" style="background:#f0f0f2;" title="Базовый (По умолчанию)"></button>
+            <!-- 2. Жёлтый -->
+            <button class="color-swatch" onclick="selectAccentColor('#eab308', this)" style="background:#eab308;" title="Жёлтый"></button>
+            <!-- 3. Золото -->
+            <button class="color-swatch" onclick="selectAccentColor('#f59e0b', this)" style="background:#f59e0b;" title="Золото"></button>
+            <!-- 4. Медь -->
+            <button class="color-swatch" onclick="selectAccentColor('#fb923c', this)" style="background:#fb923c;" title="Медь"></button>
+            <!-- 5. Лайм -->
+            <button class="color-swatch" onclick="selectAccentColor('#84cc16', this)" style="background:#84cc16;" title="Лаймовый"></button>
+            <!-- 6. Изумруд -->
+            <button class="color-swatch" onclick="selectAccentColor('#10b981', this)" style="background:#10b981;" title="Изумруд"></button>
+            <!-- 7. Алмаз -->
+            <button class="color-swatch" onclick="selectAccentColor('#06b6d4', this)" style="background:#06b6d4;" title="Алмаз"></button>
+            <!-- 8. Лазурит -->
+            <button class="color-swatch" onclick="selectAccentColor('#3b82f6', this)" style="background:#3b82f6;" title="Лазурит"></button>
+            <!-- 9. Аметист -->
+            <button class="color-swatch" onclick="selectAccentColor('#8b5cf6', this)" style="background:#8b5cf6;" title="Аметист"></button>
+            <!-- 10. Розовый -->
+            <button class="color-swatch" onclick="selectAccentColor('#ec4899', this)" style="background:#ec4899;" title="Розовый"></button>
+            <!-- 11. Редстоун -->
+            <button class="color-swatch" onclick="selectAccentColor('#ef4444', this)" style="background:#ef4444;" title="Редстоун"></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. ДОПОЛНИТЕЛЬНО -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Интерфейс и эффекты</div>
+          <div class="settings-desc">Поведение и отображение графических компонентов</div>
+        </div>
+
+        <div class="settings-card-box">
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Автообновление лаунчера</div>
+              <div class="settings-toggle-desc">Автоматически проверять и устанавливать обновления</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="autoUpdateToggle" onchange="toggleAutoUpdate(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Плавные анимации и переходы</div>
+              <div class="settings-toggle-desc">Плавное раскрытие новостей и переключение разделов</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="toggleAnimSetting">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Аппаратное ускорение графики</div>
+              <div class="settings-toggle-desc">Использовать видеокарту для рендера анимаций лаунчера</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked id="toggleGpuSetting">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Ярлык на Рабочем столе</div>
+              <div class="settings-toggle-desc">Создать удобный ярлык для быстрого запуска лаунчера</div>
+            </div>
+            <button class="btn line" onclick="createDesktopShortcut()" style="padding:6px 14px;font-size:12px;height:32px;cursor:pointer;flex-shrink:0;">Создать ярлык</button>
+          </div>
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Очистка рекламы серверов (TLauncher)</div>
+              <div class="settings-toggle-desc">Автоудаление рекламных серверов (DexLand, BigCraft, VimeMC, HypeMC и др.) из списка сетевой игры</div>
+            </div>
+            <button class="btn line" id="btnCleanServers" onclick="cleanAdServersNow()" style="padding:6px 14px;font-size:12px;height:32px;cursor:pointer;flex-shrink:0;">Очистить сервера</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. ПАПКА ИГРЫ -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Папка игры</div>
+          <div class="settings-desc">Путь к директории .minecraft</div>
+        </div>
+        <div class="settings-card-box">
+          <div class="folder-bar" style="margin-top:0;border:none;padding:0;height:auto;background:transparent;gap:12px;flex-wrap:wrap;">
+            <div class="folder-bar-path" id="mcPathDisplay" onclick="copyPathToClipboard()" title="Нажмите, чтобы скопировать путь" style="flex:1;min-width:0;">C:\Users\You\AppData\Roaming\.minecraft</div>
+            <input type="hidden" id="mcPath" value="C:\Users\You\AppData\Roaming\.minecraft">
+            <div class="folder-change-wrap" id="folderChangeWrap">
+              <button class="folder-change-btn" id="btnChangeFolder" onclick="toggleFolderMenu(event)" style="padding:6px 12px;border:1px solid var(--line);border-radius:var(--r);">Изменить</button>
+              <div class="folder-menu" id="folderMenu">
+                <button class="more-item" onclick="onFolderMenuAction('detect', event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+                  Найти автоматически
+                </button>
+                <button class="more-item" onclick="onFolderMenuAction('pick', event)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                  Обзор…
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. ЛОГИ И ДИАГНОСТИКА -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Логи и диагностика</div>
+          <div class="settings-desc">Журнал работы лаунчера для решения проблем и крашей</div>
+        </div>
+        <div class="settings-card-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div style="font-size:12px;color:var(--muted);flex:1;min-width:180px;word-break:break-all;" id="logPathDisplay">launcher.log</div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn line" onclick="copyLogContent()" style="font-size:12px;padding:6px 14px;">Скопировать лог</button>
+              <button class="btn line" onclick="openLogFile()" style="font-size:12px;padding:6px 14px;">Открыть файл</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. ВЕРСИЯ ЛАУНЧЕРА -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Версия лаунчера</div>
+          <div class="settings-desc">Информация о текущей сборке лаунчера</div>
+        </div>
+        <div class="settings-card-box">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                <span>Версия:</span>
+                <span id="launcherVersionBadge" style="font-family:monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--accent);">BETA</span>
+                <span id="launcherVersionStatus" style="font-size:12px;color:var(--muted);font-weight:normal;">(тестовая сборка)</span>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">Civilization Launcher — Специальная тестовая сборка</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn line" onclick="resetLauncherSettings()" style="font-size:12px;">Сбросить</button>
+      <div style="display:flex;gap:10px;">
+        <button class="btn ghost" onclick="closeSettingsModal()" style="font-size:12px;">Отмена</button>
+        <button class="btn primary" onclick="saveLauncherSettings()" style="font-size:12px;padding:9px 20px;">Сохранить</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ЛАЙТБОКС ПРОСМОТРА СКРИНШОТОВ -->
+<div class="lightbox" id="lightbox" onclick="handleLightboxBackdrop(event)">
+  <div class="lightbox-header">
+    <div class="lightbox-title" id="lightboxTitle">Скриншот</div>
+    <div class="lightbox-actions">
+      <button class="btn ghost sm" id="btnCopyScreenshot" onclick="copyScreenshot()">Копировать</button>
+      <button class="btn ghost sm btn-delete" onclick="deleteCurrentScreenshot()">Удалить</button>
+      <button class="lightbox-close" onclick="closeLightbox()" title="Закрыть (Esc)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+    </div>
+  </div>
+  <div class="lightbox-body">
+    <button class="lightbox-nav lightbox-prev" onclick="prevScreenshot(event)" title="Предыдущий (←)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+    </button>
+    <div class="lightbox-img-wrap">
+      <img src="" id="lightboxImg" class="lightbox-img" alt="Скриншот">
+    </div>
+    <button class="lightbox-nav lightbox-next" onclick="nextScreenshot(event)" title="Следующий (→)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
+  </div>
+  <div class="lightbox-footer">
+    <div id="lightboxMeta">1920x1080 • 2.4 MB</div>
+    <div id="lightboxCounter">1 / 3</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // Логирование ошибок интерфейса на бэкенд
+  window.addEventListener('error', function(e) {
+    try {
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'UI_ERROR',
+          msg: e.message || 'Script error',
+          file: e.filename || '',
+          line: e.lineno ? e.lineno.toString() : '',
+          stack: (e.error && e.error.stack) ? e.error.stack : ''
+        })
+      });
+    } catch(err) {}
+  });
+  window.addEventListener('unhandledrejection', function(e) {
+    try {
+      var reason = e.reason || 'Unhandled Promise Rejection';
+      fetch('/api/log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          level: 'UI_REJECTION',
+          msg: typeof reason === 'object' ? (reason.message || JSON.stringify(reason)) : String(reason),
+          stack: (reason && reason.stack) ? reason.stack : ''
+        })
+      });
+    } catch(err) {}
+  });
+
+  let toastTimer;
+  function toast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(()=>t.classList.remove('show'), 2400);
+  }
+
+  function setBar(pct, label){
+    const bp = document.getElementById('bannerProgress');
+    if(bp) bp.classList.add('show');
+    const fill = document.getElementById('barFill');
+    if(fill) fill.style.width = pct+'%';
+    const pText = document.getElementById('barPct');
+    if(pText) pText.textContent = pct+'%';
+    const meta = document.getElementById('statusMeta');
+    if(meta && label !== undefined) meta.textContent = label;
+  }
+  function hideBar(){
+    const bp = document.getElementById('bannerProgress');
+    if(bp) bp.classList.remove('show');
+    const fill = document.getElementById('barFill');
+    if(fill) fill.style.width = '0%';
+    const pText = document.getElementById('barPct');
+    if(pText) pText.textContent = '0%';
+    const meta = document.getElementById('statusMeta');
+    if(meta) meta.textContent = '';
+  }
+
+  function updatePathDisplay(path){
+    const disp = document.getElementById('mcPathDisplay');
+    const input = document.getElementById('mcPath');
+    const val = path || 'C:\\Users\\You\\AppData\\Roaming\\.minecraft';
+    if(input) input.value = val;
+    if(disp){
+      disp.textContent = val;
+      disp.title = val + ' (нажмите, чтобы скопировать)';
+    }
+  }
+
+  function copyPathToClipboard(){
+    const input = document.getElementById('mcPath');
+    const disp = document.getElementById('mcPathDisplay');
+    const val = (input && input.value) ? input.value : (disp ? disp.textContent : '');
+    if(!val) return;
+
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(val).then(()=>{
+        toast('Путь скопирован в буфер');
+      }).catch(()=>{
+        fallbackCopy(val);
+      });
+    } else {
+      fallbackCopy(val);
+    }
+  }
+
+  function fallbackCopy(text){
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      toast('Путь скопирован в буфер');
+    } catch(e){
+      toast('Не удалось скопировать');
+    }
+  }
+
+  function toggleMoreMenu(e){
+    if(e) e.stopPropagation();
+    const fm = document.getElementById('folderMenu');
+    if(fm) fm.classList.remove('show');
+    const m = document.getElementById('moreMenu');
+    if(m) m.classList.toggle('show');
+  }
+
+  function toggleFolderMenu(e){
+    if(e) e.stopPropagation();
+    const mm = document.getElementById('moreMenu');
+    if(mm) mm.classList.remove('show');
+    const m = document.getElementById('folderMenu');
+    if(m) m.classList.toggle('show');
+  }
+
+  function onFolderMenuAction(type, e){
+    if(e) e.stopPropagation();
+    const m = document.getElementById('folderMenu');
+    if(m) m.classList.remove('show');
+    if(type === 'detect') detectPath();
+    else if(type === 'pick') pickFolder();
+  }
+
+  document.addEventListener('click', (e)=>{
+    const wrap = document.getElementById('moreWrap');
+    if(wrap && !wrap.contains(e.target)){
+      const m = document.getElementById('moreMenu');
+      if(m) m.classList.remove('show');
+    }
+    const folderWrap = document.getElementById('folderChangeWrap');
+    if(folderWrap && !folderWrap.contains(e.target)){
+      const fm = document.getElementById('folderMenu');
+      if(fm) fm.classList.remove('show');
+    }
+  });
+
+  async function openGameFolder(e){
+    if(e) e.stopPropagation();
+    const m = document.getElementById('moreMenu');
+    if(m) m.classList.remove('show');
+    if(isBackend){
+      try {
+        await fetch('/api/open-folder', { method: 'POST' });
+        toast('Открыта папка игры');
+        return;
+      } catch(err) {}
+    }
+    const path = document.getElementById('mcPath').value || 'папка игры';
+    toast('Папка игры: ' + path);
+  }
+
+  function confirmUninstall(e){
+    if(e) e.stopPropagation();
+    const m = document.getElementById('moreMenu');
+    if(m) m.classList.remove('show');
+    if(!installed){
+      toast('Сборка ещё не установлена');
+      return;
+    }
+    if(confirm('Вы действительно хотите удалить сборку Civilization? Все файлы сборки будут очищены.')){
+      run('uninstall');
+    }
+  }
+
+  let installed = false, updateAvailable = false;
+  let installing = false, stopRequested = false, simTimer = null;
+  let gameRunning = false, gamePollTimer = null;
+
+  function setInstallBtn(mode){
+    const b = document.getElementById('btnMainAction');
+    if(!b) return;
+    if(mode === 'stop'){
+      b.textContent = 'Остановить';
+      b.className = 'btn ghost banner-main-btn';
+      b.disabled = false;
+    } else {
+      setStatus(installed);
+    }
+  }
+
+  function onMainActionClick(){
+    if(!installed){
+      if(installing) stopInstall();
+      else run('install');
+    } else if(updateAvailable){
+      run('update');
+    } else if(gameRunning){
+      stopGame();
+    } else {
+      startGame();
+    }
+  }
+
+  async function stopInstall(){
+    if(!installing || stopRequested) return;
+    stopRequested = true;
+    const b = document.getElementById('btnMainAction');
+    if(b){
+      b.textContent = 'Останавливаю...';
+      b.disabled = true;
+    }
+
+    if(isBackend){
+      try { await fetch('/api/cancel', { method: 'POST' }); } catch(e) {}
+      // дальше polling сам увидит cancelled и завершит
+      return;
+    }
+
+    // режим симуляции (без бэкенда)
+    if(simTimer){ clearTimeout(simTimer); simTimer = null; }
+    finishInstallUI('Установка остановлена');
+  }
+
+  function finishInstallUI(toastMsg){
+    installing = false;
+    stopRequested = false;
+    if(pollingInterval){ clearInterval(pollingInterval); pollingInterval = null; }
+    if(simTimer){ clearTimeout(simTimer); simTimer = null; }
+    hideBar();
+    setStatus(installed);
+    if(toastMsg) toast(toastMsg);
+  }
+
+  function setStatus(ok){
+    installed = ok;
+    if(!ok) updateAvailable = false;
+
+    const badge = document.getElementById('bannerBadge');
+    const badgeText = document.getElementById('badgeText');
+    const mainBtn = document.getElementById('btnMainAction');
+    const playBtn = document.getElementById('playBtn');
+    const moreWrap = document.getElementById('moreWrap');
+    const moreBtn = document.getElementById('btnMore');
+
+    // Бейдж: «Не установлено», «Доступно обновление» или скрыт когда установлено
+    if(badge){
+      if(!ok){
+        badge.style.display = 'inline-block';
+        badge.className = 'banner-badge not-installed';
+        if(badgeText) badgeText.textContent = 'Не установлено';
+      } else if(updateAvailable){
+        badge.style.display = 'inline-block';
+        badge.className = 'banner-badge update';
+        if(badgeText) badgeText.textContent = 'Доступно обновление';
+      } else {
+        badge.style.display = 'none';
+        badge.className = 'banner-badge installed';
+        if(badgeText) badgeText.textContent = '';
+      }
+    }
+
+    // Кнопка настроек (шестерёнка) доступна всегда, кроме активного процесса установки/обновления
+    if(moreWrap){
+      moreWrap.style.display = installing ? 'none' : 'inline-block';
+    }
+    if(moreBtn){
+      moreBtn.disabled = false;
+    }
+
+    if(installing){
+      // Во время процесса установки/обновления бейдж и кнопка контролируются процессом run()
+      return;
+    }
+
+    if(!ok){
+      // Состояние: Не установлено
+      if(mainBtn){
+        mainBtn.textContent = 'Установить';
+        mainBtn.className = 'btn primary banner-main-btn';
+        mainBtn.disabled = false;
+      }
+      if(playBtn) playBtn.disabled = true;
+    } else if(updateAvailable){
+      // Доступно обновление
+      if(mainBtn){
+        mainBtn.textContent = 'Обновить';
+        mainBtn.className = 'btn primary banner-main-btn';
+        mainBtn.disabled = false;
+      }
+      if(playBtn) playBtn.disabled = false;
+    } else if(gameRunning){
+      // Состояние 3: ЗАКРЫТЬ
+      if(mainBtn){
+        mainBtn.textContent = 'ЗАКРЫТЬ';
+        mainBtn.className = 'btn danger banner-main-btn';
+        mainBtn.disabled = false;
+      }
+      if(playBtn) playBtn.disabled = true;
+    } else {
+      // Состояние 1: ИГРАТЬ
+      if(mainBtn){
+        mainBtn.textContent = 'ИГРАТЬ';
+        mainBtn.className = 'btn primary banner-main-btn';
+        mainBtn.disabled = false;
+      }
+      if(playBtn) playBtn.disabled = false;
+    }
+  }
+
+  const isBackend = window.location.protocol.startsWith('http');
+
+  function setGameRunningState(running, stateText){
+    gameRunning = running;
+    const mainBtn = document.getElementById('btnMainAction');
+    const playBtn = document.getElementById('playBtn');
+    if(running){
+      if(mainBtn){
+        if(stateText === 'ЗАПУСК' || stateText === 'ЗАПУСК...'){
+          mainBtn.textContent = 'ЗАПУСК...';
+          mainBtn.className = 'btn ghost banner-main-btn';
+          mainBtn.disabled = true;
+        } else {
+          mainBtn.textContent = 'ЗАКРЫТЬ';
+          mainBtn.className = 'btn danger banner-main-btn';
+          mainBtn.disabled = false;
+        }
+      }
+      if(playBtn) playBtn.disabled = true;
+    } else {
+      if(!installing){
+        setStatus(installed);
+      }
+    }
+  }
+
+  let lastBackendScreenshotsSig = '';
+
+  async function checkGameStatus(){
+    if(!isBackend) return;
+    try {
+      const res = await fetch('/api/game-status');
+      if(res.ok){
+        const data = await res.json();
+        if(data.screenshotsSig && data.screenshotsSig !== lastBackendScreenshotsSig){
+          lastBackendScreenshotsSig = data.screenshotsSig;
+          loadRealScreenshots();
+        }
+        if(data.running){
+          if(!gameRunning){
+            setGameRunningState(true, 'ЗАКРЫТЬ');
+          }
+        } else {
+          if(gameRunning){
+            setGameRunningState(false);
+            toast('Игра завершена');
+          }
+        }
+      }
+    } catch(e) {}
+  }
+
+  let statusPollTimer = null;
+  async function checkBackendStatus(){
+    if(!isBackend) return;
+    try {
+      const res = await fetch('/api/status');
+      if(res.ok){
+        const data = await res.json();
+        if(data.mcDir) updatePathDisplay(data.mcDir);
+        const prevUpdate = updateAvailable;
+        updateAvailable = false;
+        setStatus(data.installed);
+        handleLauncherUpdateUI(false, 'BETA', null);
+      }
+      await checkGameStatus();
+      if(!gamePollTimer){
+        gamePollTimer = setInterval(checkGameStatus, 3000);
+      }
+      if(!statusPollTimer){
+        statusPollTimer = setInterval(checkBackendStatus, 15000);
+      }
+    } catch(e) {}
+  }
+
+  let currentLauncherSha = '7698d7a';
+  let launcherUpdateAvailable = false;
+
+  function handleLauncherUpdateUI(available, curSha, remoteSha){
+    launcherUpdateAvailable = !!available;
+    if(curSha) currentLauncherSha = curSha;
+
+    const banner = document.getElementById('launcherUpdateBanner');
+    const badge = document.getElementById('launcherVersionBadge');
+    const st = document.getElementById('launcherVersionStatus');
+    const modalBtn = document.getElementById('btnModalUpdateLauncher');
+    const bannerSub = document.getElementById('launcherUpdateBannerSub');
+
+    if(badge){
+      badge.textContent = currentLauncherSha ? currentLauncherSha.substring(0, 7) : '7698d7a';
+    }
+
+    if(banner){
+      banner.style.display = launcherUpdateAvailable ? 'flex' : 'none';
+      if(bannerSub && remoteSha){
+        bannerSub.textContent = 'Новая версия ' + remoteSha.substring(0, 7) + ' готова к установке в один клик.';
+      }
+    }
+
+    if(st){
+      if(launcherUpdateAvailable){
+        st.textContent = '(доступна версия ' + (remoteSha ? remoteSha.substring(0, 7) : '') + ')';
+        st.style.color = 'var(--accent)';
+      } else {
+        st.textContent = '(актуальная версия)';
+        st.style.color = 'var(--muted)';
+      }
+    }
+
+    if(modalBtn){
+      modalBtn.style.display = launcherUpdateAvailable ? 'inline-flex' : 'none';
+    }
+  }
+
+  async function manualCheckLauncherUpdate(){
+    const btn = document.getElementById('btnCheckLauncherUpdate');
+    if(btn){
+      btn.disabled = true;
+      btn.textContent = 'Проверка...';
+    }
+    try {
+      const res = await fetch('/api/check-launcher-update');
+      if(res.ok){
+        const data = await res.json();
+        handleLauncherUpdateUI(data.updateAvailable, data.currentSha, data.remoteSha);
+        if(data.updateAvailable){
+          toast('Найдено обновление лаунчера!');
+        } else {
+          toast('У вас установлена последняя версия лаунчера');
+        }
+      }
+    } catch(e) {
+      toast('Не удалось проверить обновление');
+    } finally {
+      if(btn){
+        btn.disabled = false;
+        btn.textContent = 'Проверить';
+      }
+    }
+  }
+
+  let isUpdatingLauncher = false;
+  async function updateLauncherNow(){
+    if(isUpdatingLauncher) return;
+    isUpdatingLauncher = true;
+
+    const topBtn = document.getElementById('btnUpdateLauncherTop');
+    const modalBtn = document.getElementById('btnModalUpdateLauncher');
+    if(topBtn){ topBtn.disabled = true; topBtn.textContent = 'Загрузка...'; }
+    if(modalBtn){ modalBtn.disabled = true; modalBtn.textContent = 'Загрузка...'; }
+
+    toast('Загрузка обновления лаунчера...');
+    showLauncherRestartOverlay('Обновление лаунчера', 'Новая версия загружается, подождите несколько секунд...');
+
+    try {
+      const res = await fetch('/api/update-launcher', { method: 'POST' });
+      if(res.ok){
+        setTimeout(() => {
+          checkLauncherRestart();
+        }, 2000);
+      } else {
+        toast('Ошибка при запросе обновления лаунчера');
+        hideLauncherRestartOverlay();
+        isUpdatingLauncher = false;
+        if(topBtn){ topBtn.disabled = false; topBtn.textContent = 'Обновить лаунчер'; }
+        if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить лаунчер'; }
+      }
+    } catch(e) {
+      setTimeout(() => {
+        checkLauncherRestart();
+      }, 2000);
+    }
+  }
+
+  function showLauncherRestartOverlay(title, text){
+    let ov = document.getElementById('launcherRestartOverlay');
+    if(!ov){
+      ov = document.createElement('div');
+      ov.id = 'launcherRestartOverlay';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,12,0.92);backdrop-filter:blur(10px);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px;';
+      ov.innerHTML = `
+        <div class="cv-spinner"></div>
+        <div id="restartOverlayTitle" style="font-size:18px;font-weight:700;color:#fff;">${title}</div>
+        <div id="restartOverlayText" style="font-size:13px;color:rgba(255,255,255,0.7);max-width:340px;">${text}</div>
+      `;
+      document.body.appendChild(ov);
+    } else {
+      document.getElementById('restartOverlayTitle').textContent = title;
+      document.getElementById('restartOverlayText').textContent = text;
+      ov.style.display = 'flex';
+    }
+  }
+
+  function hideLauncherRestartOverlay(){
+    const ov = document.getElementById('launcherRestartOverlay');
+    if(ov) ov.style.display = 'none';
+  }
+
+  function checkLauncherRestart(){
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const res = await fetch('/api/status', { cache: 'no-store' });
+        if(res.ok){
+          clearInterval(interval);
+          location.reload();
+        }
+      } catch(e) {
+        if(attempts > 30){
+          clearInterval(interval);
+          const t = document.getElementById('restartOverlayText');
+          if(t) t.textContent = 'Если лаунчер не перезапустился автоматически, запустите его вручную.';
+        }
+      }
+    }, 1000);
+  }
+
+  window.addEventListener('focus', () => {
+    checkBackendStatus();
+  });
+
+  let pollingInterval = null;
+  async function run(action){
+    if(action === 'install' && installed){
+      toast('Сборка уже установлена');
+      return;
+    }
+
+    const isInstall = action === 'install';
+    const mainBtn = document.getElementById('btnMainAction');
+    const moreWrap = document.getElementById('moreWrap');
+    const moreBtn = document.getElementById('btnMore');
+    const badge = document.getElementById('bannerBadge');
+    const badgeText = document.getElementById('badgeText');
+    const playBtn = document.getElementById('playBtn');
+
+    installing = true;
+    stopRequested = false;
+
+    // Состояние 2: Установка (скрываем троеточие, бейдж не меняется)
+    if(moreWrap) moreWrap.style.display = 'none';
+    if(moreBtn) moreBtn.disabled = false;
+    if(playBtn) playBtn.disabled = true;
+
+    if(isInstall){
+      setInstallBtn('stop');
+      setBar(5, 'Подготовка к установке...');
+    } else if(action === 'update'){
+      if(mainBtn){
+        mainBtn.textContent = 'Обновляю...';
+        mainBtn.className = 'btn ghost banner-main-btn';
+        mainBtn.disabled = true;
+      }
+      setBar(10, 'Проверяем наличие обновлений...');
+    } else {
+      if(mainBtn){
+        mainBtn.textContent = 'Удаляю...';
+        mainBtn.className = 'btn ghost banner-main-btn';
+        mainBtn.disabled = true;
+      }
+      setBar(5, 'Подготовка к удалению...');
+    }
+
+    if(isBackend){
+      try {
+        const mcDir = document.getElementById('mcPath').value.trim();
+        const res = await fetch('/api/' + action, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mcDir: mcDir })
+        });
+        const startData = await res.json();
+        if(startData.error){
+          toast(startData.error);
+          finishInstallUI(null);
+          return;
+        }
+
+        if(pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(async ()=>{
+          try {
+            const pRes = await fetch('/api/progress');
+            if(!pRes.ok) return;
+            const pData = await pRes.json();
+            setBar(pData.percent, pData.step);
+
+            if(!pData.active){
+              clearInterval(pollingInterval);
+              pollingInterval = null;
+              hideBar();
+              installing = false;
+              stopRequested = false;
+              if(pData.cancelled){
+                setStatus(installed);
+                toast(action === 'install' ? 'Установка остановлена' : 'Операция остановлена');
+              } else if(pData.error){
+                setStatus(installed);
+                toast('Ошибка: ' + pData.error);
+              } else if(pData.done){
+                if(action === 'install'){ setStatus(true); toast('Установка успешно завершена!'); }
+                else if(action === 'update'){ setStatus(true); toast('Обновление успешно завершено!'); }
+                else if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
+              }
+              checkBackendStatus();
+            }
+          } catch(err) {}
+        }, 300);
+        return;
+      } catch(e) {
+        // fallback to simulation below
+        if(isInstall){ installing = true; stopRequested = false; setInstallBtn('stop'); }
+      }
+    }
+
+    const steps = {
+      install:  [['Поиск папки Minecraft...', 20], ['Загрузка сборки...', 60], ['Установка файлов и модов...', 90], ['Завершение установки...', 100]],
+      update:   [['Проверяем обновления...', 20], ['Загрузка обновления...', 65], ['Установка файлов...', 90], ['Завершение...', 100]],
+      uninstall:[['Удаление файлов...', 60], ['Очистка профиля...', 100]]
+    }[action];
+
+    let i = 0;
+    const step = ()=>{
+      if(stopRequested){
+        finishInstallUI('Установка остановлена');
+        return;
+      }
+      if(i >= steps.length){
+        installing = false;
+        stopRequested = false;
+        simTimer = null;
+        hideBar();
+        if(action === 'install'){
+          setStatus(true);
+          toast('Установка успешно завершена!');
+        } else if(action === 'update'){
+          updateAvailable = false;
+          setStatus(true);
+          toast('Обновление успешно завершено!');
+        } else if(action === 'uninstall'){
+          setStatus(false);
+          toast('Сборка удалена.');
+        }
+        return;
+      }
+      setBar(steps[i][1], steps[i][0]);
+      i++;
+      simTimer = setTimeout(step, 800);
+    };
+    step();
+  }
+
+  async function startGame(){
+    if(currentView !== 'main') showMain();
+    if(!installed){ toast('Сначала установи сборку'); return; }
+    if(gameRunning){ stopGame(); return; }
+
+    setGameRunningState(true, 'ЗАПУСК...');
+
+    if(isBackend){
+      try {
+        const res = await fetch('/api/start-game', { method: 'POST' });
+        const data = await res.json();
+        if(data.ok){
+          toast(data.msg || 'Запуск игры...');
+          setGameRunningState(true, 'ЗАКРЫТЬ');
+          if(!gamePollTimer){
+            gamePollTimer = setInterval(checkGameStatus, 2500);
+          }
+        } else {
+          setGameRunningState(false);
+          toast(data.msg || 'Ошибка запуска игры');
+        }
+        return;
+      } catch(e) {
+        setGameRunningState(false);
+        toast('Ошибка связи с сервером');
+        return;
+      }
+    }
+    toast('Запуск Civilization...');
+    setTimeout(()=>{ setGameRunningState(true, 'ЗАКРЫТЬ'); }, 1500);
+  }
+
+  async function stopGame(){
+    const mainBtn = document.getElementById('btnMainAction');
+    if(mainBtn){
+      mainBtn.textContent = 'ЗАКРЫТИЕ...';
+      mainBtn.disabled = true;
+    }
+    toast('Закрытие игры...');
+    if(isBackend){
+      try {
+        const res = await fetch('/api/stop-game', { method: 'POST' });
+        const data = await res.json();
+        if(data && data.ok){
+          setGameRunningState(false);
+          toast('Игра закрыта');
+          return;
+        }
+      } catch(e) {}
+    }
+    setGameRunningState(false);
+    toast('Игра закрыта');
+  }
+
+  async function detectPath(){
+    if(isBackend){
+      try {
+        const res = await fetch('/api/detect-mc', { method: 'POST' });
+        const data = await res.json();
+        if(data.path){
+          updatePathDisplay(data.path);
+          await checkBackendStatus();
+          toast('Папка игры найдена');
+          return;
+        }
+      } catch(e) {}
+    }
+    updatePathDisplay('C:\\Users\\You\\AppData\\Roaming\\.minecraft');
+    toast('Папка найдена');
+  }
+
+  async function pickFolder(){
+    if(isBackend){
+      try {
+        const res = await fetch('/api/pick-folder', { method: 'POST' });
+        const data = await res.json();
+        if(data.path){
+          updatePathDisplay(data.path);
+          await checkBackendStatus();
+          toast(data.installed ? 'Папка выбрана: сборка Civilization найдена!' : 'Папка выбрана');
+          return;
+        }
+      } catch(e) {}
+    }
+    toast('Выбор папки отменён');
+  }
+
+  // --- Данные скриншотов игрока (16:9) ---
+  const defaultScreenshots = [
+    {
+      src: 'assets/bg.png',
+      name: '2026-09-30_21.15.02.png',
+      date: '30 сен 2026, 21:15',
+      meta: '1920x1080 • 2.4 MB'
+    },
+    {
+      src: 'assets/bg.png',
+      name: '2026-09-28_18.40.23.png',
+      date: '28 сен 2026, 18:40',
+      meta: '1920x1080 • 2.1 MB'
+    },
+    {
+      src: 'assets/bg.png',
+      name: '2026-09-24_14.05.50.png',
+      date: '24 сен 2026, 14:05',
+      meta: '1920x1080 • 2.3 MB'
+    }
+  ];
+
+  let playerScreenshots = [...defaultScreenshots];
+  let currentScreenshotIdx = 0;
+
+  function renderGallery(){
+    const empty = document.getElementById('galleryEmpty');
+    const content = document.getElementById('galleryContent');
+    const grid = document.getElementById('galleryGrid');
+    const count = document.getElementById('galleryCount');
+    const btnToggle = document.getElementById('btnEmptyToggle');
+
+    if (!playerScreenshots.length) {
+      empty.style.display = 'flex';
+      content.style.display = 'none';
+      return;
+    }
+
+    empty.style.display = 'none';
+    content.style.display = 'block';
+    if (btnToggle) btnToggle.textContent = 'Скрыть снимки';
+    count.textContent = 'Всего снимков: ' + playerScreenshots.length;
+
+    function esc(s){ if(!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
+    grid.innerHTML = playerScreenshots.map((item, idx) => `
+      <div class="screenshot-card" onclick="openLightbox(${idx})">
+        <div class="screenshot-thumb">
+          <img src="${item.src}" alt="${esc(item.name)}">
+        </div>
+        <div class="screenshot-meta">
+          <span class="screenshot-name" title="${esc(item.name)}">${esc(item.name)}</span>
+          <small class="screenshot-date">${esc(item.date)}</small>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function toggleEmptyStateDemo(){
+    if (playerScreenshots.length) {
+      playerScreenshots = [];
+    } else {
+      playerScreenshots = [...defaultScreenshots];
+    }
+    renderGallery();
+  }
+
+  async function openScreenshotsFolder(){
+    if(isBackend){
+      try { await fetch('/api/open-screenshots', { method: 'POST' }); return; } catch(e) {}
+    }
+    toast('Открытие папки со снимками...');
+  }
+
+  let lastScreenshotsSig = '';
+  let isLoadingScreenshots = false;
+
+  async function loadRealScreenshots(){
+    if(!isBackend || isLoadingScreenshots) return;
+    isLoadingScreenshots = true;
+    try {
+      const res = await fetch('/api/screenshots');
+      if(res.ok){
+        const list = await res.json();
+        const newSig = JSON.stringify((list || []).map(x => x.name + x.meta));
+        if(newSig !== lastScreenshotsSig){
+          lastScreenshotsSig = newSig;
+          playerScreenshots = list || [];
+          renderGallery();
+        }
+      }
+    } catch(e) {
+    } finally {
+      isLoadingScreenshots = false;
+    }
+  }
+
+  async function checkScreenshotsUpdate(){
+    if(!isBackend) return;
+    try {
+      const res = await fetch('/api/screenshots-status');
+      if(res.ok){
+        const data = await res.json();
+        if(data && data.sig && data.sig !== lastBackendScreenshotsSig){
+          lastBackendScreenshotsSig = data.sig;
+          loadRealScreenshots();
+        }
+      }
+    } catch(e) {}
+  }
+
+  // ==========================================
+  // ДИНАМИЧЕСКАЯ СИСТЕМА НОВОСТЕЙ
+  // ==========================================
+  const DEFAULT_NEWS = [
+    {
+      id: "trading-update-2026",
+      badge: "Релиз",
+      badgeType: "primary",
+      date: "30 сентября 2026",
+      title: "Обновление: Civilization & Player Trading",
+      subtitle: "Краткий список основных изменений и систем, добавленных на сервер. Все взаимодействия производятся через графический интерфейс.",
+      banner: {
+        type: "image",
+        url: "assets/news_banner_1.svg?v=2",
+        fallback: "assets/news_banner_1.png?v=2",
+        alt: "CIVILIZATION REBORN"
+      },
+      defaultExpanded: false,
+      sections: [
+        {
+          title: "1. Меню",
+          desc: "Главное окно для быстрого доступа ко всем системам сервера без ввода команд.",
+          items: [
+            "**Открытие**: клавиша `M` (переназначается в настройках управления) или команда `/menu`.",
+            "Содержит кнопки перехода во все разделы: Банк, Рынок, Хранилище, Восьмёрка, Союзы и Трейды."
+          ],
+          media: "assets/news/menu.png"
+        },
+        {
+          title: "2. Трейды",
+          desc: "Система безопасного обмена предметами между игроками.",
+          items: [
+            "Открывается через меню выбора игрока поблизости.",
+            "**Двустороннее окно сделки с защитой от скама**: если второй игрок меняет или убирает предмет, статус подтверждения моментально сбрасывается у обеих сторон."
+          ],
+          media: "assets/news/trades.png"
+        },
+        {
+          title: "3. Обновленная экономика",
+          desc: "Вся финансовая инфраструктура сервера разделена на три взаимосвязанных раздела:",
+          subsections: [
+            {
+              title: "Банк:",
+              desc: "Хранение виртуальной валюты на личном балансе.",
+              items: [
+                "Прямая конвертация ресурсов в доллары по фиксированному курсу:",
+                "Алмазы: **2 шт = $1.00** (1 алмаз = $0.50)",
+                "Изумруды: **128 шт = $1.00**"
+              ],
+              media: "assets/news/bank.png"
+            },
+            {
+              title: "Рынок:",
+              desc: "Ассортимент товаров регулярно меняется (каждые 12 часов происходит ротация пулов предметов).",
+              items: [
+                "На рынке действуют **скидки дня (-20%)** и шанс выпадения редких джекпотов.",
+                "Удобные категории: *Блоки, Снаряжение, Руды, Редкое, Редстоун и Товары игроков*."
+              ],
+              media: "assets/news/market.png"
+            },
+            {
+              title: "Хранилище:",
+              desc: "Персональный сейф игрока, доступный из любой точки мира. Вмещает до 6 страниц по 27 слотов (до 162 слотов суммарно).",
+              items: [
+                "Первая страница доступна сразу и бесплатно, дополнительные докупаются за валюту:",
+                "2-я страница — **$25**",
+                "3-я страница — **$100**",
+                "4-я страница — **$400**",
+                "5-я страница — **$1,600**",
+                "6-я страница — **$6,400**"
+              ],
+              media: "assets/news/storage.png"
+            }
+          ]
+        },
+        {
+          title: "4. Продажа предметов",
+          desc: "Возможность продавать свои ресурсы на общий рынок напрямую другим игрокам.",
+          items: [
+            "Выбор любого предмета из инвентаря, указание нужного количества и своей цены.",
+            "**Раздел «Мои лоты»**: мониторинг всех ваших активных предложений с возможностью снять товар с продажи в один клик.",
+            "Выставленные предметы сразу попадают в категорию «Товары игроков» на городском рынке."
+          ],
+          media: "assets/news/sell.png"
+        },
+        {
+          title: "5. NPC и «Восьмёрка»",
+          items: [
+            "**Восьмёрка**: 8 секретных NPC, спрятанных по миру. У каждого из них есть свой остров, собственное уникальное событие и особые артефакты.",
+            "**Трекер коллекции**: в меню Восьмёрки собирается своеобразный пазл ваших открытий — наглядно видно, с кем из секретных NPC вы уже встретились и какие артефакты из доступных удалось получить.",
+            "**Второстепенные NPC**: в разных уголках мира можно наткнуться на других персонажей, у которых можно узнать полезную информацию или приобрести редкие предметы."
+          ],
+          media: "assets/news/eight.png"
+        },
+        {
+          title: "6. Таверна в Аду",
+          desc: "В Незере открылась отдельная локация — Таверна.",
+          items: [
+            "**Бармен и выпивка**: за стойкой можно купить пиво, водку или виски. Напитки вызывают эффект опьянения: чем больше выпито, тем сильнее и дольше длится эффект.",
+            "**Станция вагонеток**: в том же помещении находится Вагонетчик. За $10 у него можно приобрести вагонетку и отправиться по защищённой сети рельсов Незера прямо через тоннели."
+          ],
+          media: "assets/news/tavern.png"
+        },
+        {
+          title: "7. Союзы",
+          desc: "Система альянсов между игроками.",
+          items: [
+            "Заключение и разрыв союзов через интерфейс меню.",
+            "Между союзниками полностью отключён урон (защита от случайного тимкилла)."
+          ],
+          media: "assets/news/allies.png"
+        }
+      ]
+    },
+    {
+      id: "welcome-guide-2026",
+      badge: "Гайд",
+      badgeType: "gold",
+      date: "28 сентября 2026",
+      title: "Добро пожаловать в Civilization Reborn!",
+      subtitle: "Первые шаги на сервере: как начать развитие, присоединиться к цивилизации и защитить свои ресурсы.",
+      banner: {
+        type: "image",
+        url: "assets/bg.png",
+        alt: "Civilization Reborn Background"
+      },
+      defaultExpanded: false,
+      sections: [
+        {
+          title: "Быстрый старт",
+          desc: "После первого входа в игру вы появляетесь в безопасной зоне спавна. Нажмите клавишу `M`, чтобы открыть главное интерактивное меню.",
+          items: [
+            "**Создайте или выберите цивилизацию**: объединяйтесь с другими игроками для совместной защиты и дипломатии.",
+            "**Зарабатывайте доллары**: конвертируйте алмазы в банке или выставляйте редкие ресурсы на городском рынке.",
+            "**Личное хранилище**: ваш персональный сейф в меню доступен всегда и не теряется при смерти в опасных зонах."
+          ],
+          note: "Если у вас возникнут вопросы или потребуется помощь, администрация и игроки всегда готовы помочь в нашем Discord сервере!"
+        }
+      ]
+    }
+  ];
+
+  let currentNewsData = [];
+
+  function formatNewsText(str) {
+    if (!str) return '';
+    let out = String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+    out = out.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text);">$1</strong>');
+    out = out.replace(/\*(.*?)\*/g, '<em style="color:var(--muted);">$1</em>');
+    out = out.replace(/`([^`]+)`/g, '<code style="font-family:inherit;font-size:11px;background:var(--card);border:1px solid var(--line);color:var(--text);padding:1px 5px;border-radius:4px;">$1</code>');
+    return out;
+  }
+
+  let lightboxMode = 'gallery'; // 'gallery' | 'news'
+
+  function openMediaPreview(src, title) {
+    if (!src) return;
+    lightboxMode = 'news';
+    const lb = document.getElementById('lightbox');
+    if (lb) lb.classList.add('news-mode');
+    const img = document.getElementById('lightboxImg');
+    const titleEl = document.getElementById('lightboxTitle');
+    const metaEl = document.getElementById('lightboxMeta');
+    const counterEl = document.getElementById('lightboxCounter');
+    if (img) img.src = src;
+    if (titleEl) titleEl.textContent = title || 'Изображение из новости';
+    if (metaEl) metaEl.textContent = 'Civilization Reborn';
+    if (counterEl) counterEl.textContent = '';
+    if (lb) lb.classList.add('show');
+  }
+
+  function renderNewsMedia(media, altText) {
+    if (!media) return '';
+    let type = 'image';
+    let url = '';
+    let fallback = '';
+    let alt = altText || 'Изображение к новости';
+
+    if (typeof media === 'string') {
+      url = media.trim();
+      if (url.endsWith('.mp4') || url.endsWith('.webm')) type = 'video';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) type = 'youtube';
+    } else if (typeof media === 'object') {
+      type = media.type || 'image';
+      url = (media.url || '').trim();
+      fallback = media.fallback || '';
+      alt = media.alt || alt;
+    }
+
+    if (!url) return '';
+
+    if (type === 'video') {
+      return `
+        <div class="news-shot-plate" style="background:#000;">
+          <video controls playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r);">
+            <source src="${url}">
+            Ваш браузер не поддерживает видео.
+          </video>
+        </div>`;
+    }
+
+    if (type === 'youtube') {
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      const videoId = ytMatch ? ytMatch[1] : url;
+      return `
+        <div class="news-shot-plate" style="background:#000;">
+          <iframe src="https://www.youtube-nocookie.com/embed/${videoId}" 
+                  style="width:100%;height:100%;border:none;border-radius:var(--r);" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen></iframe>
+        </div>`;
+    }
+
+    const fallbackAttr = fallback ? `onerror="this.src='${fallback}'"` : '';
+    return `
+      <div class="news-shot-plate" onclick="openMediaPreview('${url}', '${alt.replace(/'/g, "\\'")}')" style="cursor:pointer;" title="Нажмите, чтобы увеличить">
+        <img src="${url}" ${fallbackAttr} alt="${alt}" loading="lazy">
+      </div>`;
+  }
+
+  function renderNewsBanner(banner, title) {
+    if (!banner) return '';
+    let type = 'image';
+    let url = '';
+    let fallback = '';
+    let alt = title || 'Новостной баннер';
+
+    if (typeof banner === 'string') {
+      url = banner.trim();
+      if (url.endsWith('.mp4') || url.endsWith('.webm')) type = 'video';
+      else if (url.includes('youtube.com') || url.includes('youtu.be')) type = 'youtube';
+    } else if (typeof banner === 'object') {
+      type = banner.type || 'image';
+      url = (banner.url || '').trim();
+      fallback = banner.fallback || '';
+      alt = banner.alt || alt;
+    }
+
+    if (!url) return '';
+
+    if (type === 'video') {
+      return `
+        <div style="height:220px;overflow:hidden;line-height:0;background:#000;position:relative;">
+          <video autoplay loop muted playsinline style="width:100%;height:220px;object-fit:cover;display:block;">
+            <source src="${url}">
+          </video>
+        </div>`;
+    }
+
+    if (type === 'youtube') {
+      const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      const videoId = ytMatch ? ytMatch[1] : url;
+      return `
+        <div style="height:220px;overflow:hidden;background:#000;">
+          <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}" 
+                  style="width:100%;height:220px;border:none;" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                  allowfullscreen></iframe>
+        </div>`;
+    }
+
+    const fallbackAttr = fallback ? `onerror="this.src='${fallback}'"` : '';
+    return `
+      <div style="height:200px;overflow:hidden;line-height:0;background:var(--card);">
+        <img src="${url}" ${fallbackAttr} alt="${alt}" style="width:100%;height:200px;object-fit:cover;display:block;">
+      </div>`;
+  }
+
+  function renderNewsCard(item, index) {
+    const bannerHtml = renderNewsBanner(item.banner, item.title);
+    const badgeHtml = item.badge ? `
+      <span class="news-badge" style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;color:var(--accent);background:rgba(var(--accent-rgb, 240, 240, 242), 0.08);font-weight:700;">
+        ${formatNewsText(item.badge)}
+      </span>` : '';
+
+    const dateHtml = item.date ? `<span>${formatNewsText(item.date)}</span>` : '';
+
+    let sectionsHtml = '';
+    if (Array.isArray(item.sections)) {
+      sectionsHtml = item.sections.map(sec => {
+        let secHtml = `<div style="margin-top:24px;">`;
+        if (sec.title) {
+          secHtml += `<div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">${formatNewsText(sec.title)}</div>`;
+        }
+        if (sec.desc || sec.text) {
+          secHtml += `<div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">${formatNewsText(sec.desc || sec.text)}</div>`;
+        }
+        if (Array.isArray(sec.items) && sec.items.length > 0) {
+          secHtml += `<div>` + sec.items.map(it => `
+            <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;line-height:1.6;">
+              <span style="position:absolute;left:0;color:var(--line);">—</span>${formatNewsText(it)}
+            </div>
+          `).join('') + `</div>`;
+        }
+        if (sec.note) {
+          secHtml += `
+            <div class="ncard-note" style="margin-top:12px;margin-bottom:12px;">
+              ${formatNewsText(sec.note)}
+            </div>`;
+        }
+        if (sec.media) {
+          secHtml += renderNewsMedia(sec.media, sec.title || item.title);
+        }
+        if (Array.isArray(sec.subsections)) {
+          secHtml += sec.subsections.map(sub => {
+            let subHtml = `<div style="margin-left:8px;padding-left:14px;border-left:2px solid var(--line);margin-top:16px;margin-bottom:16px;">`;
+            if (sub.title) {
+              subHtml += `<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">${formatNewsText(sub.title)}</div>`;
+            }
+            if (sub.desc || sub.text) {
+              subHtml += `<div style="font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:6px;">${formatNewsText(sub.desc || sub.text)}</div>`;
+            }
+            if (Array.isArray(sub.items) && sub.items.length > 0) {
+              subHtml += `<div>` + sub.items.map(it => `
+                <div style="font-size:13px;color:var(--dim);padding:2px 0 2px 14px;position:relative;line-height:1.6;">
+                  <span style="position:absolute;left:0;color:var(--line);font-size:10px;">•</span>${formatNewsText(it)}
+                </div>
+              `).join('') + `</div>`;
+            }
+            subHtml += `</div>`;
+            if (sub.media) {
+              subHtml += renderNewsMedia(sub.media, sub.title);
+            }
+            return subHtml;
+          }).join('');
+        }
+        secHtml += `</div>`;
+        return secHtml;
+      }).join('');
+    }
+
+    const collapseId = `newsCollapseWrap_${index}`;
+    const btnId = `btnToggleNews_${index}`;
+    const isExpanded = !!item.defaultExpanded;
+
+    return `
+      <div class="news-card" id="newsCard_${index}">
+        ${bannerHtml}
+        <div class="news-content-collapse ${isExpanded ? 'expanded' : ''}" id="${collapseId}">
+          <div style="padding:22px 24px 24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:12px;color:var(--dim);letter-spacing:.5px;">
+              ${badgeHtml}
+              ${dateHtml}
+            </div>
+            <div class="news-card-title" style="font-size:18px;letter-spacing:1.5px;color:var(--text);margin-bottom:12px;font-weight:700;">
+              ${formatNewsText(item.title || '')}
+            </div>
+            ${item.subtitle ? `
+              <div style="font-size:14px;color:var(--muted);line-height:1.75;margin-bottom:20px;">
+                ${formatNewsText(item.subtitle)}
+              </div>
+            ` : ''}
+            ${sectionsHtml}
+          </div>
+        </div>
+        <div class="news-card-footer">
+          <button class="changelog-more-link" id="${btnId}" onclick="toggleNewsCardIndex(${index})">
+            ${isExpanded ? 'Свернуть' : 'Развернуть'}
+          </button>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderAllNews(list) {
+    const container = document.getElementById('newsContent');
+    const emptyEl = document.getElementById('newsEmpty');
+    if (!container) return;
+
+    if (!list || !list.length) {
+      container.innerHTML = '';
+      if (emptyEl) emptyEl.style.display = 'flex';
+      container.style.display = 'none';
+      return;
+    }
+
+    if (emptyEl) emptyEl.style.display = 'none';
+    container.style.display = 'block';
+    container.innerHTML = list.map((item, idx) => renderNewsCard(item, idx)).join('');
+  }
+
+  async function loadAndRenderNews() {
+    try {
+      const res = await fetch('/api/news');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          currentNewsData = data;
+          renderAllNews(currentNewsData);
+          return;
+        }
+      }
+    } catch (e) { }
+
+    try {
+      const res = await fetch('news.json');
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          currentNewsData = data;
+          renderAllNews(currentNewsData);
+          return;
+        }
+      }
+    } catch (e) { }
+
+    currentNewsData = (typeof DEFAULT_NEWS !== 'undefined' && Array.isArray(DEFAULT_NEWS)) ? DEFAULT_NEWS : [];
+    renderAllNews(currentNewsData);
+  }
+
+  function toggleNewsCardIndex(index) {
+    const wrap = document.getElementById(`newsCollapseWrap_${index}`);
+    const btn = document.getElementById(`btnToggleNews_${index}`);
+    if (!wrap || !btn) return;
+    const isExpanded = wrap.classList.toggle('expanded');
+    btn.textContent = isExpanded ? 'Свернуть' : 'Развернуть';
+    if (!isExpanded) {
+      const card = document.getElementById(`newsCard_${index}`);
+      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function toggleNewsCard() {
+    toggleNewsCardIndex(0);
+  }
+
+  function setNewsEmpty(empty) {
+    const emptyEl = document.getElementById('newsEmpty');
+    const contentEl = document.getElementById('newsContent');
+    if (emptyEl) emptyEl.style.display = empty ? 'flex' : 'none';
+    if (contentEl) contentEl.style.display = empty ? 'none' : 'block';
+  }
+
+  function toggleNewsEmptyDemo() {
+    const emptyEl = document.getElementById('newsEmpty');
+    const isCurrentlyEmpty = emptyEl && emptyEl.style.display !== 'none';
+    setNewsEmpty(!isCurrentlyEmpty);
+  }
+  function getImageBlob(src) {
+    return new Promise((resolve, reject) => {
+      // Способ 1: XHR для локального протокола file://
+      const xhr = new XMLHttpRequest();
+      xhr.open('GET', src, true);
+      xhr.responseType = 'blob';
+      xhr.onload = () => {
+        if ((xhr.status === 200 || xhr.status === 0) && xhr.response && xhr.response.size > 0) {
+          resolve(new Blob([xhr.response], { type: 'image/png' }));
+        } else {
+          tryCanvas();
+        }
+      };
+      xhr.onerror = () => tryCanvas();
+      xhr.send();
+
+      // Способ 2: Отрисовка в Canvas и экспорт PNG Blob
+      function tryCanvas() {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          try {
+            const canvas = document.createElement('canvas');
+            canvas.width = img.naturalWidth || img.width;
+            canvas.height = img.naturalHeight || img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            canvas.toBlob(blob => {
+              if (blob) resolve(blob);
+              else reject(new Error('Не удалось сформировать изображение'));
+            }, 'image/png');
+          } catch(err) {
+            reject(err);
+          }
+        };
+        img.onerror = () => reject(new Error('Не удалось загрузить изображение'));
+        img.src = src;
+      }
+    });
+  }
+
+  let copyResetTimer;
+  async function copyScreenshot(){
+    if (!playerScreenshots.length) return;
+    const item = playerScreenshots[currentScreenshotIdx];
+    const btn = document.getElementById('btnCopyScreenshot');
+
+    try {
+      const blob = await getImageBlob(item.src);
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': blob })
+      ]);
+
+      if (btn) {
+        btn.textContent = 'Скопировано';
+        btn.classList.add('copied');
+        clearTimeout(copyResetTimer);
+        copyResetTimer = setTimeout(()=>{
+          btn.textContent = 'Копировать';
+          btn.classList.remove('copied');
+        }, 1600);
+      }
+      toast('Картинка скопирована в буфер');
+    } catch(err) {
+      console.error('Ошибка копирования картинки:', err);
+      toast('Не удалось скопировать картинку');
+    }
+  }
+
+  async function deleteCurrentScreenshot(){
+    if (!playerScreenshots.length) return;
+    const item = playerScreenshots[currentScreenshotIdx];
+    playerScreenshots.splice(currentScreenshotIdx, 1);
+    toast('Скриншот удален');
+    if (!playerScreenshots.length) {
+      closeLightbox();
+      renderGallery();
+    } else {
+      if (currentScreenshotIdx >= playerScreenshots.length) {
+        currentScreenshotIdx = playerScreenshots.length - 1;
+      }
+      openLightbox(currentScreenshotIdx);
+      renderGallery();
+    }
+
+    if(isBackend && item && item.name){
+      try {
+        await fetch('/api/delete-screenshot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({ name: item.name })
+        });
+      } catch(e) {}
+    }
+  }
+
+  // --- Лайтбокс просмотрщика скриншотов ---
+  function openLightbox(idx){
+    if (idx < 0 || idx >= playerScreenshots.length) return;
+    lightboxMode = 'gallery';
+    const lb = document.getElementById('lightbox');
+    if (lb) lb.classList.remove('news-mode');
+    currentScreenshotIdx = idx;
+    const item = playerScreenshots[idx];
+    document.getElementById('lightboxTitle').textContent = item.name;
+    document.getElementById('lightboxImg').src = item.src;
+    document.getElementById('lightboxMeta').textContent = item.meta;
+    document.getElementById('lightboxCounter').textContent = (idx + 1) + ' / ' + playerScreenshots.length;
+
+    const prevBtn = document.querySelector('.lightbox-prev');
+    const nextBtn = document.querySelector('.lightbox-next');
+    if (prevBtn) prevBtn.disabled = (idx <= 0);
+    if (nextBtn) nextBtn.disabled = (idx >= playerScreenshots.length - 1);
+
+    if (lb) lb.classList.add('show');
+  }
+
+  function closeLightbox(){
+    const lb = document.getElementById('lightbox');
+    if (lb) {
+      lb.classList.remove('show');
+      lb.classList.remove('news-mode');
+    }
+    lightboxMode = 'gallery';
+  }
+
+  function prevScreenshot(e){
+    if (lightboxMode !== 'gallery') return;
+    if (e) e.stopPropagation();
+    if (!playerScreenshots.length) return;
+    if (currentScreenshotIdx <= 0) return;
+    currentScreenshotIdx--;
+    openLightbox(currentScreenshotIdx);
+  }
+
+  function nextScreenshot(e){
+    if (lightboxMode !== 'gallery') return;
+    if (e) e.stopPropagation();
+    if (!playerScreenshots.length) return;
+    if (currentScreenshotIdx >= playerScreenshots.length - 1) return;
+    currentScreenshotIdx++;
+    openLightbox(currentScreenshotIdx);
+  }
+
+  function handleLightboxBackdrop(e){
+    if (e.target.id === 'lightbox' || e.target.classList.contains('lightbox-body') || e.target.classList.contains('lightbox-img-wrap')) {
+      closeLightbox();
+    }
+  }
+
+  window.addEventListener('keydown', (e)=>{
+    const sm = document.getElementById('settingsModal');
+    if (sm && sm.classList.contains('show') && e.key === 'Escape') {
+      closeSettingsModal();
+      return;
+    }
+    const lb = document.getElementById('lightbox');
+    if (!lb || !lb.classList.contains('show')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (lightboxMode === 'gallery') {
+      if (e.key === 'ArrowLeft') prevScreenshot();
+      if (e.key === 'ArrowRight') nextScreenshot();
+    }
+  });
+
+  // --- Настройки лаунчера (модальное окно) ---
+  const LAUNCHER_SETTINGS_KEY = 'cv_launcher_settings';
+
+  const defaultLauncherSettings = {
+    bgPreset: 'default',
+    bgCustomData: '',
+    bgCustomFileName: '',
+    accentColor: '#f0f0f2',
+    smoothAnim: true,
+    gpuAccel: true
+  };
+
+  let launcherSettings = Object.assign({}, defaultLauncherSettings);
+
+  function getContrastColor(hex) {
+    if (!hex) return '#0b0b0d';
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    if (h.length !== 6) return '#0b0b0d';
+    const r = parseInt(h.substring(0, 2), 16) || 0;
+    const g = parseInt(h.substring(2, 4), 16) || 0;
+    const b = parseInt(h.substring(4, 6), 16) || 0;
+    const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+    return (yiq >= 150) ? '#0b0b0d' : '#ffffff';
+  }
+
+  function hexToRgb(hex) {
+    if (!hex) return '240, 240, 242';
+    let h = hex.replace('#', '');
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    if (h.length !== 6) return '240, 240, 242';
+    const r = parseInt(h.substring(0, 2), 16) || 0;
+    const g = parseInt(h.substring(2, 4), 16) || 0;
+    const b = parseInt(h.substring(4, 6), 16) || 0;
+    return `${r}, ${g}, ${b}`;
+  }
+
+  let activeBannerLayer = 'A';
+
+  // В бета-версии слайдшоу отключено (статичный чистый баннер)
+  function startBannerSlideshow() {}
+  function stopBannerSlideshow() {}
+  function nextBannerSlide() {}
+
+  function setBannerCustomImage(dataUrl) {
+    const layerA = document.getElementById('bannerBgA');
+    if (layerA) {
+      layerA.style.backgroundImage = 'url("' + dataUrl + '")';
+      layerA.style.opacity = '1';
+    }
+    document.documentElement.style.setProperty('--banner-bg', 'url("' + dataUrl + '")');
+  }
+
+  function resetBannerToDefault() {
+    const layerA = document.getElementById('bannerBgA');
+    if (layerA) {
+      layerA.style.backgroundImage = 'url("assets/bg.png")';
+      layerA.style.opacity = '1';
+    }
+    document.documentElement.style.setProperty('--banner-bg', 'url("assets/bg.png")');
+  }
+
+  function applyLauncherSettings(settings, syncUI) {
+    if (!settings) settings = launcherSettings;
+
+    // 1. Акцентный цвет
+    const accent = settings.accentColor || '#f0f0f2';
+    document.documentElement.style.setProperty('--accent', accent);
+    document.documentElement.style.setProperty('--accent-rgb', hexToRgb(accent));
+    document.documentElement.style.setProperty('--accent-text', getContrastColor(accent));
+
+    // 2. Фон баннера (#bannerCard / пул картинок)
+    const preset = settings.bgPreset || 'default';
+    if (preset === 'custom' && settings.bgCustomData) {
+      setBannerCustomImage(settings.bgCustomData);
+    } else {
+      resetBannerToDefault();
+    }
+
+    // 3. Анимации
+    if (settings.smoothAnim === false) {
+      document.body.classList.add('no-transitions');
+    } else {
+      document.body.classList.remove('no-transitions');
+    }
+
+    // 4. Синхронизация UI
+    if (syncUI) {
+      syncSettingsUI(settings);
+    }
+  }
+
+  function syncSettingsUI(settings) {
+    if (!settings) settings = launcherSettings;
+
+    // Пресеты фонов (мини-превьюшки: default, custom)
+    const preset = settings.bgPreset || 'default';
+    const grid = document.querySelector('.bg-presets-grid');
+    const defEl = document.getElementById('bgPresetDefault');
+    const customCard = document.getElementById('bgPresetCustom');
+    const customIcon = document.getElementById('bgPresetCustomIcon');
+    const customLabel = document.getElementById('bgPresetCustomLabel');
+
+    const hasCustomImage = Boolean(settings.bgCustomData);
+    if (grid) {
+      grid.classList.toggle('custom-first', hasCustomImage);
+    }
+
+    if (defEl) defEl.classList.toggle('active', preset === 'default');
+
+    if (customCard) {
+      customCard.classList.toggle('active', preset === 'custom');
+      if (hasCustomImage) {
+        customCard.classList.add('has-image');
+        customCard.style.backgroundImage = 'url("' + settings.bgCustomData + '")';
+        if (customIcon) customIcon.style.display = 'none';
+        if (customLabel) customLabel.textContent = 'Свой фон';
+        customCard.setAttribute('title', 'Свой фон (нажмите для смены)');
+      } else {
+        customCard.classList.remove('has-image');
+        customCard.style.backgroundImage = '';
+        if (customIcon) customIcon.style.display = 'flex';
+        if (customLabel) customLabel.textContent = 'Загрузить фон';
+        customCard.setAttribute('title', 'Загрузить фон');
+      }
+    }
+
+    // Акцентный цвет
+    const currentAccent = (settings.accentColor || '#f0f0f2').toLowerCase();
+    document.querySelectorAll('.color-swatch').forEach(s => {
+      s.classList.remove('active');
+      const onclickAttr = s.getAttribute('onclick') || '';
+      if (onclickAttr.toLowerCase().includes(currentAccent)) {
+        s.classList.add('active');
+      }
+    });
+
+    // Чекбоксы
+    const toggleAnim = document.getElementById('toggleAnimSetting');
+    if (toggleAnim) toggleAnim.checked = settings.smoothAnim !== false;
+    const toggleGpu = document.getElementById('toggleGpuSetting');
+    if (toggleGpu) toggleGpu.checked = settings.gpuAccel !== false;
+  }
+
+  function loadSavedLauncherSettings() {
+    try {
+      const saved = localStorage.getItem(LAUNCHER_SETTINGS_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        launcherSettings = Object.assign({}, defaultLauncherSettings, parsed);
+      }
+    } catch(e) {
+      console.warn('Ошибка загрузки настроек лаунчера:', e);
+    }
+    applyLauncherSettings(launcherSettings, true);
+  }
+
+  function saveLauncherSettingsToStorage() {
+    try {
+      localStorage.setItem(LAUNCHER_SETTINGS_KEY, JSON.stringify(launcherSettings));
+    } catch(e) {
+      console.warn('Ошибка сохранения настроек лаунчера:', e);
+    }
+  }
+
+  function selectBgPreset(preset) {
+    launcherSettings.bgPreset = preset;
+    applyLauncherSettings(launcherSettings, true);
+    saveLauncherSettingsToStorage();
+  }
+
+  function onCustomCardClick() {
+    if (launcherSettings.bgCustomData && launcherSettings.bgPreset !== 'custom') {
+      selectBgPreset('custom');
+    } else {
+      triggerBgFilePick();
+    }
+  }
+
+  function triggerBgFilePick() {
+    const input = document.getElementById('bgFileInput');
+    if (input) input.click();
+  }
+
+  function onBgFileSelected(input) {
+    const file = input && input.files && input.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast('Выберите файл изображения (PNG, JPG, WebP)');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        let w = img.width, h = img.height;
+        const maxW = 1920, maxH = 1080;
+        if (w > maxW || h > maxH) {
+          const ratio = Math.min(maxW / w, maxH / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+        launcherSettings.bgPreset = 'custom';
+        launcherSettings.bgCustomData = dataUrl;
+        launcherSettings.bgCustomFileName = file.name;
+
+        applyLauncherSettings(launcherSettings, true);
+        saveLauncherSettingsToStorage();
+        toast('Баннер успешно установлен');
+      };
+      img.onerror = function() {
+        toast('Не удалось прочитать изображение');
+      };
+      img.src = e.target.result;
+    };
+    reader.onerror = function() {
+      toast('Ошибка загрузки файла');
+    };
+    reader.readAsDataURL(file);
+    input.value = '';
+  }
+
+  function selectAccentColor(color, el) {
+    launcherSettings.accentColor = color;
+    document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+    if (el) el.classList.add('active');
+
+    document.documentElement.style.setProperty('--accent', color);
+    document.documentElement.style.setProperty('--accent-rgb', hexToRgb(color));
+    document.documentElement.style.setProperty('--accent-text', getContrastColor(color));
+    saveLauncherSettingsToStorage();
+  }
+
+  function resetLauncherSettings() {
+    launcherSettings = Object.assign({}, defaultLauncherSettings);
+    try {
+      localStorage.removeItem(LAUNCHER_SETTINGS_KEY);
+    } catch(e) {}
+    applyLauncherSettings(launcherSettings, true);
+    toast('Настройки сброшены по умолчанию');
+  }
+
+  function saveLauncherSettings() {
+    const toggleAnim = document.getElementById('toggleAnimSetting');
+    if (toggleAnim) launcherSettings.smoothAnim = toggleAnim.checked;
+    const toggleGpu = document.getElementById('toggleGpuSetting');
+    if (toggleGpu) launcherSettings.gpuAccel = toggleGpu.checked;
+
+    applyLauncherSettings(launcherSettings, true);
+    saveLauncherSettingsToStorage();
+    toast('Настройки сохранены');
+    closeSettingsModal();
+  }
+
+  async function createDesktopShortcut() {
+    if (!isBackend) {
+      toast('Недоступно в демо-режиме');
+      return;
+    }
+    try {
+      const res = await fetch('/api/create-desktop-shortcut');
+      const data = await res.json();
+      if (data && data.ok) {
+        toast(data.msg || 'Ярлык успешно создан на Рабочем столе!');
+      } else {
+        toast((data && data.msg) || 'Не удалось создать ярлык');
+      }
+    } catch (e) {
+      toast('Ошибка запроса на создание ярлыка');
+    }
+  }
+
+  async function cleanAdServersNow() {
+    if (!isBackend) {
+      toast('Недоступно в демо-режиме');
+      return;
+    }
+    const btn = document.getElementById('btnCleanServers');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = 'Очистка...';
+    }
+    try {
+      const res = await fetch('/api/clean-servers');
+      const data = await res.json();
+      if (data && data.ok) {
+        toast(data.msg || 'Список серверов очищен');
+      } else {
+        toast((data && data.msg) || 'Не удалось очистить сервера');
+      }
+    } catch (e) {
+      toast('Ошибка при очистке списка серверов');
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Очистить сервера';
+      }
+    }
+  }
+
+  async function loadLogInfo() {
+    if (!isBackend) return;
+    try {
+      const res = await fetch('/api/log-info');
+      const data = await res.json();
+      const el = document.getElementById('logPathDisplay');
+      if (el && data && data.path) {
+        const sizeStr = data.size ? ' (' + (data.size > 1024 * 1024 ? (data.size / (1024*1024)).toFixed(1) + ' MB' : Math.round(data.size / 1024) + ' KB') + ')' : '';
+        el.textContent = data.path + sizeStr;
+        el.title = data.path;
+      }
+    } catch(e) {}
+  }
+
+  async function openLogFile() {
+    if (!isBackend) { toast('Логи доступны только в приложении'); return; }
+    try {
+      const res = await fetch('/api/open-log', { method: 'POST' });
+      const data = await res.json();
+      if (data && data.ok) toast('Лог открыт в Notepad');
+      else toast('Не удалось открыть лог: ' + (data && data.error ? data.error : 'ошибка'));
+    } catch(e) {
+      toast('Ошибка вызова: ' + e.message);
+    }
+  }
+
+  async function copyLogContent() {
+    if (!isBackend) { toast('Логи доступны только в приложении'); return; }
+    try {
+      const res = await fetch('/api/get-log');
+      const data = await res.json();
+      if (data && data.content) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(data.content);
+          toast('Лог скопирован в буфер обмена');
+        } else {
+          const ta = document.createElement('textarea');
+          ta.value = data.content;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand('copy');
+          document.body.removeChild(ta);
+          toast('Лог скопирован в буфер обмена');
+        }
+      } else {
+        toast('Файл лога пуст');
+      }
+    } catch(e) {
+      toast('Ошибка копирования лога: ' + e.message);
+    }
+  }
+
+  function openSettingsModal() {
+    syncSettingsUI(launcherSettings);
+    loadLogInfo();
+    const m = document.getElementById('settingsModal');
+    if (m) m.classList.add('show');
+  }
+
+  function closeSettingsModal() {
+    const m = document.getElementById('settingsModal');
+    if (m) m.classList.remove('show');
+  }
+
+  function handleSettingsBackdrop(e) {
+    if (e.target.id === 'settingsModal') {
+      closeSettingsModal();
+    }
+  }
+
+  function openSettingsFromMenu(e) {
+    if (e) e.stopPropagation();
+    const m = document.getElementById('moreMenu');
+    if (m) m.classList.remove('show');
+    openSettingsModal();
+  }
+
+  let currentView = 'main';
+  function hideAllViews(){
+    ['viewMain', 'viewNews', 'viewGallery', 'viewRating'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.display = 'none';
+    });
+    ['btnMain', 'btnNews', 'btnGallery', 'btnRating'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    });
+  }
+
+  function showMain(){
+    currentView = 'main';
+    hideAllViews();
+    document.getElementById('viewMain').style.display = 'flex';
+    document.getElementById('btnMain').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'ГЛАВНАЯ';
+  }
+
+  function showNews(autoExpand){
+    currentView = 'news';
+    hideAllViews();
+    document.getElementById('viewNews').style.display = 'flex';
+    document.getElementById('btnNews').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'НОВОСТИ';
+    if (!currentNewsData || currentNewsData.length === 0) {
+      loadAndRenderNews();
+    }
+    if (autoExpand === true) {
+      setTimeout(() => {
+        const wrap = document.getElementById('newsCollapseWrap_0');
+        const btn = document.getElementById('btnToggleNews_0');
+        if (wrap && !wrap.classList.contains('expanded')) {
+          wrap.classList.add('expanded');
+          if (btn) btn.textContent = 'Свернуть';
+        }
+      }, 50);
+    }
+  }
+
+  function showGallery(){
+    currentView = 'gallery';
+    hideAllViews();
+    document.getElementById('viewGallery').style.display = 'flex';
+    document.getElementById('btnGallery').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'ГАЛЕРЕЯ';
+    renderGallery();
+    loadRealScreenshots();
+  }
+
+  function showRating(){
+    currentView = 'rating';
+    hideAllViews();
+    document.getElementById('viewRating').style.display = 'flex';
+    document.getElementById('btnRating').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'РЕЙТИНГ';
+  }
+
+  let autoUpdate = true;
+  function toggleAutoUpdate(enabled){
+    autoUpdate = enabled;
+    toast(enabled ? 'Автообновление включено' : 'Автообновление выключено');
+  }
+
+  loadSavedLauncherSettings();
+  showMain();
+  setStatus(false);
+  checkBackendStatus();
+  loadRealScreenshots();
+  setInterval(checkScreenshotsUpdate, 1500);
+
+  // --- Статус сервера ---
+  function updateServerStatus(online, players) {
+    const dot = document.getElementById('serverStatusDot');
+    const val = document.getElementById('serverStatusValue');
+    const pls = document.getElementById('serverStatusPlayers');
+    if (!dot) return;
+    if (online === null) {
+      dot.className = 'server-status-dot';
+      if (val) val.textContent = 'Проверка...';
+      if (pls) pls.textContent = '—';
+    } else if (online) {
+      dot.className = 'server-status-dot online';
+      if (val) val.textContent = 'Онлайн';
+      if (pls) pls.textContent = players !== undefined ? players + ' игр.' : '—';
+    } else {
+      dot.className = 'server-status-dot offline';
+      if (val) val.textContent = 'Оффлайн';
+      if (pls) pls.textContent = '0';
+    }
+  }
+
+  async function checkServerStatus() {
+    try {
+      // Псевдо-запрос — в реальности заменить на API бэкенда
+      const res = await fetch('/api/server-status').catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json();
+        updateServerStatus(data.online, data.players);
+      } else {
+        // Бэкенд не доступен — показываем оффлайн
+        updateServerStatus(false);
+      }
+    } catch(e) {
+      updateServerStatus(false);
+    }
+  }
+
+  updateServerStatus(null);
+  checkServerStatus();
+  setInterval(checkServerStatus, 30000);
+  loadAndRenderNews();
+</script>
+</body>
+</html>
+
