@@ -37,7 +37,7 @@ banner_repl = '''        <!-- КАРТОЧКА ЗАПУСКА (БЕЗ БАННЕ
 
           <h1 class="banner-title">CIVILIZATION <span style="font-size:12px;color:var(--accent);vertical-align:middle;padding:2px 8px;border-radius:4px;background:rgba(var(--accent-rgb),0.12);font-weight:700;letter-spacing:1.5px;margin-left:6px;border:1px solid rgba(var(--accent-rgb),0.3);">BETA</span></h1>
 
-          <div class="banner-sub">Бета-тест сборки · Minecraft 1.21.8 · Forge</div>'''
+          <div class="banner-sub">Бета-тест сборки · Minecraft 1.21.8 · Fabric · 18 модов</div>'''
 
 content = re.sub(
     r'<!-- БАННЕР -->\s*<div class="card" id="bannerCard">[\s\S]*?<div class="banner-sub">[\s\S]*?</div>',
@@ -129,8 +129,8 @@ content = content.replace(
     '<div id="newsContent" class="news-list-wrap" style="display:none !important;">'
 )
 content = content.replace(
-    '<div class="empty-title">НОВОСТИ ОТСУТСТВУЮТ</div>\n          <div class="empty-desc">Свежие события и обновления сборки появятся здесь автоматически</div>',
-    '<div class="empty-title">НОВОСТЕЙ ПОКА НЕТ</div>\n          <div class="empty-desc">Следите за событиями и анонсами на нашем сервере</div>'
+    '<div class="empty-title">ОБНОВЛЕНИЯ ОТСУТСТВУЮТ</div>\n          <div class="empty-desc">Свежие события и обновления сборки появятся здесь автоматически</div>',
+    '<div class="empty-title">ОБНОВЛЕНИЙ ПОКА НЕТ</div>\n          <div class="empty-desc">Следите за событиями и анонсами на нашем сервере</div>'
 )
 
 # 5. Clear DEFAULT_NEWS (lines 2976 to 3114)
@@ -189,21 +189,16 @@ content = re.sub(
 )
 print('renderAllNews & loadAndRenderNews replaced with strict empty handlers')
 
-# 9. Settings modal: hide banner background preset group
+# 9. Settings modal: launcher version badge
 content = re.sub(
-    r'<!-- 1\. ФОН БАННЕРА КАРТОЧКИ -->\s*<div class="settings-group">',
-    '<!-- 1. ФОН БАННЕРА КАРТОЧКИ -->\n      <div class="settings-group" style="display:none !important;">',
+    r'<span id="launcherVersionBadge"[^>]*>.*?</span>',
+    '<span id="launcherVersionBadge" style="font-family:monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--accent);">BETA</span>',
     content
 )
-
-# 10. Settings modal: launcher version badge
-content = content.replace(
-    '<span id="launcherVersionBadge" style="font-family:monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;font-size:12px;">v1.0.0</span>',
-    '<span id="launcherVersionBadge" style="font-family:monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--accent);">BETA</span>'
-)
-content = content.replace(
-    '<span id="launcherVersionStatus" style="font-size:12px;color:var(--muted);font-weight:normal;"></span>',
-    '<span id="launcherVersionStatus" style="font-size:12px;color:var(--muted);font-weight:normal;">(тестовая сборка)</span>'
+content = re.sub(
+    r'<span id="launcherVersionStatus"[^>]*>.*?</span>',
+    '<span id="launcherVersionStatus" style="font-size:12px;color:var(--muted);font-weight:normal;">· (тестовая сборка)</span>',
+    content
 )
 
 with open('beta/ui.html', 'w', encoding='utf-8') as f:

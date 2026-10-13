@@ -269,7 +269,12 @@
     background:var(--bg);
   }
   #viewMain{
-    justify-content:center;
+    min-height:100%;
+    box-sizing:border-box;
+  }
+  #viewMain .inner{
+    margin:auto auto;
+    padding-bottom:20px;
   }
   #viewGallery, #viewNews, #viewRating{
     min-height:100%;
@@ -310,7 +315,7 @@
     flex-direction:column;
     justify-content:flex-end;
     padding:34px 36px 30px;
-    background:var(--card);
+    background:#111114;
     border:1px solid var(--line);
     border-radius:var(--r);
   }
@@ -677,7 +682,7 @@
   .server-status-bar{
     display:flex;
     align-items:center;
-    gap:12px;
+    justify-content:space-between;
     height:52px;
     padding:0 18px;
     margin-top:14px;
@@ -690,10 +695,10 @@
     width:8px;
     height:8px;
     border-radius:50%;
-    background:var(--dim);
+    background:#e74c3c;
     flex-shrink:0;
   }
-  .server-status-dot.online{ background:#2ecc71; box-shadow:0 0 6px rgba(46,204,113,.5); }
+  .server-status-dot.online{ background:#2ecc71; }
   .server-status-dot.offline{ background:#e74c3c; }
   .server-status-label{
     font-size:10px;
@@ -759,11 +764,19 @@
     text-overflow:ellipsis;
     letter-spacing:.5px;
     cursor:pointer;
-    transition:color .15s;
+    padding:6px 10px;
+    border-radius:6px;
+    background:rgba(255,255,255,.02);
+    border:1px solid transparent;
+    transition:color .15s, background .15s, border-color .15s;
     user-select:none;
+    display:flex;
+    align-items:center;
   }
   .folder-bar-path:hover{
     color:var(--text);
+    background:rgba(255,255,255,.06);
+    border-color:rgba(255,255,255,.12);
   }
   .folder-change-wrap{
     position:relative;
@@ -1097,7 +1110,7 @@
   .modal-backdrop{
     position:fixed;
     inset:0;
-    background:rgba(6,6,8,.86);
+    background:rgb(0 0 0 / 58%);
     backdrop-filter:blur(8px);
     z-index:1000;
     display:none;
@@ -1183,7 +1196,7 @@
     line-height:1.5;
   }
   .settings-card-box{
-    background:rgba(255,255,255,.02);
+    background:rgb(255 255 255 / 1%);
     border:1px solid var(--line);
     border-radius:8px;
     padding:16px 18px;
@@ -1312,6 +1325,7 @@
   .color-swatches{
     display:flex;
     align-items:center;
+    justify-content:center;
     gap:10px;
     flex-wrap:wrap;
   }
@@ -1333,7 +1347,6 @@
   }
   .color-swatch.active{
     border-color:#fff;
-    box-shadow:0 0 0 2px rgba(255,255,255,.3);
     outline:2px solid rgba(255,255,255,.15);
     outline-offset:2px;
   }
@@ -1392,6 +1405,54 @@
     padding: 0px 24px 24px 24px;
     margin-top: 24px;
     background: linear-gradient(to top, var(--card, #0c0c0c) 75%, transparent 100%);
+  }
+
+  /* Кнопки внутри тела модального окна (строго единый размер и вес) */
+  .modal-body .btn,
+  .modal-body .folder-change-btn{
+    height: 30px !important;
+    min-height: 30px !important;
+    max-height: 30px !important;
+    padding: 0 14px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    letter-spacing: .6px !important;
+    border-radius: var(--r) !important;
+    display: inline-flex;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    flex: none !important;
+    min-width: auto !important;
+    line-height: normal !important;
+  }
+  #btnModalUpdateLauncher{
+    display: none !important;
+  }
+  #btnModalUpdateLauncher.visible{
+    display: inline-flex !important;
+  }
+  #btnCheckLauncherUpdate.hidden{
+    display: none !important;
+  }
+
+  /* Кнопки футера модального окна (самые большие и заметные) */
+  .modal-footer .btn{
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    padding: 0 18px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: .8px !important;
+    border-radius: var(--r) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-sizing: border-box !important;
+    flex: none !important;
+    min-width: auto !important;
+    line-height: normal !important;
   }
 
   /* ---------------- новости ---------------- */
@@ -1615,7 +1676,7 @@
     <div class="side-section" style="margin-top:20px">
       <nav class="side-nav">
         <button class="side-nav-item active" id="btnMain" onclick="showMain()">Главная</button>
-        <button class="side-nav-item" id="btnNews" onclick="showNews()">Новости</button>
+        <button class="side-nav-item" id="btnNews" onclick="showNews()">Обновления</button>
         <button class="side-nav-item" id="btnGallery" onclick="showGallery()">Галерея</button>
         <button class="side-nav-item" id="btnRating" onclick="showRating()" style="display:none">Рейтинг</button>
       </nav>
@@ -1671,7 +1732,7 @@
 
           <h1 class="banner-title">CIVILIZATION</h1>
 
-          <div class="banner-sub">Minecraft 1.21.8 · Forge · 13 модов</div>
+          <div class="banner-sub">Minecraft 1.21.8 · Fabric · 18 модов</div>
 
           <div class="banner-actions">
             <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
@@ -1752,14 +1813,14 @@
 
         <!-- СТАТУС СЕРВЕРА -->
         <div class="server-status-bar" id="serverStatusBar">
-          <div class="server-status-dot" id="serverStatusDot"></div>
-          <div class="server-status-label" id="serverStatusLabel">СЕРВЕР</div>
-          <div class="server-status-value" id="serverStatusValue">Проверка...</div>
-          <div class="server-status-sep"></div>
-          <div class="server-status-label">ОНЛАЙН</div>
-          <div class="server-status-players" id="serverStatusPlayers">—</div>
-          <div class="server-status-sep"></div>
-          <div class="server-status-addr">civilization.server.ru : 25565</div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="server-status-dot offline" id="serverStatusDot"></div>
+            <div class="server-status-label" id="serverStatusLabel">СЕРВЕР</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="server-status-label">ОНЛАЙН</div>
+            <div class="server-status-players" id="serverStatusPlayers">0</div>
+          </div>
         </div>
 
       </div>
@@ -1771,7 +1832,7 @@
 
         <!-- EMPTY STATE (когда нет новостей) -->
         <div class="empty-state" id="newsEmpty" style="display:none">
-          <div class="empty-title">НОВОСТИ ОТСУТСТВУЮТ</div>
+          <div class="empty-title">ОБНОВЛЕНИЯ ОТСУТСТВУЮТ</div>
           <div class="empty-desc">Свежие события и обновления сборки появятся здесь автоматически</div>
         </div>
 
@@ -1865,10 +1926,7 @@
 <div class="modal-backdrop" id="settingsModal" onclick="handleSettingsBackdrop(event)">
   <div class="modal-dialog">
     <div class="modal-header">
-      <div>
-        <div class="modal-title">НАСТРОЙКИ ЛАУНЧЕРА</div>
-        <div class="modal-sub">Персонализация внешнего вида и параметров интерфейса</div>
-      </div>
+      <div class="modal-title">ПАРАМЕТРЫ</div>
       <button class="lightbox-close" onclick="closeSettingsModal()" title="Закрыть (Esc)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -1878,85 +1936,17 @@
     </div>
 
     <div class="modal-body">
-      <!-- 1. ФОН БАННЕРА КАРТОЧКИ -->
+      <!-- 1. ОБЩЕЕ -->
       <div class="settings-group">
         <div class="settings-group-header">
-          <div class="settings-title">Фон главного баннера</div>
-          <div class="settings-desc">Выберите картинку из пресетов или загрузите свою</div>
-        </div>
-
-        <div class="settings-card-box">
-          <input type="file" id="bgFileInput" accept="image/*" style="display:none;" onchange="onBgFileSelected(this)">
-
-          <!-- Пресеты фонов (мини-превьюшки) -->
-          <div class="bg-presets-grid">
-            <!-- 1. По умолчанию -->
-            <div class="bg-preset-item active" id="bgPresetDefault" onclick="selectBgPreset('default')" style="background-image:url('assets/bg.png');" title="По умолчанию">
-              <span class="bg-preset-label">По умолчанию</span>
-            </div>
-
-            <!-- 2. Свой фон (кнопка аплоад) -->
-            <div class="bg-preset-item upload-btn" id="bgPresetCustom" onclick="onCustomCardClick()" title="Загрузить фон">
-              <div class="bg-preset-custom-icon" id="bgPresetCustomIcon">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-              </div>
-              <span class="bg-preset-label" id="bgPresetCustomLabel">Загрузить фон</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 2. ВЫБОР АКЦЕНТНОГО ЦВЕТА -->
-      <div class="settings-group">
-        <div class="settings-group-header">
-          <div class="settings-title">Акцентный цвет интерфейса</div>
-          <div class="settings-desc">Цветовая палитра кнопок действий, индикаторов, рамок и бейджей</div>
-        </div>
-
-        <div class="settings-card-box">
-          <div class="color-swatches">
-            <!-- 1. Базовый (По умолчанию) -->
-            <button class="color-swatch active" id="swatchDefault" onclick="selectAccentColor('#f0f0f2', this)" style="background:#f0f0f2;" title="Базовый (По умолчанию)"></button>
-            <!-- 2. Жёлтый -->
-            <button class="color-swatch" onclick="selectAccentColor('#eab308', this)" style="background:#eab308;" title="Жёлтый"></button>
-            <!-- 3. Золото -->
-            <button class="color-swatch" onclick="selectAccentColor('#f59e0b', this)" style="background:#f59e0b;" title="Золото"></button>
-            <!-- 4. Медь -->
-            <button class="color-swatch" onclick="selectAccentColor('#fb923c', this)" style="background:#fb923c;" title="Медь"></button>
-            <!-- 5. Лайм -->
-            <button class="color-swatch" onclick="selectAccentColor('#84cc16', this)" style="background:#84cc16;" title="Лаймовый"></button>
-            <!-- 6. Изумруд -->
-            <button class="color-swatch" onclick="selectAccentColor('#10b981', this)" style="background:#10b981;" title="Изумруд"></button>
-            <!-- 7. Алмаз -->
-            <button class="color-swatch" onclick="selectAccentColor('#06b6d4', this)" style="background:#06b6d4;" title="Алмаз"></button>
-            <!-- 8. Лазурит -->
-            <button class="color-swatch" onclick="selectAccentColor('#3b82f6', this)" style="background:#3b82f6;" title="Лазурит"></button>
-            <!-- 9. Аметист -->
-            <button class="color-swatch" onclick="selectAccentColor('#8b5cf6', this)" style="background:#8b5cf6;" title="Аметист"></button>
-            <!-- 10. Розовый -->
-            <button class="color-swatch" onclick="selectAccentColor('#ec4899', this)" style="background:#ec4899;" title="Розовый"></button>
-            <!-- 11. Редстоун -->
-            <button class="color-swatch" onclick="selectAccentColor('#ef4444', this)" style="background:#ef4444;" title="Редстоун"></button>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. ДОПОЛНИТЕЛЬНО -->
-      <div class="settings-group">
-        <div class="settings-group-header">
-          <div class="settings-title">Интерфейс и эффекты</div>
-          <div class="settings-desc">Поведение и отображение графических компонентов</div>
+          <div class="settings-title">Общее</div>
         </div>
 
         <div class="settings-card-box">
           <div class="settings-toggle-row">
             <div class="settings-toggle-info">
-              <div class="settings-toggle-title">Автообновление лаунчера</div>
-              <div class="settings-toggle-desc">Автоматически проверять и устанавливать обновления</div>
+              <div class="settings-toggle-title">Автообновление</div>
+              <div class="settings-toggle-desc">Проверка при каждом запуске</div>
             </div>
             <label class="switch">
               <input type="checkbox" checked id="autoUpdateToggle" onchange="toggleAutoUpdate(this.checked)">
@@ -1966,105 +1956,62 @@
 
           <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
             <div class="settings-toggle-info">
-              <div class="settings-toggle-title">Плавные анимации и переходы</div>
-              <div class="settings-toggle-desc">Плавное раскрытие новостей и переключение разделов</div>
+              <div class="settings-toggle-title">Ярлык</div>
+              <div class="settings-toggle-desc">Для быстрого запуска</div>
             </div>
-            <label class="switch">
-              <input type="checkbox" checked id="toggleAnimSetting">
-              <span class="slider"></span>
-            </label>
-          </div>
-
-          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
-            <div class="settings-toggle-info">
-              <div class="settings-toggle-title">Аппаратное ускорение графики</div>
-              <div class="settings-toggle-desc">Использовать видеокарту для рендера анимаций лаунчера</div>
-            </div>
-            <label class="switch">
-              <input type="checkbox" checked id="toggleGpuSetting">
-              <span class="slider"></span>
-            </label>
-          </div>
-          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
-            <div class="settings-toggle-info">
-              <div class="settings-toggle-title">Ярлык на Рабочем столе</div>
-              <div class="settings-toggle-desc">Создать удобный ярлык для быстрого запуска лаунчера</div>
-            </div>
-            <button class="btn line" onclick="createDesktopShortcut()" style="padding:6px 14px;font-size:12px;height:32px;cursor:pointer;flex-shrink:0;">Создать ярлык</button>
-          </div>
-          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
-            <div class="settings-toggle-info">
-              <div class="settings-toggle-title">Очистка рекламы серверов (TLauncher)</div>
-              <div class="settings-toggle-desc">Автоудаление рекламных серверов (DexLand, BigCraft, VimeMC, HypeMC и др.) из списка сетевой игры</div>
-            </div>
-            <button class="btn line" id="btnCleanServers" onclick="cleanAdServersNow()" style="padding:6px 14px;font-size:12px;height:32px;cursor:pointer;flex-shrink:0;">Очистить сервера</button>
+            <button class="btn line" onclick="createDesktopShortcut()">Создать</button>
           </div>
         </div>
       </div>
 
-      <!-- 4. ПАПКА ИГРЫ -->
+      <!-- 2. ФАЙЛЫ (ИГРА И ЛОГИ) -->
       <div class="settings-group">
         <div class="settings-group-header">
-          <div class="settings-title">Папка игры</div>
-          <div class="settings-desc">Путь к директории .minecraft</div>
+          <div class="settings-title">Файлы</div>
         </div>
         <div class="settings-card-box">
-          <div class="folder-bar" style="margin-top:0;border:none;padding:0;height:auto;background:transparent;gap:12px;flex-wrap:wrap;">
-            <div class="folder-bar-path" id="mcPathDisplay" onclick="copyPathToClipboard()" title="Нажмите, чтобы скопировать путь" style="flex:1;min-width:0;">C:\Users\You\AppData\Roaming\.minecraft</div>
-            <input type="hidden" id="mcPath" value="C:\Users\You\AppData\Roaming\.minecraft">
-            <div class="folder-change-wrap" id="folderChangeWrap">
-              <button class="folder-change-btn" id="btnChangeFolder" onclick="toggleFolderMenu(event)" style="padding:6px 12px;border:1px solid var(--line);border-radius:var(--r);">Изменить</button>
-              <div class="folder-menu" id="folderMenu">
-                <button class="more-item" onclick="onFolderMenuAction('detect', event)">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
-                  Найти автоматически
-                </button>
-                <button class="more-item" onclick="onFolderMenuAction('pick', event)">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-                  Обзор…
-                </button>
-              </div>
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info" style="min-width:0;flex:1;margin-right:16px;">
+              <div class="settings-toggle-title">Игра</div>
+              <div class="settings-toggle-desc" id="mcPathDisplay" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="C:\Users\...\.minecraft">C:\Users\...\.minecraft</div>
+              <input type="hidden" id="mcPath">
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+              <button class="btn line" onclick="pickFolder()">Изменить</button>
+              <button class="btn line" onclick="openGameFolder(event)">Открыть</button>
+            </div>
+          </div>
+
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info" style="min-width:0;flex:1;margin-right:16px;">
+              <div class="settings-toggle-title">Логи</div>
+              <div class="settings-toggle-desc" id="logPathDisplay" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="launcher.log">launcher.log</div>
+            </div>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+              <button class="btn line" onclick="copyLogContent()">Копировать</button>
+              <button class="btn line" onclick="openLogFile()">Открыть</button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- 5. ЛОГИ И ДИАГНОСТИКА -->
+      <!-- 4. ОБНОВЛЕНИЕ -->
       <div class="settings-group">
         <div class="settings-group-header">
-          <div class="settings-title">Логи и диагностика</div>
-          <div class="settings-desc">Журнал работы лаунчера для решения проблем и крашей</div>
-        </div>
-        <div class="settings-card-box">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-            <div style="font-size:12px;color:var(--muted);flex:1;min-width:180px;word-break:break-all;" id="logPathDisplay">launcher.log</div>
-            <div style="display:flex;gap:8px;">
-              <button class="btn line" onclick="copyLogContent()" style="font-size:12px;padding:6px 14px;">Скопировать лог</button>
-              <button class="btn line" onclick="openLogFile()" style="font-size:12px;padding:6px 14px;">Открыть файл</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 6. ВЕРСИЯ И ОБНОВЛЕНИЕ ЛАУНЧЕРА -->
-      <div class="settings-group">
-        <div class="settings-group-header">
-          <div class="settings-title">Обновление лаунчера</div>
-          <div class="settings-desc">Проверка актуальной версии лаунчера и оболочки</div>
+          <div class="settings-title">Обновление</div>
         </div>
         <div class="settings-card-box">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
             <div>
               <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
-                <span>Версия:</span>
-                <span id="launcherVersionBadge" style="font-family:monospace;background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--accent);">7698d7a</span>
-                <span id="launcherVersionStatus" style="font-size:12px;color:var(--muted);font-weight:normal;">(актуальная версия)</span>
+                <span>Версия</span>
+                <span id="launcherVersionBadge" style="font-family:monospace;background:rgba(255,255,200,0.06);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--accent);">07dfee4</span>
+                <span id="launcherVersionStatus" style="font-size:12px;color:var(--muted);font-weight:normal;">· Актуальная</span>
               </div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="launcherUpdateHint">Лаунчер проверяет обновления при запуске</div>
             </div>
             <div style="display:flex;gap:8px;">
-              <button class="btn line" id="btnCheckLauncherUpdate" onclick="manualCheckLauncherUpdate()" style="font-size:12px;padding:6px 14px;">Проверить</button>
-              <button class="btn primary" id="btnModalUpdateLauncher" onclick="updateLauncherNow()" style="display:none;font-size:12px;padding:6px 14px;">Обновить лаунчер</button>
+              <button class="btn line" id="btnCheckLauncherUpdate" onclick="manualCheckLauncherUpdate()">Проверить</button>
+              <button class="btn primary" id="btnModalUpdateLauncher" onclick="updateLauncherNow()" style="display:none;">Обновить</button>
             </div>
           </div>
         </div>
@@ -2072,10 +2019,10 @@
     </div>
 
     <div class="modal-footer">
-      <button class="btn line" onclick="resetLauncherSettings()" style="font-size:12px;">Сбросить</button>
+      <button class="btn line" onclick="resetLauncherSettings()">По умолчанию</button>
       <div style="display:flex;gap:10px;">
-        <button class="btn ghost" onclick="closeSettingsModal()" style="font-size:12px;">Отмена</button>
-        <button class="btn primary" onclick="saveLauncherSettings()" style="font-size:12px;padding:9px 20px;">Сохранить</button>
+        <button class="btn ghost" onclick="closeSettingsModal()">Отмена</button>
+        <button class="btn primary" onclick="saveLauncherSettings()">Сохранить</button>
       </div>
     </div>
   </div>
@@ -2178,11 +2125,38 @@
     const disp = document.getElementById('mcPathDisplay');
     const input = document.getElementById('mcPath');
     const val = path || 'C:\\Users\\You\\AppData\\Roaming\\.minecraft';
-    if(input) input.value = val;
+    if(input && input.value !== val) input.value = val;
     if(disp){
       disp.textContent = val;
-      disp.title = val + ' (нажмите, чтобы скопировать)';
+      disp.title = val + ' (нажмите, чтобы открыть в проводнике)';
     }
+    const statusEl = document.getElementById('mcFolderStatus');
+    if(statusEl){
+      statusEl.textContent = installed ? 'Сборка Civilization установлена' : 'Сборка не найдена в этой папке';
+      statusEl.style.color = installed ? 'var(--accent)' : 'var(--muted)';
+    }
+  }
+
+  async function saveCustomPath(path){
+    if(!path) return;
+    const clean = path.trim();
+    if(!clean) return;
+    if(isBackend){
+      try {
+        const res = await fetch('/api/set-mc-dir', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: clean })
+        });
+        const data = await res.json();
+        if(data && data.path){
+          updatePathDisplay(data.path);
+          await checkBackendStatus();
+          return;
+        }
+      } catch(e) {}
+    }
+    updatePathDisplay(clean);
   }
 
   function copyPathToClipboard(){
@@ -2261,13 +2235,16 @@
     if(m) m.classList.remove('show');
     if(isBackend){
       try {
-        await fetch('/api/open-folder', { method: 'POST' });
-        toast('Открыта папка игры');
+        const mcEl = document.getElementById('mcPath');
+        const customPath = mcEl ? mcEl.value : '';
+        await fetch('/api/open-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: customPath })
+        });
         return;
       } catch(err) {}
     }
-    const path = document.getElementById('mcPath').value || 'папка игры';
-    toast('Папка игры: ' + path);
   }
 
   function confirmUninstall(e){
@@ -2463,7 +2440,6 @@
         } else {
           if(gameRunning){
             setGameRunningState(false);
-            toast('Игра завершена');
           }
         }
       }
@@ -2496,7 +2472,7 @@
     } catch(e) {}
   }
 
-  let currentLauncherSha = '7698d7a';
+  let currentLauncherSha = '07dfee4';
   let launcherUpdateAvailable = false;
 
   function handleLauncherUpdateUI(available, curSha, remoteSha){
@@ -2507,10 +2483,11 @@
     const badge = document.getElementById('launcherVersionBadge');
     const st = document.getElementById('launcherVersionStatus');
     const modalBtn = document.getElementById('btnModalUpdateLauncher');
+    const checkBtn = document.getElementById('btnCheckLauncherUpdate');
     const bannerSub = document.getElementById('launcherUpdateBannerSub');
 
     if(badge){
-      badge.textContent = currentLauncherSha ? currentLauncherSha.substring(0, 7) : '7698d7a';
+      badge.textContent = currentLauncherSha ? currentLauncherSha.substring(0, 7) : '07dfee4';
     }
 
     if(banner){
@@ -2522,16 +2499,21 @@
 
     if(st){
       if(launcherUpdateAvailable){
-        st.textContent = '(доступна версия ' + (remoteSha ? remoteSha.substring(0, 7) : '') + ')';
+        st.textContent = '· Доступно обновление';
         st.style.color = 'var(--accent)';
       } else {
-        st.textContent = '(актуальная версия)';
+        st.textContent = '· Актуальная';
         st.style.color = 'var(--muted)';
       }
     }
 
     if(modalBtn){
-      modalBtn.style.display = launcherUpdateAvailable ? 'inline-flex' : 'none';
+      modalBtn.classList.toggle('visible', launcherUpdateAvailable);
+      modalBtn.style.setProperty('display', launcherUpdateAvailable ? 'inline-flex' : 'none', 'important');
+    }
+    if(checkBtn){
+      checkBtn.classList.toggle('hidden', launcherUpdateAvailable);
+      checkBtn.style.setProperty('display', launcherUpdateAvailable ? 'none' : 'inline-flex', 'important');
     }
   }
 
@@ -2586,7 +2568,7 @@
         hideLauncherRestartOverlay();
         isUpdatingLauncher = false;
         if(topBtn){ topBtn.disabled = false; topBtn.textContent = 'Обновить лаунчер'; }
-        if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить лаунчер'; }
+        if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить'; }
       }
     } catch(e) {
       setTimeout(() => {
@@ -2811,20 +2793,17 @@
       mainBtn.textContent = 'ЗАКРЫТИЕ...';
       mainBtn.disabled = true;
     }
-    toast('Закрытие игры...');
     if(isBackend){
       try {
         const res = await fetch('/api/stop-game', { method: 'POST' });
         const data = await res.json();
         if(data && data.ok){
           setGameRunningState(false);
-          toast('Игра закрыта');
           return;
         }
       } catch(e) {}
     }
     setGameRunningState(false);
-    toast('Игра закрыта');
   }
 
   async function detectPath(){
@@ -2833,15 +2812,12 @@
         const res = await fetch('/api/detect-mc', { method: 'POST' });
         const data = await res.json();
         if(data.path){
-          updatePathDisplay(data.path);
-          await checkBackendStatus();
-          toast('Папка игры найдена');
+          await saveCustomPath(data.path);
           return;
         }
       } catch(e) {}
     }
     updatePathDisplay('C:\\Users\\You\\AppData\\Roaming\\.minecraft');
-    toast('Папка найдена');
   }
 
   async function pickFolder(){
@@ -2849,15 +2825,13 @@
       try {
         const res = await fetch('/api/pick-folder', { method: 'POST' });
         const data = await res.json();
-        if(data.path){
+        if(data && data.path){
           updatePathDisplay(data.path);
           await checkBackendStatus();
-          toast(data.installed ? 'Папка выбрана: сборка Civilization найдена!' : 'Папка выбрана');
           return;
         }
       } catch(e) {}
     }
-    toast('Выбор папки отменён');
   }
 
   // --- Данные скриншотов игрока (16:9) ---
@@ -2928,9 +2902,8 @@
 
   async function openScreenshotsFolder(){
     if(isBackend){
-      try { await fetch('/api/open-screenshots', { method: 'POST' }); return; } catch(e) {}
+      try { await fetch('/api/open-screenshots', { method: 'POST' }); } catch(e) {}
     }
-    toast('Открытие папки со снимками...');
   }
 
   let lastScreenshotsSig = '';
@@ -2979,7 +2952,7 @@
       badge: "Релиз",
       badgeType: "primary",
       date: "30 сентября 2026",
-      title: "Обновление: Civilization & Player Trading",
+      title: "Обновление",
       subtitle: "Краткий список основных изменений и систем, добавленных на сервер. Все взаимодействия производятся через графический интерфейс.",
       banner: {
         type: "image",
@@ -3065,48 +3038,103 @@
           media: "assets/news/eight.png"
         },
         {
-          title: "6. Таверна в Аду",
-          desc: "В Незере открылась отдельная локация — Таверна.",
-          items: [
-            "**Бармен и выпивка**: за стойкой можно купить пиво, водку или виски. Напитки вызывают эффект опьянения: чем больше выпито, тем сильнее и дольше длится эффект.",
-            "**Станция вагонеток**: в том же помещении находится Вагонетчик. За $10 у него можно приобрести вагонетку и отправиться по защищённой сети рельсов Незера прямо через тоннели."
-          ],
-          media: "assets/news/tavern.png"
-        },
-        {
-          title: "7. Союзы",
+          title: "6. Союзы",
           desc: "Система альянсов между игроками.",
           items: [
             "Заключение и разрыв союзов через интерфейс меню.",
             "Между союзниками полностью отключён урон (защита от случайного тимкилла)."
           ],
           media: "assets/news/allies.png"
-        }
-      ]
-    },
-    {
-      id: "welcome-guide-2026",
-      badge: "Гайд",
-      badgeType: "gold",
-      date: "28 сентября 2026",
-      title: "Добро пожаловать в Civilization Reborn!",
-      subtitle: "Первые шаги на сервере: как начать развитие, присоединиться к цивилизации и защитить свои ресурсы.",
-      banner: {
-        type: "image",
-        url: "assets/bg.png",
-        alt: "Civilization Reborn Background"
-      },
-      defaultExpanded: false,
-      sections: [
+        },
         {
-          title: "Быстрый старт",
-          desc: "После первого входа в игру вы появляетесь в безопасной зоне спавна. Нажмите клавишу `M`, чтобы открыть главное интерактивное меню.",
+          title: "7. Реворк Ада",
+          desc: "Незер получил обновление: переработана адская сеть, открыта Таверна и добавлены новые остановки с НПС.",
           items: [
-            "**Создайте или выберите цивилизацию**: объединяйтесь с другими игроками для совместной защиты и дипломатии.",
-            "**Зарабатывайте доллары**: конвертируйте алмазы в банке или выставляйте редкие ресурсы на городском рынке.",
-            "**Личное хранилище**: ваш персональный сейф в меню доступен всегда и не теряется при смерти в опасных зонах."
+            "**Таверна**: в Незере открылась отдельная локация. За стойкой можно купить пиво, водку или виски — чем больше выпито, тем сильнее и дольше эффект опьянения.",
+            "**Станция вагонеток**: в Таверне работает Вагонетчик. За $10 выдаёт вагонетку для проезда по защищённой сети рельсов Незера.",
+            "**Адская сеть**: тоннели и коридоры, соединяющие базы игроков, получили обновлённый дизайн и частичную перестройку.",
+            "**Остановки**: на узловых точках сети появились обустроенные остановки с НПС — Санди Манди лодочник."
           ],
-          note: "Если у вас возникнут вопросы или потребуется помощь, администрация и игроки всегда готовы помочь в нашем Discord сервере!"
+          media: [
+            "assets/news/tavern.png",
+            {
+              type: "image",
+              url: "assets/news/nether_stops.png",
+              alt: "Обновлённые адские пути и остановки с НПС",
+              placeholderTitle: "Скриншот адских путей и остановок",
+              placeholderDesc: "Поместите скриншот в assets/news/nether_stops.png"
+            }
+          ]
+        },
+        {
+          title: "8. Стол Моряка и улучшение лодок",
+          desc: "На сервере появился новый рабочий блок «Стол Моряка». С его помощью можно кастомизировать, усиливать и бронировать любые лодки.",
+          media: {
+            type: "image",
+            url: "assets/news/sailor_craft.png",
+            alt: "Крафт Стола Моряка",
+            placeholderTitle: "Скриншот крафта Стола Моряка",
+            placeholderDesc: "Поместите скриншот окна крафта на верстаке в assets/news/sailor_craft.png"
+          },
+          subsections: [
+            {
+              title: "Отделки и запас прочности",
+              desc: "У каждой лодки появился запас прочности (базовый — 400 HP). В Столе Моряка судно можно усилить слитками 6 материалов, увеличив запас прочности и снизив получаемый урон от столкновений:",
+              items: [
+                "**Железо**: 500 HP | +35% к сцеплению со льдом | -40% урона от столкновений",
+                "**Золото**: 440 HP | +15% к удаче | -30% урона от столкновений",
+                "**Медь**: 460 HP | +15% к скорости в грозу и дождь | -30% урона от столкновений",
+                "**Алмаз**: 600 HP | +19% к скорости на воде | -50% урона от столкновений",
+                "**Изумруд**: 480 HP | +10% к удаче | -30% урона от столкновений",
+                "**Незерит**: 1000 HP | полный иммунитет к горению в лаве | -65% урона от столкновений"
+              ],
+              media: {
+                type: "image",
+                url: "assets/news/sailor_gui.png",
+                alt: "Интерфейс Стола Моряка",
+                placeholderTitle: "Скриншот интерфейса Стола Моряка",
+                placeholderDesc: "Поместите скриншот меню «Улучшение судна» со слотами отделок в assets/news/sailor_gui.png"
+              }
+            },
+            {
+              title: "Новая физика лодок на воде",
+              desc: "Водная физика судов была полностью переработана — управление стало комфортным и реалистичным:",
+              items: [
+                "**Плавный разгон и динамика**: лодка естественно набирает ход с учётом плотности воды, без резких рывков.",
+                "**Мягкое управление**: при маневрах и поворотах судно не теряет скорость скачками, сохраняя плавный ход по дуге.",
+                "**Инерция и дрейф**: при отпускании клавиши движения судно плавно скользит по воде без внезапного ступора.",
+                "**Покачивание на волнах и крен**: живое покачивание камеры на воде и реалистичный крен корпуса лодки в виражах.",
+                "**Парус (любое знамя)**: на корму лодки можно установить флаг вашей нации или клана. Клавиша H поднимает парус (+40% к скорости) или складывает его для маневренности на вёслах."
+              ],
+              media: {
+                type: "youtube",
+                url: "https://youtu.be/zkCm93VsoMo",
+                alt: "Демонстрация физики лодок"
+              }
+            },
+            {
+              title: "Скорости судов и прочность",
+              desc: "Сравнение скоростных параметров и механика прочности судов:",
+              table: {
+                headers: ["Тип судна", "Скорость на воде", "Скорость на льду"],
+                rows: [
+                  ["Обычная деревянная лодка", "до 32 км/ч", "до 120 км/ч"],
+                  ["Скоростная турбо-лодка (из бледного дуба или Turbo)", "до 60 км/ч", "до 240 км/ч"]
+                ]
+              },
+              items: [
+                "**Столкновения и разрушение**: при сильных ударах на высокой скорости судно расходует запас прочности. Любая лодка ломается, если её прочность падает до нуля, а отделки повышают максимальный запас HP и существенно снижают урон от аварий.",
+                "**Ремонт судна**: восстановить прочность лодки можно деревянными досками через Shift + ПКМ (каждая доска чинит +50 HP). Пассажир на втором сиденье может чинить судно досками прямо на ходу во время движения."
+              ],
+              media: {
+                type: "image",
+                url: "assets/news/boat_showcase.png",
+                alt: "Лодки в игре",
+                placeholderTitle: "Скриншот лодок в игре",
+                placeholderDesc: "Поместите скриншот кастомизированных лодок с парусом в assets/news/boat_showcase.png"
+              }
+            }
+          ]
         }
       ]
     }
@@ -3585,7 +3613,8 @@
     bgCustomFileName: '',
     accentColor: '#f0f0f2',
     smoothAnim: true,
-    gpuAccel: true
+    gpuAccel: true,
+    autoUpdate: true
   };
 
   let launcherSettings = Object.assign({}, defaultLauncherSettings);
@@ -3616,7 +3645,6 @@
   const BANNER_POOL = [
     'assets/pool/pool_1.png',
     'assets/pool/pool_2.png',
-    'assets/pool/pool_3.png',
     'assets/pool/pool_4.png',
     'assets/pool/pool_5.png',
     'assets/pool/pool_6.png',
@@ -3628,15 +3656,22 @@
   let bannerSlideTimer = null;
   let bannerPoolIdx = 0;
   let activeBannerLayer = 'A';
+  let isBannerTransitioning = false;
 
-  // Предзагрузка картинок пула
+  // Предзагрузка и кэширование картинок пула
   BANNER_POOL.forEach(url => {
     const img = new Image();
     img.src = url;
+    if (img.decode) img.decode().catch(() => {});
   });
+
+  function shouldRunBannerSlideshow() {
+    return !document.hidden && document.hasFocus() && currentView === 'main';
+  }
 
   function startBannerSlideshow() {
     stopBannerSlideshow();
+    if (!shouldRunBannerSlideshow()) return;
     bannerSlideTimer = setInterval(nextBannerSlide, 8000);
   }
 
@@ -3647,26 +3682,70 @@
     }
   }
 
+  function updateBannerSlideshowState() {
+    if (shouldRunBannerSlideshow()) {
+      if (!bannerSlideTimer) startBannerSlideshow();
+    } else {
+      stopBannerSlideshow();
+    }
+  }
+
+  window.addEventListener('focus', updateBannerSlideshowState);
+  window.addEventListener('blur', updateBannerSlideshowState);
+  document.addEventListener('visibilitychange', updateBannerSlideshowState);
+
   function nextBannerSlide() {
+    if (!shouldRunBannerSlideshow() || isBannerTransitioning) return;
     const layerA = document.getElementById('bannerBgA');
     const layerB = document.getElementById('bannerBgB');
     if (!layerA || !layerB) return;
 
-    bannerPoolIdx = (bannerPoolIdx + 1) % BANNER_POOL.length;
-    const nextUrl = BANNER_POOL[bannerPoolIdx];
+    const nextIdx = (bannerPoolIdx + 1) % BANNER_POOL.length;
+    const nextUrl = BANNER_POOL[nextIdx];
 
-    if (activeBannerLayer === 'A') {
-      layerB.style.backgroundImage = 'url("' + nextUrl + '")';
-      layerB.style.opacity = '1';
-      layerA.style.opacity = '0';
-      activeBannerLayer = 'B';
-    } else {
-      layerA.style.backgroundImage = 'url("' + nextUrl + '")';
-      layerA.style.opacity = '1';
-      layerB.style.opacity = '0';
-      activeBannerLayer = 'A';
-    }
-    document.documentElement.style.setProperty('--banner-bg', 'url("' + nextUrl + '")');
+    isBannerTransitioning = true;
+    const img = new Image();
+
+    const doTransition = () => {
+      if (!shouldRunBannerSlideshow()) {
+        isBannerTransitioning = false;
+        return;
+      }
+
+      bannerPoolIdx = nextIdx;
+      if (activeBannerLayer === 'A') {
+        layerB.style.backgroundImage = 'url("' + nextUrl + '")';
+        layerB.style.opacity = '1';
+        layerA.style.opacity = '0';
+        activeBannerLayer = 'B';
+      } else {
+        layerA.style.backgroundImage = 'url("' + nextUrl + '")';
+        layerA.style.opacity = '1';
+        layerB.style.opacity = '0';
+        activeBannerLayer = 'A';
+      }
+      document.documentElement.style.setProperty('--banner-bg', 'url("' + nextUrl + '")');
+
+      setTimeout(() => {
+        isBannerTransitioning = false;
+      }, 1600);
+    };
+
+    img.onload = () => {
+      if (img.decode) {
+        img.decode().then(doTransition).catch(doTransition);
+      } else {
+        doTransition();
+      }
+    };
+
+    img.onerror = () => {
+      console.warn('Banner image load error:', nextUrl);
+      bannerPoolIdx = nextIdx;
+      isBannerTransitioning = false;
+    };
+
+    img.src = nextUrl;
   }
 
   function setBannerCustomImage(dataUrl) {
@@ -3719,7 +3798,12 @@
       document.body.classList.remove('no-transitions');
     }
 
-    // 4. Синхронизация UI
+    // 4. Автообновление
+    if (settings.autoUpdate !== undefined) {
+      autoUpdate = settings.autoUpdate !== false;
+    }
+
+    // 5. Синхронизация UI
     if (syncUI) {
       syncSettingsUI(settings);
     }
@@ -3771,6 +3855,8 @@
     });
 
     // Чекбоксы
+    const toggleAuto = document.getElementById('autoUpdateToggle');
+    if (toggleAuto) toggleAuto.checked = settings.autoUpdate !== false;
     const toggleAnim = document.getElementById('toggleAnimSetting');
     if (toggleAnim) toggleAnim.checked = settings.smoothAnim !== false;
     const toggleGpu = document.getElementById('toggleGpuSetting');
@@ -3884,6 +3970,11 @@
   }
 
   function saveLauncherSettings() {
+    const toggleAuto = document.getElementById('autoUpdateToggle');
+    if (toggleAuto) {
+      launcherSettings.autoUpdate = toggleAuto.checked;
+      autoUpdate = toggleAuto.checked;
+    }
     const toggleAnim = document.getElementById('toggleAnimSetting');
     if (toggleAnim) launcherSettings.smoothAnim = toggleAnim.checked;
     const toggleGpu = document.getElementById('toggleGpuSetting');
@@ -3891,8 +3982,8 @@
 
     applyLauncherSettings(launcherSettings, true);
     saveLauncherSettingsToStorage();
-    toast('Настройки сохранены');
     closeSettingsModal();
+    toast('Настройки сохранены');
   }
 
   async function createDesktopShortcut() {
@@ -3947,21 +4038,37 @@
       const res = await fetch('/api/log-info');
       const data = await res.json();
       const el = document.getElementById('logPathDisplay');
+      const statusEl = document.getElementById('logStatusText');
       if (el && data && data.path) {
-        const sizeStr = data.size ? ' (' + (data.size > 1024 * 1024 ? (data.size / (1024*1024)).toFixed(1) + ' MB' : Math.round(data.size / 1024) + ' KB') + ')' : '';
-        el.textContent = data.path + sizeStr;
+        if ('value' in el) el.value = data.path;
+        el.textContent = data.path;
         el.title = data.path;
+      }
+      if (statusEl && data) {
+        const sizeStr = data.size ? (data.size > 1024 * 1024 ? (data.size / (1024*1024)).toFixed(1) + ' MB' : Math.round(data.size / 1024) + ' KB') : '0 KB';
+        statusEl.textContent = 'Размер файла: ' + sizeStr;
       }
     } catch(e) {}
   }
 
+  async function openLogFolder(e) {
+    if (e) e.stopPropagation();
+    if (!isBackend) { return; }
+    try {
+      const res = await fetch('/api/open-log-folder', { method: 'POST' });
+      const data = await res.json();
+      if (!data || !data.ok) toast('Не удалось открыть папку: ' + (data && data.error ? data.error : 'ошибка'));
+    } catch(err) {
+      toast('Ошибка вызова: ' + err.message);
+    }
+  }
+
   async function openLogFile() {
-    if (!isBackend) { toast('Логи доступны только в приложении'); return; }
+    if (!isBackend) { return; }
     try {
       const res = await fetch('/api/open-log', { method: 'POST' });
       const data = await res.json();
-      if (data && data.ok) toast('Лог открыт в Notepad');
-      else toast('Не удалось открыть лог: ' + (data && data.error ? data.error : 'ошибка'));
+      if (!data || !data.ok) toast('Не удалось открыть лог: ' + (data && data.error ? data.error : 'ошибка'));
     } catch(e) {
       toast('Ошибка вызова: ' + e.message);
     }
@@ -3996,6 +4103,16 @@
   function openSettingsModal() {
     syncSettingsUI(launcherSettings);
     loadLogInfo();
+    const modalBtn = document.getElementById('btnModalUpdateLauncher');
+    const checkBtn = document.getElementById('btnCheckLauncherUpdate');
+    if (modalBtn) {
+      modalBtn.classList.toggle('visible', launcherUpdateAvailable);
+      modalBtn.style.setProperty('display', launcherUpdateAvailable ? 'inline-flex' : 'none', 'important');
+    }
+    if (checkBtn) {
+      checkBtn.classList.toggle('hidden', launcherUpdateAvailable);
+      checkBtn.style.setProperty('display', launcherUpdateAvailable ? 'none' : 'inline-flex', 'important');
+    }
     const m = document.getElementById('settingsModal');
     if (m) m.classList.add('show');
   }
@@ -4028,6 +4145,7 @@
       const el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
+    if (typeof updateBannerSlideshowState === 'function') updateBannerSlideshowState();
   }
 
   function showMain(){
@@ -4036,6 +4154,7 @@
     document.getElementById('viewMain').style.display = 'flex';
     document.getElementById('btnMain').classList.add('active');
     document.getElementById('pageTitle').textContent = 'ГЛАВНАЯ';
+    if (typeof updateBannerSlideshowState === 'function') updateBannerSlideshowState();
   }
 
   function showNews(autoExpand){
@@ -4043,7 +4162,7 @@
     hideAllViews();
     document.getElementById('viewNews').style.display = 'flex';
     document.getElementById('btnNews').classList.add('active');
-    document.getElementById('pageTitle').textContent = 'НОВОСТИ';
+    document.getElementById('pageTitle').textContent = 'ОБНОВЛЕНИЯ';
     if (!currentNewsData || currentNewsData.length === 0) {
       loadAndRenderNews();
     }
@@ -4080,7 +4199,7 @@
   let autoUpdate = true;
   function toggleAutoUpdate(enabled){
     autoUpdate = enabled;
-    toast(enabled ? 'Автообновление включено' : 'Автообновление выключено');
+    launcherSettings.autoUpdate = enabled;
   }
 
   loadSavedLauncherSettings();
@@ -4093,20 +4212,13 @@
   // --- Статус сервера ---
   function updateServerStatus(online, players) {
     const dot = document.getElementById('serverStatusDot');
-    const val = document.getElementById('serverStatusValue');
     const pls = document.getElementById('serverStatusPlayers');
     if (!dot) return;
-    if (online === null) {
-      dot.className = 'server-status-dot';
-      if (val) val.textContent = 'Проверка...';
-      if (pls) pls.textContent = '—';
-    } else if (online) {
+    if (online) {
       dot.className = 'server-status-dot online';
-      if (val) val.textContent = 'Онлайн';
-      if (pls) pls.textContent = players !== undefined ? players + ' игр.' : '—';
+      if (pls) pls.textContent = players !== undefined ? players : '0';
     } else {
       dot.className = 'server-status-dot offline';
-      if (val) val.textContent = 'Оффлайн';
       if (pls) pls.textContent = '0';
     }
   }

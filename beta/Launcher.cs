@@ -501,36 +501,263 @@ namespace CivilizationLauncher
         private static extern bool SetWindowText(IntPtr hWnd, string lpString);
 
         [DllImport("user32.dll")]
-        private static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
-        private delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+        public static extern bool EnumWindows(EnumWindowsProc enumProc, IntPtr lParam);
+        public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
         [DllImport("user32.dll", SetLastError = true)]
-        private static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+        public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
 
         [DllImport("user32.dll")]
-        private static extern bool IsWindowVisible(IntPtr hWnd);
+        public static extern bool IsWindowVisible(IntPtr hWnd);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
+        public static extern int GetClassName(IntPtr hWnd, StringBuilder lpClassName, int nMaxCount);
 
         [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
-        private static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+        public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
 
         [DllImport("user32.dll")]
         private static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport("user32.dll")]
-        private static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
+        public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, uint uFlags);
 
         [DllImport("user32.dll")]
-        private static extern bool IsWindow(IntPtr hWnd);
+        public static extern bool IsWindow(IntPtr hWnd);
 
         [DllImport("user32.dll")]
-        private static extern bool SetForegroundWindow(IntPtr hWnd);
+        public static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [DllImport("user32.dll")]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
 
+        [DllImport("user32.dll")]
+        public static extern bool AllowSetForegroundWindow(int dwProcessId);
+
+        [DllImport("user32.dll")]
+        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
+
+        [DllImport("user32.dll")]
+        public static extern bool BringWindowToTop(IntPtr hWnd);
+
+        [DllImport("user32.dll")]
+        public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetForegroundWindow();
+
+        [DllImport("kernel32.dll")]
+        public static extern uint GetCurrentThreadId();
+
+        [DllImport("user32.dll")]
+        public static extern bool AttachThreadInput(uint idAttach, uint idAttachTo, bool fAttach);
+
+        [DllImport("user32.dll")]
+        public static extern IntPtr GetWindow(IntPtr hWnd, uint uCmd);
+        public const uint GW_OWNER = 4;
+        public const int ASFW_ANY = -1;
+
+        [DllImport("user32.dll")]
+        public static extern bool IsIconic(IntPtr hWnd);
+
+        public static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);
+        public static readonly IntPtr HWND_NOTOPMOST = new IntPtr(-2);
+
+        public static void ForceForeground(IntPtr targetHwnd)
+        {
+            if (targetHwnd == IntPtr.Zero || !IsWindow(targetHwnd)) return;
+            try
+            {
+                if (IsIconic(targetHwnd))
+                {
+                    ShowWindow(targetHwnd, 9); // SW_RESTORE only when iconic/minimized
+                }
+                else
+                {
+                    ShowWindow(targetHwnd, 5); // SW_SHOW without un-maximizing
+                }
+
+                // 1. Устанавливаем окно на самый верх (TOPMOST), чтобы оно физически всплыло над развёрнутым браузером
+                SetWindowPos(targetHwnd, HWND_TOPMOST, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0040); // SWP_NOSIZE | SWP_NOMOVE | SWP_SHOWWINDOW
+                BringWindowToTop(targetHwnd);
+                SetForegroundWindow(targetHwnd);
+                SwitchToThisWindow(targetHwnd, true);
+
+                // 2. Оставляем TOPMOST на 1 секунду, чтобы окно гарантированно отрисовалось перед глазами пользователя,
+                // после чего аккуратно возвращаем в обычный Z-порядок (HWND_NOTOPMOST) без потери фокуса
+                ThreadPool.QueueUserWorkItem(delegate
+                {
+                    Thread.Sleep(1000);
+                    try
+                    {
+                        if (IsWindow(targetHwnd))
+                        {
+                            SetWindowPos(targetHwnd, HWND_NOTOPMOST, 0, 0, 0, 0, 0x0001 | 0x0002 | 0x0010 | 0x0040); // SWP_NOACTIVATE
+                        }
+                    }
+                    catch { }
+                });
+            }
+            catch (Exception ex)
+            {
+                Log("ForceForeground error: " + ex.Message);
+            }
+        }
+
+        public static void OpenPathInExplorer(string fullPath, bool selectFile)
+        {
+            if (string.IsNullOrEmpty(fullPath)) return;
+
+            ThreadPool.QueueUserWorkItem(delegate(object state)
+            {
+                try
+                {
+                    var existingHwnds = new HashSet<IntPtr>();
+                    IntPtr lastActiveExplorer = IntPtr.Zero;
+                    EnumWindows(delegate(IntPtr hWnd, IntPtr lParam)
+                    {
+                        if (IsWindow(hWnd) && IsWindowVisible(hWnd))
+                        {
+                            StringBuilder sb = new StringBuilder(64);
+                            GetClassName(hWnd, sb, 64);
+                            string cls = sb.ToString();
+                            if (cls == "CabinetWClass" || cls == "ExploreWClass")
+                            {
+                                existingHwnds.Add(hWnd);
+                                if (lastActiveExplorer == IntPtr.Zero) lastActiveExplorer = hWnd;
+                            }
+                        }
+                        return true;
+                    }, IntPtr.Zero);
+
+                    AllowSetForegroundWindow(ASFW_ANY);
+
+                    if (selectFile && File.Exists(fullPath))
+                    {
+                        var psi = new ProcessStartInfo("explorer.exe", string.Format("/select,\"{0}\"", fullPath));
+                        psi.UseShellExecute = true;
+                        Process.Start(psi);
+                    }
+                    else
+                    {
+                        string target = Directory.Exists(fullPath) ? fullPath : (Path.GetDirectoryName(fullPath) ?? fullPath);
+                        if (!string.IsNullOrEmpty(target) && !Directory.Exists(target))
+                        {
+                            try { Directory.CreateDirectory(target); } catch { }
+                        }
+                        var psi = new ProcessStartInfo("explorer.exe", string.Format("\"{0}\"", target));
+                        psi.UseShellExecute = true;
+                        Process.Start(psi);
+                    }
+
+                    IntPtr foundHwnd = IntPtr.Zero;
+                    for (int i = 0; i < 60; i++)
+                    {
+                        Thread.Sleep(70);
+                        EnumWindows(delegate(IntPtr hWnd, IntPtr lParam)
+                        {
+                            if (foundHwnd != IntPtr.Zero) return false;
+                            if (IsWindow(hWnd) && IsWindowVisible(hWnd) && !existingHwnds.Contains(hWnd))
+                            {
+                                StringBuilder sb = new StringBuilder(64);
+                                GetClassName(hWnd, sb, 64);
+                                string cls = sb.ToString();
+                                if (cls == "CabinetWClass" || cls == "ExploreWClass")
+                                {
+                                    foundHwnd = hWnd;
+                                    return false;
+                                }
+                            }
+                            return true;
+                        }, IntPtr.Zero);
+
+                        if (foundHwnd != IntPtr.Zero)
+                        {
+                            Log("OpenPathInExplorer: Found new Explorer window " + foundHwnd);
+                            ForceForeground(foundHwnd);
+                            break;
+                        }
+                    }
+
+                    if (foundHwnd == IntPtr.Zero)
+                    {
+                        string targetName = Path.GetFileName(fullPath.TrimEnd('\\', '/'));
+                        if (!string.IsNullOrEmpty(targetName))
+                        {
+                            EnumWindows(delegate(IntPtr hWnd, IntPtr lParam)
+                            {
+                                if (foundHwnd != IntPtr.Zero) return false;
+                                if (IsWindow(hWnd) && IsWindowVisible(hWnd))
+                                {
+                                    StringBuilder sb = new StringBuilder(64);
+                                    GetClassName(hWnd, sb, 64);
+                                    string cls = sb.ToString();
+                                    if (cls == "CabinetWClass" || cls == "ExploreWClass")
+                                    {
+                                        StringBuilder titleSb = new StringBuilder(256);
+                                        GetWindowText(hWnd, titleSb, 256);
+                                        if (titleSb.ToString().IndexOf(targetName, StringComparison.OrdinalIgnoreCase) >= 0)
+                                        {
+                                            foundHwnd = hWnd;
+                                            return false;
+                                        }
+                                    }
+                                }
+                                return true;
+                            }, IntPtr.Zero);
+                        }
+
+                        if (foundHwnd == IntPtr.Zero && lastActiveExplorer != IntPtr.Zero && IsWindow(lastActiveExplorer))
+                        {
+                            foundHwnd = lastActiveExplorer;
+                        }
+
+                        if (foundHwnd != IntPtr.Zero)
+                        {
+                            Log("OpenPathInExplorer: Activating existing Explorer window " + foundHwnd);
+                            ForceForeground(foundHwnd);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("OpenPathInExplorer error: " + ex.Message);
+                }
+            });
+        }
+
+        public static void OpenFileInNotepad(string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath)) return;
+
+            ThreadPool.QueueUserWorkItem(delegate(object state)
+            {
+                try
+                {
+                    AllowSetForegroundWindow(ASFW_ANY);
+                    Process p = Process.Start("notepad.exe", string.Format("\"{0}\"", filePath));
+                    if (p != null)
+                    {
+                        for (int i = 0; i < 30; i++)
+                        {
+                            Thread.Sleep(70);
+                            p.Refresh();
+                            if (p.MainWindowHandle != IntPtr.Zero && IsWindowVisible(p.MainWindowHandle))
+                            {
+                                ForceForeground(p.MainWindowHandle);
+                                break;
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("OpenFileInNotepad error: " + ex.Message);
+                }
+            });
+        }
+
+        public static IntPtr MainBrowserHwnd = IntPtr.Zero;
         private static System.Drawing.Icon appIconBig = null;
         private static System.Drawing.Icon appIconSmall = null;
 
@@ -596,6 +823,7 @@ namespace CivilizationLauncher
                                     if (string.IsNullOrEmpty(title) || title.Contains("Civilization") || title.Contains("Launcher") || title.Contains("127.0.0.1") || title.Contains("localhost"))
                                     {
                                         mainHwnd = hWnd;
+                                        MainBrowserHwnd = hWnd;
                                         DwmSetWindowAttribute(hWnd, 20, ref dark, 4);     // DWMWA_USE_IMMERSIVE_DARK_MODE
                                         DwmSetWindowAttribute(hWnd, 35, ref colorRef, 4); // DWMWA_CAPTION_COLOR
                                         DwmSetWindowAttribute(hWnd, 34, ref colorRef, 4); // DWMWA_BORDER_COLOR
@@ -646,7 +874,10 @@ namespace CivilizationLauncher
                         Log("Minecraft exited while launcher window was open, restoring launcher focus");
                         try
                         {
-                            ShowWindow(mainHwnd, 9); // SW_RESTORE
+                            if (IsIconic(mainHwnd))
+                            {
+                                ShowWindow(mainHwnd, 9);
+                            }
                             SetForegroundWindow(mainHwnd);
                         }
                         catch { }
@@ -1039,9 +1270,8 @@ namespace CivilizationLauncher
 
             if (endpoint == "status")
             {
-                string mcDir = GetInstalledMcDir();
+                string mcDir = GetActiveMcDir();
                 bool installed = !string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir);
-                if (string.IsNullOrEmpty(mcDir)) mcDir = GetDetectedMcDir();
                 ThreadPool.QueueUserWorkItem((s) => { try { AdServerBlocker.CleanAll(mcDir); } catch { } });
 
                 string installedAt = "";
@@ -1155,9 +1385,10 @@ namespace CivilizationLauncher
             if (endpoint == "pick-folder")
             {
                 string chosen = null;
-                string initial = GetTargetMcDir();
+                string initial = GetActiveMcDir();
+                IntPtr ownerHwnd = MainBrowserHwnd;
                 var t = new Thread(() => {
-                    chosen = ModernFolderBrowser.ShowDialog(IntPtr.Zero, "Выберите папку .minecraft", initial);
+                    chosen = ModernFolderBrowser.ShowDialog(ownerHwnd, "Выберите папку .minecraft", initial);
                 });
                 t.SetApartmentState(ApartmentState.STA);
                 t.Start();
@@ -1166,14 +1397,38 @@ namespace CivilizationLauncher
                 bool isInst = false;
                 if (!string.IsNullOrEmpty(chosen))
                 {
+                    chosen = chosen.Trim().TrimEnd('\\', '/');
                     isInst = TestIsInstalled(chosen);
                     SaveCustomMcDir(chosen);
                     Log(string.Format("User selected custom Minecraft folder: '{0}' (Civilization detected: {1})", chosen, isInst));
                 }
 
+                string activeDir = GetActiveMcDir();
                 SendJson(ctx, new Dictionary<string, object> { 
-                    { "path", chosen ?? "" },
-                    { "installed", isInst }
+                    { "path", activeDir },
+                    { "installed", TestIsInstalled(activeDir) }
+                });
+                return;
+            }
+
+            if (endpoint == "set-mc-dir")
+            {
+                string body = ReadBody(ctx);
+                Dictionary<string, object> data = null;
+                try { data = jss.Deserialize<Dictionary<string, object>>(body); } catch { }
+                string chosen = null;
+                if (data != null && data.ContainsKey("path")) chosen = data["path"] as string;
+                if (!string.IsNullOrEmpty(chosen))
+                {
+                    chosen = chosen.Trim().TrimEnd('\\', '/');
+                    SaveCustomMcDir(chosen);
+                    Log(string.Format("User manually set custom Minecraft folder: '{0}'", chosen));
+                }
+                string activeDir = GetActiveMcDir();
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "ok", true },
+                    { "path", activeDir },
+                    { "installed", TestIsInstalled(activeDir) }
                 });
                 return;
             }
@@ -1217,7 +1472,6 @@ namespace CivilizationLauncher
                 try { data = jss.Deserialize<Dictionary<string, object>>(body); } catch { }
                 string targetDir = null;
                 if (data != null && data.ContainsKey("mcDir")) targetDir = (string)data["mcDir"];
-                if (string.IsNullOrEmpty(targetDir)) targetDir = GetInstalledMcDir();
                 if (string.IsNullOrEmpty(targetDir)) targetDir = GetTargetMcDir();
 
                 cancelRequested = false;
@@ -1229,10 +1483,10 @@ namespace CivilizationLauncher
 
             if (endpoint == "uninstall")
             {
-                string mcDir = GetInstalledMcDir();
-                if (string.IsNullOrEmpty(mcDir))
+                string mcDir = GetTargetMcDir();
+                if (string.IsNullOrEmpty(mcDir) || !TestIsInstalled(mcDir))
                 {
-                    SendJson(ctx, new Dictionary<string, object> { { "error", "Civilization не установлена" } });
+                    SendJson(ctx, new Dictionary<string, object> { { "error", "Civilization не установлена в текущей папке" } });
                     return;
                 }
                 cancelRequested = false;
@@ -1244,14 +1498,59 @@ namespace CivilizationLauncher
 
             if (endpoint == "open-folder")
             {
-                string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
+                string explicitPath = null;
+                try
+                {
+                    if (ctx.Request.HasEntityBody)
+                    {
+                        using (var reader = new StreamReader(ctx.Request.InputStream, ctx.Request.ContentEncoding))
+                        {
+                            string body = reader.ReadToEnd();
+                            if (!string.IsNullOrEmpty(body))
+                            {
+                                var json = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(body);
+                                if (json != null && json.ContainsKey("path"))
+                                {
+                                    string p = json["path"] as string;
+                                    if (!string.IsNullOrEmpty(p)) explicitPath = p.Trim();
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+
+                string mcDir = (!string.IsNullOrEmpty(explicitPath) && Directory.Exists(explicitPath))
+                    ? explicitPath
+                    : GetActiveMcDir();
+
+                string target = null;
                 if (!string.IsNullOrEmpty(mcDir))
                 {
-                    string target = Path.Combine(mcDir, @"versions\Civilization");
-                    if (!Directory.Exists(target)) target = mcDir;
-                    try { Process.Start("explorer.exe", target); } catch { }
+                    string civDir = Path.Combine(mcDir, @"versions\Civilization");
+                    if (Directory.Exists(civDir))
+                    {
+                        target = civDir;
+                    }
+                    else
+                    {
+                        try
+                        {
+                            Directory.CreateDirectory(civDir);
+                            target = civDir;
+                        }
+                        catch
+                        {
+                            target = Path.Combine(mcDir, "versions");
+                            if (!Directory.Exists(target)) target = mcDir;
+                        }
+                    }
+                    if (!string.IsNullOrEmpty(target))
+                    {
+                        OpenPathInExplorer(target, false);
+                    }
                 }
-                SendJson(ctx, new Dictionary<string, object> { { "ok", true } });
+                SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", target } });
                 return;
             }
 
@@ -1264,7 +1563,30 @@ namespace CivilizationLauncher
                     {
                         File.WriteAllText(logPath, "Log initialized\r\n", Encoding.UTF8);
                     }
-                    Process.Start("notepad.exe", logPath);
+                    OpenFileInNotepad(logPath);
+                    SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", logPath } });
+                }
+                catch (Exception ex)
+                {
+                    SendJson(ctx, new Dictionary<string, object> { { "ok", false }, { "error", ex.Message } });
+                }
+                return;
+            }
+
+            if (endpoint == "open-log-folder")
+            {
+                string logPath = GetLogPath();
+                try
+                {
+                    string dir = Path.GetDirectoryName(logPath);
+                    if (File.Exists(logPath))
+                    {
+                        OpenPathInExplorer(logPath, true);
+                    }
+                    else if (!string.IsNullOrEmpty(dir) && Directory.Exists(dir))
+                    {
+                        OpenPathInExplorer(dir, false);
+                    }
                     SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", logPath } });
                 }
                 catch (Exception ex)
@@ -1334,7 +1656,7 @@ namespace CivilizationLauncher
 
             if (endpoint == "open-screenshots")
             {
-                string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
+                string mcDir = GetActiveMcDir();
                 string sDir = null;
                 if (!string.IsNullOrEmpty(mcDir))
                 {
@@ -1359,7 +1681,7 @@ namespace CivilizationLauncher
                     sDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "Screenshots");
                 }
                 if (!Directory.Exists(sDir)) Directory.CreateDirectory(sDir);
-                try { Process.Start("explorer.exe", sDir); } catch { }
+                OpenPathInExplorer(sDir, false);
                 SendJson(ctx, new Dictionary<string, object> { { "ok", true } });
                 return;
             }
@@ -1367,7 +1689,7 @@ namespace CivilizationLauncher
             if (endpoint == "screenshots")
             {
                 SetupScreenshotWatchers();
-                string mcDir = GetInstalledMcDir() ?? GetDetectedMcDir();
+                string mcDir = GetActiveMcDir();
                 var list = new List<Dictionary<string, object>>();
                 if (!string.IsNullOrEmpty(mcDir))
                 {
@@ -2168,6 +2490,25 @@ namespace CivilizationLauncher
                     return false;
                 }
 
+                string mainClass = "net.fabricmc.loader.impl.launch.knot.KnotClient";
+                if (root != null && root.ContainsKey("mainClass") && root["mainClass"] != null)
+                {
+                    string mc = root["mainClass"].ToString().Trim();
+                    if (!string.IsNullOrEmpty(mc)) mainClass = mc;
+                }
+
+                bool isFabric = mainClass.IndexOf("fabricmc", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                jsonTxt.IndexOf("fabricmc", StringComparison.OrdinalIgnoreCase) >= 0;
+                bool isForge = mainClass.IndexOf("minecraftforge", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                               jsonTxt.IndexOf("minecraftforge", StringComparison.OrdinalIgnoreCase) >= 0;
+
+                string assetIndex = "26";
+                if (root != null && root.ContainsKey("assets") && root["assets"] != null)
+                {
+                    string ai = root["assets"].ToString().Trim();
+                    if (!string.IsNullOrEmpty(ai)) assetIndex = ai;
+                }
+
                 // 4. Построение аргументов команды
                 var args = new StringBuilder();
                 args.Append("-Dos.name=\"Windows 10\" ");
@@ -2189,11 +2530,19 @@ namespace CivilizationLauncher
                 args.Append("-XX:G1ReservePercent=20 ");
                 args.Append("-XX:MaxGCPauseMillis=50 ");
                 args.Append("-XX:G1HeapRegionSize=32M ");
-                args.Append("-Dfml.ignoreInvalidMinecraftCertificates=true ");
-                args.Append("-Dfml.ignorePatchDiscrepancies=true ");
-                args.Append(string.Format("-Dminecraft.applet.TargetDirectory=\"{0}\" ", civDir));
-                args.Append(string.Format("-DlibraryDirectory=\"{0}\" ", Path.Combine(mcDir, "libraries")));
-                args.Append(string.Format("-DLibLoader.modsFolder=\"{0}\" ", Path.Combine(civDir, "mods")));
+
+                if (isFabric)
+                {
+                    args.Append("-DFabricMcEmu=\" net.minecraft.client.main.Main \" ");
+                }
+                else if (isForge)
+                {
+                    args.Append("-Dfml.ignoreInvalidMinecraftCertificates=true ");
+                    args.Append("-Dfml.ignorePatchDiscrepancies=true ");
+                    args.Append(string.Format("-Dminecraft.applet.TargetDirectory=\"{0}\" ", civDir));
+                    args.Append(string.Format("-DlibraryDirectory=\"{0}\" ", Path.Combine(mcDir, "libraries")));
+                    args.Append(string.Format("-DLibLoader.modsFolder=\"{0}\" ", Path.Combine(civDir, "mods")));
+                }
 
                 string log4j = Path.Combine(mcDir, @"assets\log_configs\client-1.12.xml");
                 if (File.Exists(log4j))
@@ -2202,13 +2551,13 @@ namespace CivilizationLauncher
                 }
 
                 args.Append(string.Format("-cp \"{0}\" ", string.Join(";", cpList.ToArray())));
-                args.Append("net.minecraftforge.bootstrap.ForgeBootstrap ");
+                args.Append(mainClass + " ");
 
                 args.Append(string.Format("--username \"{0}\" ", username));
                 args.Append("--version \"Civilization\" ");
                 args.Append(string.Format("--gameDir \"{0}\" ", civDir));
                 args.Append(string.Format("--assetsDir \"{0}\" ", Path.Combine(mcDir, "assets")));
-                args.Append("--assetIndex \"26\" ");
+                args.Append(string.Format("--assetIndex \"{0}\" ", assetIndex));
                 args.Append(string.Format("--uuid \"{0}\" ", uuid));
                 args.Append("--accessToken \"null\" ");
                 args.Append("--clientId \"null\" ");
@@ -2217,7 +2566,11 @@ namespace CivilizationLauncher
                 args.Append("--versionType \"release\" ");
                 args.Append("--width 925 ");
                 args.Append("--height 530 ");
-                args.Append("--launchTarget \"forge_client\"");
+
+                if (isForge)
+                {
+                    args.Append("--launchTarget \"forge_client\"");
+                }
 
                 Log("Launching game directly:");
                 Log(string.Format("  Target Dir: {0}", civDir));
@@ -2833,9 +3186,32 @@ namespace CivilizationLauncher
             return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft");
         }
 
+        public static string GetActiveMcDir()
+        {
+            try
+            {
+                var state = LoadState();
+                if (state != null && state.ContainsKey("mcDir"))
+                {
+                    string custom = (string)state["mcDir"];
+                    if (!string.IsNullOrEmpty(custom))
+                    {
+                        custom = custom.Trim().TrimEnd('\\', '/');
+                        if (custom.Length > 0) return custom;
+                    }
+                }
+            }
+            catch { }
+
+            string inst = GetInstalledMcDir();
+            if (!string.IsNullOrEmpty(inst)) return inst;
+
+            return GetDetectedMcDir();
+        }
+
         static string GetTargetMcDir()
         {
-            return GetInstalledMcDir() ?? GetDetectedMcDir();
+            return GetActiveMcDir();
         }
 
         public class JavaReqInfo
@@ -3116,8 +3492,42 @@ namespace CivilizationLauncher
         static List<string> InstallFiles(string sourceDir, string mcDir)
         {
             var files = new List<string>();
-            SetProgress(60, "Копирование библиотек Forge...", true, false, null);
+            SetProgress(60, "Копирование библиотек Fabric...", true, false, null);
             CopyTracked(Path.Combine(sourceDir, "libraries"), Path.Combine(mcDir, "libraries"), "libraries", files);
+
+            try
+            {
+                string targetMods = Path.Combine(mcDir, @"versions\Civilization\mods");
+                string sourceMods = Path.Combine(sourceDir, @"versions\Civilization\mods");
+                if (Directory.Exists(targetMods) && Directory.Exists(sourceMods))
+                {
+                    var newModFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var mf in Directory.GetFiles(sourceMods, "*.jar"))
+                    {
+                        newModFiles.Add(Path.GetFileName(mf));
+                    }
+                    foreach (var existingMod in Directory.GetFiles(targetMods, "*.jar"))
+                    {
+                        string fn = Path.GetFileName(existingMod);
+                        if (!newModFiles.Contains(fn))
+                        {
+                            try
+                            {
+                                File.Delete(existingMod);
+                                Log("Deleted obsolete mod: " + fn);
+                            }
+                            catch (Exception ex)
+                            {
+                                Log("Could not delete obsolete mod " + fn + ": " + ex.Message);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Error during cleaning obsolete mods: " + ex.Message);
+            }
 
             SetProgress(75, "Копирование модов, ресурспаков и конфигов...", true, false, null);
             CopyTracked(Path.Combine(sourceDir, @"versions\Civilization"), Path.Combine(mcDir, @"versions\Civilization"), @"versions\Civilization", files);
@@ -3227,6 +3637,24 @@ namespace CivilizationLauncher
             }
         }
 
+        static void ForceDeleteDirectory(string path)
+        {
+            if (!Directory.Exists(path)) return;
+            try
+            {
+                var di = new DirectoryInfo(path);
+                foreach (var fi in di.GetFiles("*", SearchOption.AllDirectories))
+                {
+                    try { fi.Attributes = FileAttributes.Normal; } catch { }
+                }
+                di.Delete(true);
+            }
+            catch (Exception ex)
+            {
+                Log("ForceDeleteDirectory error: " + ex.Message);
+            }
+        }
+
         static string DownloadBuild(bool isUpdate = false)
         {
             Log(string.Format("DownloadBuild started (isUpdate={0})", isUpdate));
@@ -3235,22 +3663,72 @@ namespace CivilizationLauncher
             SetProgress(initialPct, labelPrep, true, false, null);
             CheckCancelled();
 
-            // Пробуем git
+            // 1. Быстрое обновление через Git, если репозиторий уже есть в CacheDir
+            if (Directory.Exists(Path.Combine(CacheDir, ".git")))
+            {
+                try
+                {
+                    Log("Existing git repository found in CacheDir. Performing fast update...");
+                    SetProgress(isUpdate ? 30 : 15, "Быстрое обновление через Git...", true, false, null);
+                    var psiFetch = new ProcessStartInfo("git", "fetch --depth 1 origin main");
+                    psiFetch.WorkingDirectory = CacheDir;
+                    psiFetch.CreateNoWindow = true;
+                    psiFetch.UseShellExecute = false;
+                    using (var pf = Process.Start(psiFetch))
+                    {
+                        int w = 0;
+                        while (w < 45000)
+                        {
+                            if (pf.WaitForExit(200)) break;
+                            w += 200;
+                            if (cancelRequested) { try { pf.Kill(); } catch { } throw new OperationCancelled(); }
+                        }
+                        if (pf.HasExited && pf.ExitCode == 0)
+                        {
+                            var psiReset = new ProcessStartInfo("git", "reset --hard origin/main");
+                            psiReset.WorkingDirectory = CacheDir;
+                            psiReset.CreateNoWindow = true;
+                            psiReset.UseShellExecute = false;
+                            using (var pr = Process.Start(psiReset))
+                            {
+                                pr.WaitForExit(10000);
+                                if (pr.ExitCode == 0 && File.Exists(Path.Combine(CacheDir, @"versions\Civilization\Civilization.json")))
+                                {
+                                    Log("Fast git update succeeded in " + CacheDir);
+                                    return CacheDir;
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (OperationCancelled) { throw; }
+                catch (Exception ex)
+                {
+                    Log("Fast git update skipped: " + ex.Message);
+                }
+            }
+
+            // 2. Пробуем полный git clone, если репозитория еще нет
             try
             {
                 Log("Attempting git clone from https://github.com/civilkaserver-sketch/Civilka-version.git...");
+                ForceDeleteDirectory(CacheDir);
                 var psi = new ProcessStartInfo("git", string.Format("clone --depth 1 \"https://github.com/civilkaserver-sketch/Civilka-version.git\" \"{0}\"", CacheDir));
                 psi.CreateNoWindow = true;
                 psi.UseShellExecute = false;
-                if (Directory.Exists(CacheDir)) Directory.Delete(CacheDir, true);
                 using (var p = Process.Start(psi))
                 {
                     int waited = 0;
                     bool exited = false;
-                    while (waited < 15000)
+                    while (waited < 90000)
                     {
                         if (p.WaitForExit(200)) { exited = true; break; }
                         waited += 200;
+                        if ((waited % 2000) == 0)
+                        {
+                            int pct = isUpdate ? (25 + Math.Min(45, (waited / 2000))) : (10 + Math.Min(40, (waited / 2000)));
+                            SetProgress(pct, isUpdate ? "Клонирование обновления через Git..." : "Клонирование сборки через Git...", true, false, null);
+                        }
                         if (cancelRequested)
                         {
                             try { p.Kill(); } catch { }
@@ -3265,6 +3743,7 @@ namespace CivilizationLauncher
                     else
                     {
                         Log(string.Format("Git clone not usable (exited={0}, code={1})", exited, exited ? p.ExitCode : -1));
+                        if (!exited) { try { p.Kill(); } catch { } }
                     }
                 }
             }
@@ -3274,19 +3753,25 @@ namespace CivilizationLauncher
                 Log("Git clone skipped or failed: " + ex.Message);
             }
 
-            // Загрузка через zip
+            // 3. Загрузка через zip с отображением мегабайтов и процентов в реальном времени
             CheckCancelled();
             string zipPath = Path.Combine(Path.GetTempPath(), "civilka_full.zip");
             if (File.Exists(zipPath)) File.Delete(zipPath);
-            if (Directory.Exists(ExtractDir)) Directory.Delete(ExtractDir, true);
+            ForceDeleteDirectory(ExtractDir);
 
             Log("Downloading zip archive from " + RepoZip + " to " + zipPath);
-            DownloadFileCancellable(RepoZip, zipPath, (pct) =>
+            long estTotal = 370L * 1024 * 1024; // примерный размер архива сборки ~370 MB
+            DownloadFileCancellable(RepoZip, zipPath, (received, total) =>
             {
+                long targetTotal = (total > 0) ? total : estTotal;
+                double mbRec = received / (1024.0 * 1024.0);
+                double mbTot = targetTotal / (1024.0 * 1024.0);
+                int pct = Math.Max(0, Math.Min(99, (int)((received * 100) / targetTotal)));
+
                 int p = isUpdate ? (25 + (int)(pct * 0.45)) : (10 + (int)(pct * 0.4));
                 string txt = isUpdate
-                    ? string.Format("Загрузка обновления ({0}%)...", pct)
-                    : string.Format("Загрузка сборки ({0}%)...", pct);
+                    ? string.Format("Загрузка обновления: {0:F1} / {1:F1} MB ({2}%)...", mbRec, mbTot, pct)
+                    : string.Format("Загрузка сборки: {0:F1} / {1:F1} MB ({2}%)...", mbRec, mbTot, pct);
                 SetProgress(p, txt, true, false, null);
             });
 
@@ -3300,8 +3785,9 @@ namespace CivilizationLauncher
             CheckCancelled();
             SetProgress(isUpdate ? 72 : 52, isUpdate ? "Распаковка обновления..." : "Распаковка сборки...", true, false, null);
             Log("Extracting zip to: " + ExtractDir);
+            ForceDeleteDirectory(ExtractDir);
             ZipFile.ExtractToDirectory(zipPath, ExtractDir);
-            File.Delete(zipPath);
+            try { File.Delete(zipPath); } catch { }
             CheckCancelled();
 
             string unpacked = Path.Combine(ExtractDir, "Civilka-version-main");
@@ -3328,20 +3814,39 @@ namespace CivilizationLauncher
 
         static void DownloadFileCancellable(string url, string destPath, Action<int> onPercent)
         {
+            DownloadFileCancellable(url, destPath, (rec, tot) =>
+            {
+                if (onPercent != null)
+                {
+                    int pct = (tot > 0) ? (int)((rec * 100) / tot) : 0;
+                    onPercent(pct);
+                }
+            });
+        }
+
+        static void DownloadFileCancellable(string url, string destPath, Action<long, long> onProgress)
+        {
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             using (var wc = new WebClient())
             using (var done = new ManualResetEvent(false))
             {
                 Exception dlError = null;
                 bool dlCancelled = false;
-                int lastPct = -1;
+                long lastReportBytes = -1;
+                long lastReportTime = 0;
+                var sw = Stopwatch.StartNew();
 
                 wc.DownloadProgressChanged += (s, e) =>
                 {
-                    if (e.ProgressPercentage != lastPct)
+                    long now = sw.ElapsedMilliseconds;
+                    if (e.BytesReceived - lastReportBytes > 256 * 1024 || (now - lastReportTime > 250))
                     {
-                        lastPct = e.ProgressPercentage;
-                        if (onPercent != null) onPercent(e.ProgressPercentage);
+                        lastReportBytes = e.BytesReceived;
+                        lastReportTime = now;
+                        if (onProgress != null)
+                        {
+                            try { onProgress(e.BytesReceived, e.TotalBytesToReceive); } catch { }
+                        }
                     }
                     if (cancelRequested)
                     {
@@ -3529,8 +4034,63 @@ namespace CivilizationLauncher
     {
         public static string ShowDialog(IntPtr ownerHandle, string title = "Выберите папку .minecraft", string initialFolder = null)
         {
+            Form topOwner = null;
             try
             {
+                topOwner = new Form();
+                topOwner.Size = new System.Drawing.Size(1, 1);
+                topOwner.StartPosition = FormStartPosition.Manual;
+                topOwner.Location = new System.Drawing.Point(-32000, -32000);
+                topOwner.ShowInTaskbar = false;
+                topOwner.TopMost = true;
+                topOwner.Show();
+                topOwner.BringToFront();
+                topOwner.Activate();
+                ownerHandle = topOwner.Handle;
+            }
+            catch { }
+
+            try
+            {
+                // Гарантируем, что диалог выбора папки откроется на переднем плане перед окном лаунчера
+                ThreadPool.QueueUserWorkItem(delegate
+                {
+                    int currentPid = Process.GetCurrentProcess().Id;
+                    for (int i = 0; i < 40; i++)
+                    {
+                        Thread.Sleep(50);
+                        IntPtr dlgHwnd = IntPtr.Zero;
+                        Program.EnumWindows(delegate(IntPtr hWnd, IntPtr lParam)
+                        {
+                            if (dlgHwnd != IntPtr.Zero) return false;
+                            if (Program.IsWindow(hWnd) && Program.IsWindowVisible(hWnd))
+                            {
+                                uint pid;
+                                Program.GetWindowThreadProcessId(hWnd, out pid);
+                                if (pid == (uint)currentPid)
+                                {
+                                    StringBuilder sb = new StringBuilder(64);
+                                    Program.GetClassName(hWnd, sb, 64);
+                                    if (sb.ToString() == "#32770")
+                                    {
+                                        dlgHwnd = hWnd;
+                                        return false;
+                                    }
+                                }
+                            }
+                            return true;
+                        }, IntPtr.Zero);
+
+                        if (dlgHwnd != IntPtr.Zero)
+                        {
+                            Program.ForceForeground(dlgHwnd);
+                            break;
+                        }
+                    }
+                });
+
+                Program.AllowSetForegroundWindow(-1);
+
                 var dialog = (IFileOpenDialog)new FileOpenDialogInternal();
                 dialog.SetOptions(FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST);
                 if (!string.IsNullOrEmpty(title))
@@ -3549,6 +4109,11 @@ namespace CivilizationLauncher
                 }
 
                 int hr = dialog.Show(ownerHandle);
+                if (topOwner != null)
+                {
+                    try { topOwner.Close(); topOwner.Dispose(); topOwner = null; } catch { }
+                }
+
                 if (hr == 0) // S_OK
                 {
                     IShellItem item;
