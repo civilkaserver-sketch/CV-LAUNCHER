@@ -276,10 +276,10 @@
     margin:auto auto;
     padding-bottom:20px;
   }
-  #viewGallery, #viewNews, #viewRating{
+  #viewSkin, #viewGallery, #viewNews, #viewRating{
     min-height:100%;
   }
-  #viewGallery .inner, #viewNews .inner, #viewRating .inner{
+  #viewSkin .inner, #viewGallery .inner, #viewNews .inner, #viewRating .inner{
     display:flex;
     flex-direction:column;
     padding-bottom:40px;
@@ -972,6 +972,251 @@
     padding:1px 6px;
     letter-spacing:1px;
     vertical-align:baseline;
+  }
+
+  /* ================== РАЗДЕЛ: СКИН (Стиль Modrinth) ================== */
+  /* ================== РАЗДЕЛ: СКИН (Стиль Modrinth) ================== */
+  .skin-layout {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    width: 100%;
+    margin-top: 6px;
+  }
+  @media (max-width: 960px) {
+    .skin-layout {
+      flex-direction: column;
+      gap: 28px;
+    }
+  }
+
+  /* Левая часть: 3D рендер без рамки */
+  .skin-stage-col {
+    width: 310px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    margin-top: 80px;
+  }
+
+  .skin-canvas-wrap {
+    position: relative;
+    width: 310px;
+    height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none !important;
+    border: none !important;
+    overflow: visible;
+    cursor: ew-resize;
+    touch-action: none;
+    user-select: none;
+  }
+  .skin-canvas-wrap:active {
+    cursor: grabbing;
+  }
+
+  .skin-floor-shadow {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 180px;
+    height: 38px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.16) 45%, transparent 75%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  #skinCanvas {
+    position: relative;
+    z-index: 2;
+    display: block;
+    width: 310px;
+    height: 400px;
+  }
+
+  .skin-canvas-hint-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+    pointer-events: none;
+    margin-top: 8px;
+    background: none;
+    border: none;
+    padding: 0;
+  }
+  .skin-canvas-hint-pill svg {
+    flex-shrink: 0;
+    opacity: 0.75;
+  }
+
+  .skin-model-toggle-btn {
+    margin-top: 14px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  /* Правая часть: Сетка карточек */
+  .skin-gallery-panel {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .skin-gallery-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+  }
+
+  .skin-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 170px);
+    gap: 12px;
+  }
+
+  .skin-card {
+    position: relative;
+    width: 170px;
+    height: 216px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+    user-select: none;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .skin-card:hover {
+    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.055);
+  }
+
+  .skin-card.active {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+  }
+
+  .skin-card-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #121212;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+    z-index: 5;
+  }
+
+  .skin-card-delete {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.88);
+    border: none;
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 15px;
+    line-height: 1;
+    z-index: 6;
+    transition: background 0.12s;
+  }
+  .skin-card:hover .skin-card-delete {
+    display: flex;
+  }
+  .skin-card-delete:hover {
+    background: #ef4444;
+  }
+
+  .skin-card-canvas {
+    width: 170px;
+    height: 216px;
+    image-rendering: auto;
+    pointer-events: none;
+    flex-shrink: 0;
+    display: block;
+  }
+
+  /* Карточка "Добавить скин" */
+  .skin-card-add {
+    border: 1.5px dashed rgba(255, 255, 255, 0.18);
+    background: rgba(255, 255, 255, 0.012);
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .skin-card-add:hover, .skin-card-add.drag-over {
+    border-color: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.035);
+  }
+
+  .skin-card-add-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text);
+    transition: transform 0.15s, background 0.15s;
+  }
+
+  .skin-card-add:hover .skin-card-add-icon, .skin-card-add.drag-over .skin-card-add-icon {
+    background: rgba(255, 255, 255, 0.12);
+    transform: scale(1.08);
+  }
+
+  .skin-card-add-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .skin-card-add-desc {
+    font-size: 11px;
+    color: var(--dim);
+    text-align: center;
   }
 
   /* лайтбокс просмотрщика */
@@ -1677,6 +1922,7 @@
       <nav class="side-nav">
         <button class="side-nav-item active" id="btnMain" onclick="showMain()">Главная</button>
         <button class="side-nav-item" id="btnNews" onclick="showNews()">Обновления</button>
+        <button class="side-nav-item" id="btnSkin" onclick="showSkin()">Скин</button>
         <button class="side-nav-item" id="btnGallery" onclick="showGallery()">Галерея</button>
         <button class="side-nav-item" id="btnRating" onclick="showRating()" style="display:none">Рейтинг</button>
       </nav>
@@ -1803,6 +2049,14 @@
                 <span class="bullet">—</span>
                 <div class="cl-text"><strong>7. Союзы</strong>: система альянсов между игроками с полным отключением урона (без тимкилла)</div>
               </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>8. Стол Моряка</strong>: улучшение и отделка лодок, новая водная физика и паруса</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>9. Оптимизация</strong>: умный подбор RAM, флаги ZGC, сбалансированные моды и режим производительности</div>
+              </div>
             </div>
           </div>
           <div class="changelog-latest" id="changelogLatest" style="display:none">
@@ -1838,6 +2092,60 @@
 
         <div id="newsContent" class="news-list-wrap">
           <!-- Новости генерируются динамически через renderAllNews() -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ЭКРАН: СКИН -->
+    <div class="content" id="viewSkin" style="display:none">
+      <div class="inner" style="max-width:1150px;width:100%;">
+        <div class="skin-layout">
+          <!-- Левая часть: 3D рендер без рамки в стиле Modrinth -->
+          <div class="skin-stage-col">
+            <div class="skin-canvas-wrap" id="skinCanvasWrap">
+              <div class="skin-floor-shadow"></div>
+              <canvas id="skinCanvas" width="320" height="420"></canvas>
+            </div>
+            <div class="skin-canvas-hint-pill">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="5 9 2 12 5 15"></polyline>
+                <polyline points="9 5 12 2 15 5"></polyline>
+                <polyline points="15 19 12 22 9 19"></polyline>
+                <polyline points="19 9 22 12 19 15"></polyline>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <line x1="12" y1="2" x2="12" y2="22"></line>
+              </svg>
+              <span>Вращайте мышью</span>
+            </div>
+            <button class="btn line sm skin-model-toggle-btn" id="btnToggleSkinModel" onclick="toggleCurrentSkinModel()" title="Переключить тип модели: Classic (4px) / Slim (3px)">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20h9"></path>
+                <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+              </svg>
+              <span id="skinModelToggleText">Модель: Classic</span>
+            </button>
+          </div>
+
+          <!-- Правая часть: Сохраненные скины в карточках -->
+          <div class="skin-gallery-panel">
+            <input type="file" id="skinFileInput" accept="image/png,.png" style="display:none" onchange="handleSkinFileSelected(event)">
+            <div class="skin-gallery-header">
+              Сохраненные скины
+            </div>
+
+            <!-- Сетка карточек скинов -->
+            <div class="skin-cards-grid" id="skinCardsGrid">
+              <!-- Карточка "+ Добавить скин" -->
+              <div class="skin-card skin-card-add" id="skinCardAdd" onclick="triggerSkinFileInput()" ondragover="handleSkinDragOver(event)" ondragleave="handleSkinDragLeave(event)" ondrop="handleSkinDrop(event)">
+                <div class="skin-card-add-icon">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </div>
+                <div class="skin-card-add-title">Добавить скин</div>
+                <div class="skin-card-add-desc">Перетащите PNG</div>
+              </div>
+              <!-- Сохраненные скины будут отрендерены через JS -->
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1950,6 +2258,17 @@
             </div>
             <label class="switch">
               <input type="checkbox" checked id="autoUpdateToggle" onchange="toggleAutoUpdate(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Режим производительности</div>
+              <div class="settings-toggle-desc">Быстрая графика, без облаков и частиц</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="performanceModeToggle" onchange="togglePerformanceMode(this.checked)">
               <span class="slider"></span>
             </label>
           </div>
@@ -2461,6 +2780,11 @@
           toast('Доступно обновление сборки Civilization!');
         }
         handleLauncherUpdateUI(data.launcherUpdateAvailable, data.currentLauncherSha, data.remoteLauncherSha);
+        if(typeof data.performanceMode !== 'undefined'){
+          launcherSettings.performanceMode = !!data.performanceMode;
+          const togglePerf = document.getElementById('performanceModeToggle');
+          if(togglePerf) togglePerf.checked = !!data.performanceMode;
+        }
       }
       await checkGameStatus();
       if(!gamePollTimer){
@@ -2764,6 +3088,9 @@
 
     if(isBackend){
       try {
+        if (typeof currentSkinDataUrl !== 'undefined' && currentSkinDataUrl) {
+          saveSkinToBackend(currentSkinDataUrl, skinModelType, currentSkinFileName);
+        }
         const res = await fetch('/api/start-game', { method: 'POST' });
         const data = await res.json();
         if(data.ok){
@@ -3134,6 +3461,16 @@
                 placeholderDesc: "Поместите скриншот кастомизированных лодок с парусом в assets/news/boat_showcase.png"
               }
             }
+          ]
+        },
+        {
+          title: "9. Оптимизация и плавность",
+          desc: "Сборка и лаунчер настроены так, чтобы обеспечивать высокий FPS и стабильную работу без микрофризов на любом ПК:",
+          items: [
+            "**Умный подбор памяти**: лаунчер автоматически определяет объём вашей ОЗУ и выделяет оптимальное количество памяти под сборку без перегрузки системы.",
+            "**Современные флаги JVM**: игра запускается с передовым сборщиком мусора Generational ZGC (Java 21+) — паузы на очистку памяти составляют менее 1 мс, исключая подвисания.",
+            "**Сбалансированная сборка**: оптимизационный стек модов (Sodium, Lithium, FerriteCore, ImmediatelyFast, C2ME) ускоряет рендеринг, физику и параллельную загрузку мира.",
+            "**Режим производительности**: быстрый тумблер в настройках лаунчера для моментального облегчения графики, облаков и частиц на слабых ПК и ноутбуках."
           ]
         }
       ]
@@ -3614,7 +3951,8 @@
     accentColor: '#f0f0f2',
     smoothAnim: true,
     gpuAccel: true,
-    autoUpdate: true
+    autoUpdate: true,
+    performanceMode: false
   };
 
   let launcherSettings = Object.assign({}, defaultLauncherSettings);
@@ -3857,6 +4195,8 @@
     // Чекбоксы
     const toggleAuto = document.getElementById('autoUpdateToggle');
     if (toggleAuto) toggleAuto.checked = settings.autoUpdate !== false;
+    const togglePerf = document.getElementById('performanceModeToggle');
+    if (togglePerf) togglePerf.checked = settings.performanceMode === true;
     const toggleAnim = document.getElementById('toggleAnimSetting');
     if (toggleAnim) toggleAnim.checked = settings.smoothAnim !== false;
     const toggleGpu = document.getElementById('toggleGpuSetting');
@@ -3975,6 +4315,10 @@
       launcherSettings.autoUpdate = toggleAuto.checked;
       autoUpdate = toggleAuto.checked;
     }
+    const togglePerf = document.getElementById('performanceModeToggle');
+    if (togglePerf && launcherSettings.performanceMode !== togglePerf.checked) {
+      togglePerformanceMode(togglePerf.checked);
+    }
     const toggleAnim = document.getElementById('toggleAnimSetting');
     if (toggleAnim) launcherSettings.smoothAnim = toggleAnim.checked;
     const toggleGpu = document.getElementById('toggleGpuSetting');
@@ -3984,6 +4328,21 @@
     saveLauncherSettingsToStorage();
     closeSettingsModal();
     toast('Настройки сохранены');
+  }
+
+  async function togglePerformanceMode(enabled) {
+    launcherSettings.performanceMode = enabled;
+    saveLauncherSettingsToStorage();
+    if (isBackend) {
+      try {
+        await fetch('/api/set-performance-mode', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: enabled })
+        });
+      } catch (e) {}
+    }
+    toast(enabled ? 'Режим производительности включен' : 'Режим производительности выключен');
   }
 
   async function createDesktopShortcut() {
@@ -4135,13 +4494,1290 @@
     openSettingsModal();
   }
 
+  // =========================================================================
+  // РАЗДЕЛ: СКИН (3D WebGL просмотрщик и карточки в стиле Modrinth)
+  // =========================================================================
+  const DEFAULT_STEVE_SKIN_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAMAAACdt4HsAAAAdVBMVEUAAAD///+3g2sAzMyzeV4KvLyqclkAr68ApKSbY0mUYD4ElZWPXj6QWT8FiIiBUzkAf38Denp2SzNVVVV3QjVSPYlqQDBKSkpGOqUAaGhBNZs/Pz86MYk3Nzc/KhVJJRAoKCg0JRIzJBFCHQorHg0mGgokGAjoejraAAAAAXRSTlMAQObYZgAAAtFJREFUeNrtlm132jAMhelKFWuOHdr1hYYkZcbz//+Ju5LjsXRwEujHcSNsOefc50gmEK+KYgyIEJtRq0sVw4AQwBN0DQBmudyTyl0OgDvgcz0g5iZcbuFyQAggxGFoXAO5+nKA7AFUN/m6GAB3BCM29QfU1MuN4kwyDhAIWASZgmZxye7HlEJAwC9XEhxikPvDot6jDLz+tib+qeshBC0D1FmAVpxiZFqviYjVldvQRuYB+vhxorsX4pc7Suz0VkgKCku+/5AYInp9JWIoaf0pCSTOAlJMjuvmu6s/np8PSJqaHW4KIC4BNA5+FuPh44Dv32HBTh7HX9DCX2UH9f1+X9b3xMDSfTeq3K+qyjARnQTs933/B8AO4pMAAvxsBbOABwDmKzjfgpEWPlfQtl273W47TG2L2UKVIWYyVc4NRlgrZJg2kCyOgO4I2ELWe1tVlgij5pDa1Q/A+/sG6REwGtsC8I+P3sAiA3IlWAm1G6sALE4DEI9QMUluxIXPZtQ7JPMEIG0IoYPE5I0C/AiwAmFmJ5cKi2kFCLgVJGV7YxQwtqAFERETY4CboCkAKrOHrJSNbSi5LJkyQgGII6CdAiw8Xso2xkquACMAlTYyqaBTo2CQQdZbhNEiNEMCv2diBUBTwNtbN+pNBZcyYLQiccPvCYBCmAD6HVw/xLqTdJe/DNTjYZMEHSHZZgBnAP8N6PudGHc9hBEA7Wnbep/3BSyMTPDmLVDE6qb/Ug9ZlYEqJKubbvqk2ZetvJOIiCW/5sChAMdEX6jgoSLoKxUYx4taKOeFti0v3Q1UXu2ieUBxdgBB+jpXgo7LAJ0A2iPAZjNiaQUFgKycB4rG/4OiI/DcecGJWC6Vm68AZkgrkJxhzUeDrMtagASgdqUwLd9ESABOASqdFjxE5UlABmnvap8BnDsvFL/YZwCnzwsK4ALgGcCJ8wLnTUCQTP/8Hn4DsAh5tPm8HxQAAAAASUVORK5CYII=';
+
+  let savedSkins = [];
+  let activeSkinId = 'steve';
+  let skinModelType = 'classic';
+  let currentSkinDataUrl = DEFAULT_STEVE_SKIN_BASE64;
+  let currentSkinFileName = 'Steve';
+
+  let skinAutoRotate = true;
+  let skinYaw = 0.45;
+  let skinPitch = 0.08;
+  let skinDistance = 44.0;
+  let isSkinDragging = false;
+  let skinLastMouseX = 0;
+  let skinLastMouseY = 0;
+  let skinGl = null;
+  let skinProgram = null;
+  let skinTexture = null;
+  let skinBuffers = null;
+  let skinAnimFrameId = null;
+
+  function escapeSkinHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  const Mat4 = {
+    perspective(out, fovy, aspect, near, far) {
+      const f = 1.0 / Math.tan(fovy / 2);
+      const nf = 1 / (near - far);
+      out.fill(0);
+      out[0] = f / aspect;
+      out[5] = f;
+      out[10] = (far + near) * nf;
+      out[11] = -1;
+      out[14] = (2 * far * near) * nf;
+      return out;
+    },
+    lookAt(out, eye, center, up) {
+      const eyex = eye[0], eyey = eye[1], eyez = eye[2];
+      const upx = up[0], upy = up[1], upz = up[2];
+      const centerx = center[0], centery = center[1], centerz = center[2];
+
+      let z0 = eyex - centerx, z1 = eyey - centery, z2 = eyez - centerz;
+      let len = Math.hypot(z0, z1, z2);
+      if (len === 0) { z2 = 1; } else { z0 /= len; z1 /= len; z2 /= len; }
+
+      let x0 = upy * z2 - upz * z1, x1 = upz * z0 - upx * z2, x2 = upx * z1 - upy * z0;
+      len = Math.hypot(x0, x1, x2);
+      if (len === 0) { x0 = 0; x1 = 0; x2 = 0; } else { x0 /= len; x1 /= len; x2 /= len; }
+
+      let y0 = z1 * x2 - z2 * x1, y1 = z2 * x0 - z0 * x2, y2 = z0 * x1 - z1 * x0;
+      len = Math.hypot(y0, y1, y2);
+      if (len === 0) { y0 = 0; y1 = 0; y2 = 0; } else { y0 /= len; y1 /= len; y2 /= len; }
+
+      out[0] = x0; out[1] = y0; out[2] = z0; out[3] = 0;
+      out[4] = x1; out[5] = y1; out[6] = z1; out[7] = 0;
+      out[8] = x2; out[9] = y2; out[10] = z2; out[11] = 0;
+      out[12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+      out[13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+      out[14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+      out[15] = 1;
+      return out;
+    },
+    multiply(out, a, b) {
+      const a00 = a[0], a01 = a[1], a02 = a[2], a03 = a[3];
+      const a10 = a[4], a11 = a[5], a12 = a[6], a13 = a[7];
+      const a20 = a[8], a21 = a[9], a22 = a[10], a23 = a[11];
+      const a30 = a[12], a31 = a[13], a32 = a[14], a33 = a[15];
+
+      let b0 = b[0], b1 = b[1], b2 = b[2], b3 = b[3];
+      out[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+      out[1] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+      out[2] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+      out[3] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+      b0 = b[4]; b1 = b[5]; b2 = b[6]; b3 = b[7];
+      out[4] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+      out[5] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+      out[6] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+      out[7] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+      b0 = b[8]; b1 = b[9]; b2 = b[10]; b3 = b[11];
+      out[8] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+      out[9] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+      out[10] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+      out[11] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+
+      b0 = b[12]; b1 = b[13]; b2 = b[14]; b3 = b[15];
+      out[12] = b0*a00 + b1*a10 + b2*a20 + b3*a30;
+      out[13] = b0*a01 + b1*a11 + b2*a21 + b3*a31;
+      out[14] = b0*a02 + b1*a12 + b2*a22 + b3*a32;
+      out[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33;
+      return out;
+    }
+  };
+
+  function addSkinBox(positions, normals, texCoords, indices, cx, cy, cz, w, h, d, u, v, inflate, pivot, rot) {
+    inflate = inflate || 0;
+    pivot = pivot || [cx, cy, cz];
+    rot = rot || [0, 0, 0];
+
+    const rx = rot[0] || 0, ry = rot[1] || 0, rz = rot[2] || 0;
+    const hasRot = (rx !== 0 || ry !== 0 || rz !== 0);
+
+    function transformPoint(p) {
+      if (!hasRot) return p;
+      let x = p[0] - pivot[0];
+      let y = p[1] - pivot[1];
+      let z = p[2] - pivot[2];
+
+      if (rx) {
+        const c = Math.cos(rx), s = Math.sin(rx);
+        const y1 = y * c - z * s;
+        const z1 = y * s + z * c;
+        y = y1; z = z1;
+      }
+      if (ry) {
+        const c = Math.cos(ry), s = Math.sin(ry);
+        const x1 = x * c + z * s;
+        const z1 = -x * s + z * c;
+        x = x1; z = z1;
+      }
+      if (rz) {
+        const c = Math.cos(rz), s = Math.sin(rz);
+        const x1 = x * c - y * s;
+        const y1 = x * s + y * c;
+        x = x1; y = y1;
+      }
+      return [x + pivot[0], y + pivot[1], z + pivot[2]];
+    }
+
+    function transformNormal(norm) {
+      if (!hasRot) return norm;
+      let x = norm[0], y = norm[1], z = norm[2];
+      if (rx) {
+        const c = Math.cos(rx), s = Math.sin(rx);
+        const y1 = y * c - z * s;
+        const z1 = y * s + z * c;
+        y = y1; z = z1;
+      }
+      if (ry) {
+        const c = Math.cos(ry), s = Math.sin(ry);
+        const x1 = x * c + z * s;
+        const z1 = -x * s + z * c;
+        x = x1; z = z1;
+      }
+      if (rz) {
+        const c = Math.cos(rz), s = Math.sin(rz);
+        const x1 = x * c - y * s;
+        const y1 = x * s + y * c;
+        x = x1; y = y1;
+      }
+      return [x, y, z];
+    }
+
+    const x0 = cx - (w / 2) - inflate;
+    const x1 = cx + (w / 2) + inflate;
+    const y0 = cy - (h / 2) - inflate;
+    const y1 = cy + (h / 2) + inflate;
+    const z0 = cz - (d / 2) - inflate;
+    const z1 = cz + (d / 2) + inflate;
+
+    function addFace(verts, norm, fu, fv, fw, fh) {
+      const baseIdx = positions.length / 3;
+      const tNorm = transformNormal(norm);
+      for (let i = 0; i < 4; i++) {
+        const tp = transformPoint(verts[i]);
+        positions.push(tp[0], tp[1], tp[2]);
+        normals.push(tNorm[0], tNorm[1], tNorm[2]);
+      }
+      const u0 = fu / 64.0;
+      const u1 = (fu + fw) / 64.0;
+      const v0 = fv / 64.0;
+      const v1 = (fv + fh) / 64.0;
+
+      texCoords.push(u0, v0);
+      texCoords.push(u1, v0);
+      texCoords.push(u1, v1);
+      texCoords.push(u0, v1);
+
+      indices.push(baseIdx, baseIdx + 1, baseIdx + 2, baseIdx, baseIdx + 2, baseIdx + 3);
+    }
+
+    // 1. Перед (+Z)
+    addFace(
+      [[x0, y1, z1], [x1, y1, z1], [x1, y0, z1], [x0, y0, z1]],
+      [0, 0, 1],
+      u + d, v + d, w, h
+    );
+    // 2. Сзади (-Z)
+    addFace(
+      [[x1, y1, z0], [x0, y1, z0], [x0, y0, z0], [x1, y0, z0]],
+      [0, 0, -1],
+      u + d + w + d, v + d, w, h
+    );
+    // 3. Сверху (+Y)
+    addFace(
+      [[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]],
+      [0, 1, 0],
+      u + d, v, w, d
+    );
+    // 4. Снизу (-Y)
+    addFace(
+      [[x0, y0, z1], [x1, y0, z1], [x1, y0, z0], [x0, y0, z0]],
+      [0, -1, 0],
+      u + d + w, v, w, d
+    );
+    // 5. Справа (-X, правая сторона персонажа)
+    addFace(
+      [[x0, y1, z0], [x0, y1, z1], [x0, y0, z1], [x0, y0, z0]],
+      [-1, 0, 0],
+      u, v + d, d, h
+    );
+    // 6. Слева (+X, левая сторона персонажа)
+    addFace(
+      [[x1, y1, z1], [x1, y1, z0], [x1, y0, z0], [x1, y0, z1]],
+      [1, 0, 0],
+      u + d + w, v + d, d, h
+    );
+  }
+
+  function buildSkinGeometry(isSlim) {
+    const positions = [];
+    const normals = [];
+    const texCoords = [];
+    const indices = [];
+
+    const armW = isSlim ? 3 : 4;
+    const rArmX = isSlim ? -5.5 : -6;
+    const lArmX = isSlim ? 5.5 : 6;
+
+    // Естественная демонстрационная стойка (в стиле Modrinth)
+    const headRot = [0.03, -0.16, 0];
+    const headPiv = [0, 24, 0];
+
+    const rArmRot = [0.18, 0, -0.06];
+    const rArmPiv = [rArmX + (isSlim ? 1.5 : 2), 22, 0];
+
+    const lArmRot = [-0.18, 0, 0.06];
+    const lArmPiv = [lArmX - (isSlim ? 1.5 : 2), 22, 0];
+
+    const rLegRot = [-0.12, 0, 0];
+    const rLegPiv = [-2, 12, 0];
+
+    const lLegRot = [0.12, 0, 0];
+    const lLegPiv = [2, 12, 0];
+
+    // ВНУТРЕННИЙ СЛОЙ
+    // Голова (0, 0)
+    addSkinBox(positions, normals, texCoords, indices, 0, 28, 0, 8, 8, 8, 0, 0, 0, headPiv, headRot);
+    // Туловище (16, 16)
+    addSkinBox(positions, normals, texCoords, indices, 0, 18, 0, 8, 12, 4, 16, 16, 0);
+    // Правая рука (40, 16)
+    addSkinBox(positions, normals, texCoords, indices, rArmX, 18, 0, armW, 12, 4, 40, 16, 0, rArmPiv, rArmRot);
+    // Левая рука (32, 48)
+    addSkinBox(positions, normals, texCoords, indices, lArmX, 18, 0, armW, 12, 4, 32, 48, 0, lArmPiv, lArmRot);
+    // Правая нога (0, 16)
+    addSkinBox(positions, normals, texCoords, indices, -2, 6, 0, 4, 12, 4, 0, 16, 0, rLegPiv, rLegRot);
+    // Левая нога (16, 48)
+    addSkinBox(positions, normals, texCoords, indices, 2, 6, 0, 4, 12, 4, 16, 48, 0, lLegPiv, lLegRot);
+
+    // ВНЕШНИЙ СЛОЙ (OVERLAY)
+    // Шляпа (32, 0)
+    addSkinBox(positions, normals, texCoords, indices, 0, 28, 0, 8, 8, 8, 32, 0, 0.45, headPiv, headRot);
+    // Куртка (16, 32)
+    addSkinBox(positions, normals, texCoords, indices, 0, 18, 0, 8, 12, 4, 16, 32, 0.4);
+    // Правый рукав (40, 32)
+    addSkinBox(positions, normals, texCoords, indices, rArmX, 18, 0, armW, 12, 4, 40, 32, 0.38, rArmPiv, rArmRot);
+    // Левый рукав (48, 48)
+    addSkinBox(positions, normals, texCoords, indices, lArmX, 18, 0, armW, 12, 4, 48, 48, 0.38, lArmPiv, lArmRot);
+    // Правая штанина (0, 32)
+    addSkinBox(positions, normals, texCoords, indices, -2, 6, 0, 4, 12, 4, 0, 32, 0.35, rLegPiv, rLegRot);
+    // Левая штанина (0, 48)
+    addSkinBox(positions, normals, texCoords, indices, 2, 6, 0, 4, 12, 4, 0, 48, 0.35, lLegPiv, lLegRot);
+
+    return {
+      positions: new Float32Array(positions),
+      normals: new Float32Array(normals),
+      texCoords: new Float32Array(texCoords),
+      indices: new Uint16Array(indices),
+      count: indices.length
+    };
+  }
+
+  function initSkinViewer() {
+    const canvas = document.getElementById('skinCanvas');
+    if (!canvas) return;
+
+    if (!skinGl) {
+      skinGl = canvas.getContext('webgl', { alpha: true, antialias: true }) || canvas.getContext('experimental-webgl');
+      if (!skinGl) {
+        console.warn('WebGL is not supported for 3D skin viewer');
+        return;
+      }
+
+      const gl = skinGl;
+      gl.enable(gl.DEPTH_TEST);
+      gl.depthFunc(gl.LEQUAL);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      const vsSource = `
+        attribute vec3 aPosition;
+        attribute vec3 aNormal;
+        attribute vec2 aTexCoord;
+
+        uniform mat4 uMVP;
+        uniform mat4 uModel;
+
+        varying vec2 vTexCoord;
+        varying vec3 vNormal;
+
+        void main() {
+          vTexCoord = aTexCoord;
+          vNormal = mat3(uModel) * aNormal;
+          gl_Position = uMVP * vec4(aPosition, 1.0);
+        }
+      `;
+
+      const fsSource = `
+        precision mediump float;
+
+        uniform sampler2D uSampler;
+
+        varying vec2 vTexCoord;
+        varying vec3 vNormal;
+
+        void main() {
+          vec4 texColor = texture2D(uSampler, vTexCoord);
+          if (texColor.a < 0.1) {
+            discard;
+          }
+          vec3 norm = normalize(vNormal);
+          vec3 lightDir = normalize(vec3(0.55, 0.8, 0.65));
+          float diff = max(dot(norm, lightDir), 0.0);
+          vec3 light = vec3(0.68) + vec3(0.32) * diff;
+          gl_FragColor = vec4(texColor.rgb * light, texColor.a);
+        }
+      `;
+
+      function createShader(type, source) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, source);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+          console.error('Shader error:', gl.getShaderInfoLog(s));
+          gl.deleteShader(s);
+          return null;
+        }
+        return s;
+      }
+
+      const vs = createShader(gl.VERTEX_SHADER, vsSource);
+      const fs = createShader(gl.FRAGMENT_SHADER, fsSource);
+      skinProgram = gl.createProgram();
+      gl.attachShader(skinProgram, vs);
+      gl.attachShader(skinProgram, fs);
+      gl.linkProgram(skinProgram);
+
+      if (!gl.getProgramParameter(skinProgram, gl.LINK_STATUS)) {
+        console.error('Program link error:', gl.getProgramInfoLog(skinProgram));
+        return;
+      }
+
+      skinProgram.attribs = {
+        position: gl.getAttribLocation(skinProgram, 'aPosition'),
+        normal: gl.getAttribLocation(skinProgram, 'aNormal'),
+        texCoord: gl.getAttribLocation(skinProgram, 'aTexCoord')
+      };
+      skinProgram.uniforms = {
+        mvp: gl.getUniformLocation(skinProgram, 'uMVP'),
+        model: gl.getUniformLocation(skinProgram, 'uModel'),
+        sampler: gl.getUniformLocation(skinProgram, 'uSampler')
+      };
+
+      skinTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, skinTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+      const wrap = document.getElementById('skinCanvasWrap') || canvas;
+
+      wrap.addEventListener('mousedown', (e) => {
+        isSkinDragging = true;
+        skinLastMouseX = e.clientX;
+        skinLastMouseY = e.clientY;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isSkinDragging) return;
+        const dx = e.clientX - skinLastMouseX;
+        skinYaw -= dx * 0.012;
+        // Поворот ТОЛЬКО влево-вправо (по горизонтальной оси)
+        skinLastMouseX = e.clientX;
+        skinLastMouseY = e.clientY;
+      });
+
+      window.addEventListener('mouseup', () => {
+        isSkinDragging = false;
+      });
+
+      wrap.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        skinDistance = Math.max(26.0, Math.min(75.0, skinDistance + e.deltaY * 0.035));
+      }, { passive: false });
+
+      wrap.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+          isSkinDragging = true;
+          skinLastMouseX = e.touches[0].clientX;
+          skinLastMouseY = e.touches[0].clientY;
+        }
+      }, { passive: true });
+
+      window.addEventListener('touchmove', (e) => {
+        if (!isSkinDragging || e.touches.length !== 1) return;
+        const dx = e.touches[0].clientX - skinLastMouseX;
+        skinYaw -= dx * 0.012;
+        // Поворот ТОЛЬКО влево-вправо (по горизонтальной оси)
+        skinLastMouseX = e.touches[0].clientX;
+        skinLastMouseY = e.touches[0].clientY;
+      }, { passive: true });
+
+      window.addEventListener('touchend', () => {
+        isSkinDragging = false;
+      });
+    }
+
+    updateSkinGeometryBuffers();
+    updateSkinTextureFromData(currentSkinDataUrl || DEFAULT_STEVE_SKIN_BASE64);
+
+    if (!skinAnimFrameId) {
+      startSkinRenderLoop();
+    }
+  }
+
+  function updateSkinGeometryBuffers() {
+    if (!skinGl || !skinProgram) return;
+    const gl = skinGl;
+    const geom = buildSkinGeometry(skinModelType === 'slim');
+
+    if (!skinBuffers) {
+      skinBuffers = {
+        pos: gl.createBuffer(),
+        norm: gl.createBuffer(),
+        tex: gl.createBuffer(),
+        idx: gl.createBuffer(),
+        count: 0
+      };
+    }
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, skinBuffers.pos);
+    gl.bufferData(gl.ARRAY_BUFFER, geom.positions, gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, skinBuffers.norm);
+    gl.bufferData(gl.ARRAY_BUFFER, geom.normals, gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, skinBuffers.tex);
+    gl.bufferData(gl.ARRAY_BUFFER, geom.texCoords, gl.STATIC_DRAW);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skinBuffers.idx);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geom.indices, gl.STATIC_DRAW);
+
+    skinBuffers.count = geom.count;
+  }
+
+  function updateSkinTextureFromData(dataUrl) {
+    if (!skinGl || !skinTexture) return;
+    const img = new Image();
+    img.onload = () => {
+      const gl = skinGl;
+      gl.bindTexture(gl.TEXTURE_2D, skinTexture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+    };
+    img.src = dataUrl;
+  }
+
+  function renderSkinFrame() {
+    if (currentView !== 'skin' || !skinGl || !skinProgram || !skinBuffers) return;
+
+    if (skinAutoRotate && !isSkinDragging) {
+      skinYaw += 0.007;
+    }
+
+    const gl = skinGl;
+    const canvas = document.getElementById('skinCanvas');
+    if (!canvas) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const dispW = Math.round(canvas.clientWidth * dpr);
+    const dispH = Math.round(canvas.clientHeight * dpr);
+    if (canvas.width !== dispW || canvas.height !== dispH) {
+      canvas.width = dispW;
+      canvas.height = dispH;
+    }
+
+    gl.viewport(0, 0, canvas.width, canvas.height);
+    gl.clearColor(0.0, 0.0, 0.0, 0.0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    gl.useProgram(skinProgram);
+
+    const aspect = canvas.width / (canvas.height || 1);
+    const proj = new Float32Array(16);
+    Mat4.perspective(proj, (45 * Math.PI) / 180, aspect, 0.1, 200.0);
+
+    const cx = 0, cy = 16, cz = 0;
+    const eyeX = cx + skinDistance * Math.sin(skinYaw) * Math.cos(skinPitch);
+    const eyeY = cy + skinDistance * Math.sin(skinPitch);
+    const eyeZ = cz + skinDistance * Math.cos(skinYaw) * Math.cos(skinPitch);
+
+    const view = new Float32Array(16);
+    Mat4.lookAt(view, [eyeX, eyeY, eyeZ], [cx, cy, cz], [0, 1, 0]);
+
+    const mvp = new Float32Array(16);
+    Mat4.multiply(mvp, proj, view);
+
+    const modelIdentity = new Float32Array([
+      1,0,0,0,
+      0,1,0,0,
+      0,0,1,0,
+      0,0,0,1
+    ]);
+
+    gl.uniformMatrix4fv(skinProgram.uniforms.mvp, false, mvp);
+    gl.uniformMatrix4fv(skinProgram.uniforms.model, false, modelIdentity);
+    gl.uniform1i(skinProgram.uniforms.sampler, 0);
+
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, skinTexture);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, skinBuffers.pos);
+    gl.enableVertexAttribArray(skinProgram.attribs.position);
+    gl.vertexAttribPointer(skinProgram.attribs.position, 3, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, skinBuffers.norm);
+    gl.enableVertexAttribArray(skinProgram.attribs.normal);
+    gl.vertexAttribPointer(skinProgram.attribs.normal, 3, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, skinBuffers.tex);
+    gl.enableVertexAttribArray(skinProgram.attribs.texCoord);
+    gl.vertexAttribPointer(skinProgram.attribs.texCoord, 2, gl.FLOAT, false, 0, 0);
+
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skinBuffers.idx);
+    gl.drawElements(gl.TRIANGLES, skinBuffers.count, gl.UNSIGNED_SHORT, 0);
+  }
+
+  function startSkinRenderLoop() {
+    function loop() {
+      if (currentView === 'skin') {
+        renderSkinFrame();
+      }
+      skinAnimFrameId = requestAnimationFrame(loop);
+    }
+    skinAnimFrameId = requestAnimationFrame(loop);
+  }
+
+  // --- 3D Изометрическая генерация превью скина (в стиле официального Minecraft Launcher) ---
+  let thumbGl = null;
+  let thumbProgram = null;
+  let thumbOffscreenCanvas = null;
+  let thumbClassicBuffers = null;
+  let thumbSlimBuffers = null;
+  let thumbTexture = null;
+
+  function initThumbRenderer() {
+    if (thumbGl) return true;
+    try {
+      thumbOffscreenCanvas = document.createElement('canvas');
+      thumbOffscreenCanvas.width = 340;
+      thumbOffscreenCanvas.height = 432;
+
+      const opts = { alpha: true, antialias: true, preserveDrawingBuffer: true };
+      thumbGl = thumbOffscreenCanvas.getContext('webgl', opts) || thumbOffscreenCanvas.getContext('experimental-webgl', opts);
+      if (!thumbGl) return false;
+
+      const gl = thumbGl;
+      gl.enable(gl.DEPTH_TEST);
+      gl.depthFunc(gl.LEQUAL);
+      gl.enable(gl.BLEND);
+      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+      const vsSource = `
+        attribute vec3 aPosition;
+        attribute vec3 aNormal;
+        attribute vec2 aTexCoord;
+
+        uniform mat4 uMVP;
+        uniform mat4 uModel;
+
+        varying vec2 vTexCoord;
+        varying vec3 vNormal;
+
+        void main() {
+          vTexCoord = aTexCoord;
+          vNormal = mat3(uModel) * aNormal;
+          gl_Position = uMVP * vec4(aPosition, 1.0);
+        }
+      `;
+
+      const fsSource = `
+        precision mediump float;
+        uniform sampler2D uSampler;
+        varying vec2 vTexCoord;
+        varying vec3 vNormal;
+
+        void main() {
+          vec4 texColor = texture2D(uSampler, vTexCoord);
+          if (texColor.a < 0.1) discard;
+          vec3 norm = normalize(vNormal);
+          vec3 lightDir = normalize(vec3(-0.35, 0.8, 0.65));
+          float diff = max(dot(norm, lightDir), 0.0);
+          vec3 light = vec3(0.72) + vec3(0.28) * diff;
+          gl_FragColor = vec4(texColor.rgb * light, texColor.a);
+        }
+      `;
+
+      function createShader(type, src) {
+        const s = gl.createShader(type);
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        return s;
+      }
+
+      const vs = createShader(gl.VERTEX_SHADER, vsSource);
+      const fs = createShader(gl.FRAGMENT_SHADER, fsSource);
+      thumbProgram = gl.createProgram();
+      gl.attachShader(thumbProgram, vs);
+      gl.attachShader(thumbProgram, fs);
+      gl.linkProgram(thumbProgram);
+
+      thumbProgram.attribs = {
+        position: gl.getAttribLocation(thumbProgram, 'aPosition'),
+        normal: gl.getAttribLocation(thumbProgram, 'aNormal'),
+        texCoord: gl.getAttribLocation(thumbProgram, 'aTexCoord')
+      };
+      thumbProgram.uniforms = {
+        mvp: gl.getUniformLocation(thumbProgram, 'uMVP'),
+        model: gl.getUniformLocation(thumbProgram, 'uModel'),
+        sampler: gl.getUniformLocation(thumbProgram, 'uSampler')
+      };
+
+      thumbTexture = gl.createTexture();
+      gl.bindTexture(gl.TEXTURE_2D, thumbTexture);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+      function uploadBufs(geom) {
+        const pb = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, pb);
+        gl.bufferData(gl.ARRAY_BUFFER, geom.positions, gl.STATIC_DRAW);
+
+        const nb = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, nb);
+        gl.bufferData(gl.ARRAY_BUFFER, geom.normals, gl.STATIC_DRAW);
+
+        const tb = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, tb);
+        gl.bufferData(gl.ARRAY_BUFFER, geom.texCoords, gl.STATIC_DRAW);
+
+        const ib = gl.createBuffer();
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geom.indices, gl.STATIC_DRAW);
+
+        return { pos: pb, norm: nb, tex: tb, idx: ib, count: geom.count };
+      }
+
+      thumbClassicBuffers = uploadBufs(buildSkinGeometry(false));
+      thumbSlimBuffers = uploadBufs(buildSkinGeometry(true));
+      return true;
+    } catch(e) {
+      console.warn('Init thumb renderer error:', e);
+      return false;
+    }
+  }
+
+  function renderSkinThumbnail3D(img, targetCanvas, isSlim) {
+    if (!targetCanvas || !img) return;
+    if (!initThumbRenderer()) return;
+
+    try {
+      const gl = thumbGl;
+      const w = thumbOffscreenCanvas.width;
+      const h = thumbOffscreenCanvas.height;
+
+      gl.viewport(0, 0, w, h);
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+      gl.useProgram(thumbProgram);
+
+      gl.bindTexture(gl.TEXTURE_2D, thumbTexture);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+
+      const aspect = w / h;
+      const proj = new Float32Array(16);
+      Mat4.perspective(proj, (40 * Math.PI) / 180, aspect, 0.1, 200.0);
+
+      // Ракурс в стиле лаунчера Minecraft (Steve/Alex в карточках):
+      // Легкий поворот персонажа на зрителя (yaw ~ -0.36 rad, pitch ~ 0.08 rad)
+      const yaw = -0.32;
+      const pitch = 0.08;
+      const dist = 44.5;
+      const cx = 0, cy = 18.8, cz = 0; // Масштаб 85% высоты карточки с аккуратным отступом сверху
+
+      const eyeX = cx + dist * Math.sin(yaw) * Math.cos(pitch);
+      const eyeY = cy + dist * Math.sin(pitch);
+      const eyeZ = cz + dist * Math.cos(yaw) * Math.cos(pitch);
+
+      const view = new Float32Array(16);
+      Mat4.lookAt(view, [eyeX, eyeY, eyeZ], [cx, cy, cz], [0, 1, 0]);
+
+      const mvp = new Float32Array(16);
+      Mat4.multiply(mvp, proj, view);
+
+      const modelId = new Float32Array([
+        1,0,0,0,
+        0,1,0,0,
+        0,0,1,0,
+        0,0,0,1
+      ]);
+
+      gl.uniformMatrix4fv(thumbProgram.uniforms.mvp, false, mvp);
+      gl.uniformMatrix4fv(thumbProgram.uniforms.model, false, modelId);
+      gl.uniform1i(thumbProgram.uniforms.sampler, 0);
+
+      const bufs = isSlim ? thumbSlimBuffers : thumbClassicBuffers;
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufs.pos);
+      gl.enableVertexAttribArray(thumbProgram.attribs.position);
+      gl.vertexAttribPointer(thumbProgram.attribs.position, 3, gl.FLOAT, false, 0, 0);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufs.norm);
+      gl.enableVertexAttribArray(thumbProgram.attribs.normal);
+      gl.vertexAttribPointer(thumbProgram.attribs.normal, 3, gl.FLOAT, false, 0, 0);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, bufs.tex);
+      gl.enableVertexAttribArray(thumbProgram.attribs.texCoord);
+      gl.vertexAttribPointer(thumbProgram.attribs.texCoord, 2, gl.FLOAT, false, 0, 0);
+
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, bufs.idx);
+      gl.drawElements(gl.TRIANGLES, bufs.count, gl.UNSIGNED_SHORT, 0);
+
+      const ctx = targetCanvas.getContext('2d');
+      ctx.clearRect(0, 0, targetCanvas.width, targetCanvas.height);
+      ctx.imageSmoothingEnabled = true;
+      ctx.drawImage(thumbOffscreenCanvas, 0, 0, targetCanvas.width, targetCanvas.height);
+    } catch(err) {
+      console.warn('renderSkinThumbnail3D error:', err);
+    }
+  }
+
+  function updateSkinCardsSelection() {
+    const grid = document.getElementById('skinCardsGrid');
+    if (!grid) return;
+    const cards = grid.querySelectorAll('.skin-card:not(.skin-card-add)');
+    cards.forEach(card => {
+      const isCardActive = (card.dataset.skinId === activeSkinId);
+      card.classList.toggle('active', isCardActive);
+      let badge = card.querySelector('.skin-card-badge');
+      if (isCardActive && !badge) {
+        badge = document.createElement('div');
+        badge.className = 'skin-card-badge';
+        badge.innerHTML = `
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="3.2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        `;
+        card.prepend(badge);
+      } else if (!isCardActive && badge) {
+        badge.remove();
+      }
+    });
+  }
+
+  function reRenderSkinCardThumbnail(skinId) {
+    const skin = savedSkins.find(s => s.id === skinId);
+    if (!skin) return;
+    const card = document.querySelector(`.skin-card[data-skin-id="${skin.id}"]`);
+    if (card) {
+      card.dataset.renderedModel = skin.model || 'classic';
+    }
+    const c = document.getElementById(`bust_${skin.id}`);
+    if (c) {
+      const img = new Image();
+      img.onload = () => renderSkinThumbnail3D(img, c, skin.model === 'slim');
+      img.src = skin.data;
+    }
+  }
+
+  function renderSavedSkinsGrid() {
+    const grid = document.getElementById('skinCardsGrid');
+    if (!grid) return;
+
+    const addCard = document.getElementById('skinCardAdd');
+    if (addCard && !grid.contains(addCard)) {
+      grid.prepend(addCard);
+    }
+
+    // Удаляем карточки, которых больше нет в savedSkins
+    const existingCards = grid.querySelectorAll('.skin-card:not(.skin-card-add)');
+    const savedSkinIds = new Set(savedSkins.map(s => s.id));
+    existingCards.forEach(card => {
+      if (!savedSkinIds.has(card.dataset.skinId)) {
+        card.remove();
+      }
+    });
+
+    // Создаем новые карточки или обновляем измененные
+    savedSkins.forEach(skin => {
+      let card = grid.querySelector(`.skin-card[data-skin-id="${skin.id}"]`);
+      if (!card) {
+        card = document.createElement('div');
+        card.dataset.skinId = skin.id;
+        card.className = 'skin-card';
+        card.setAttribute('title', escapeSkinHtml(skin.name));
+        card.onclick = () => selectSkinCard(skin.id);
+
+        let deleteHtml = '';
+        if (!skin.isDefault) {
+          deleteHtml = `
+            <button class="skin-card-delete" onclick="deleteSavedSkin(event, '${skin.id}')" title="Удалить скин">&times;</button>
+          `;
+        }
+
+        const canvasId = `bust_${skin.id}`;
+        card.innerHTML = `
+          ${deleteHtml}
+          <canvas class="skin-card-canvas" id="${canvasId}" width="340" height="432"></canvas>
+        `;
+        grid.appendChild(card);
+
+        card.dataset.renderedModel = skin.model || 'classic';
+        const c = document.getElementById(canvasId);
+        if (c) {
+          const img = new Image();
+          img.onload = () => renderSkinThumbnail3D(img, c, skin.model === 'slim');
+          img.src = skin.data;
+        }
+      } else {
+        if (card.dataset.renderedModel !== (skin.model || 'classic')) {
+          reRenderSkinCardThumbnail(skin.id);
+        }
+      }
+    });
+
+    updateSkinCardsSelection();
+  }
+
+  function selectSkinCard(id) {
+    const skin = savedSkins.find(s => s.id === id);
+    if (!skin) return;
+    activeSkinId = id;
+    skinModelType = skin.model || 'classic';
+    applySkinData(skin.data, skin.name, skin.model, true);
+    updateSkinCardsSelection();
+    toast(`Выбран скин: ${skin.name}`);
+  }
+
+  function deleteSavedSkin(e, id) {
+    if (e) e.stopPropagation();
+    const idx = savedSkins.findIndex(s => s.id === id);
+    if (idx === -1) return;
+    const skin = savedSkins[idx];
+    if (skin.isDefault) return;
+
+    savedSkins.splice(idx, 1);
+    if (activeSkinId === id) {
+      activeSkinId = 'steve';
+      const steve = savedSkins.find(s => s.id === 'steve') || savedSkins[0];
+      if (steve) {
+        skinModelType = steve.model || 'classic';
+        applySkinData(steve.data, steve.name, steve.model, true);
+      }
+    }
+    persistSavedSkins();
+    renderSavedSkinsGrid();
+    toast('Скин удален');
+  }
+
+  function showSkin() {
+    currentView = 'skin';
+    hideAllViews();
+    document.getElementById('viewSkin').style.display = 'flex';
+    document.getElementById('btnSkin').classList.add('active');
+    document.getElementById('pageTitle').textContent = 'СКИН';
+    resetSkinRotation();
+    renderSavedSkinsGrid();
+    setTimeout(() => {
+      initSkinViewer();
+    }, 20);
+  }
+
+  function toggleSkinAutoRotate() {
+    skinAutoRotate = !skinAutoRotate;
+    const txt = document.getElementById('skinRotateText');
+    const icon = document.getElementById('skinRotateIcon');
+    if (skinAutoRotate) {
+      if (txt) txt.textContent = 'Пауза';
+      if (icon) icon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"></polygon>';
+    } else {
+      if (txt) txt.textContent = 'Вращать';
+      if (icon) icon.innerHTML = '<rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect>';
+    }
+  }
+
+  function resetSkinRotation() {
+    skinYaw = 0.45;
+    skinPitch = 0.08;
+    skinDistance = 44.0;
+    isSkinDragging = false;
+  }
+
+  function triggerSkinFileInput() {
+    const input = document.getElementById('skinFileInput');
+    if (input) input.click();
+  }
+
+  function handleSkinDragOver(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const card = document.getElementById('skinCardAdd');
+    if (card) card.classList.add('drag-over');
+  }
+
+  function handleSkinDragLeave(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const card = document.getElementById('skinCardAdd');
+    if (card) card.classList.remove('drag-over');
+  }
+
+  function handleSkinDrop(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const card = document.getElementById('skinCardAdd');
+    if (card) card.classList.remove('drag-over');
+    const files = e.dataTransfer ? e.dataTransfer.files : null;
+    if (files && files.length > 0) {
+      validateAndLoadSkinFile(files[0]);
+    }
+  }
+
+  function handleSkinFileSelected(e) {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      validateAndLoadSkinFile(files[0]);
+    }
+    e.target.value = '';
+  }
+
+  function validateAndLoadSkinFile(file) {
+    if (!file) return;
+    const isPng = file.name.toLowerCase().endsWith('.png') || file.type === 'image/png';
+    if (!isPng) {
+      toast('Ошибка: файл скина должен быть strictly .PNG формата!');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      processSkinDataUrl(e.target.result, file.name);
+    };
+    reader.onerror = function() {
+      toast('Не удалось прочитать выбранный файл скина');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function copySkinFlippedPart(ctx, img, sx, sy, sw, sh, dx, dy) {
+    const temp = document.createElement('canvas');
+    temp.width = sw;
+    temp.height = sh;
+    const tctx = temp.getContext('2d');
+    tctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+    ctx.save();
+    ctx.translate(dx + sw, dy);
+    ctx.scale(-1, 1);
+    ctx.drawImage(temp, 0, 0);
+    ctx.restore();
+  }
+
+  function arePixelArraysEqual(a, b) {
+    if (!a || !b || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
+
+  function getSkinPixelHash(data) {
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (let i = 0; i < data.length; i++) {
+      h1 = Math.imul(h1 ^ data[i], 2654435761);
+      h2 = Math.imul(h2 ^ data[i], 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+  }
+
+  function getSkinPixelsFromDataUrl(dataUrl) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = 64;
+        c.height = 64;
+        const ctx = c.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        if (img.height === 32) {
+          ctx.drawImage(img, 0, 0);
+          copySkinFlippedPart(ctx, img, 0, 16, 16, 16, 16, 48);
+          copySkinFlippedPart(ctx, img, 40, 16, 16, 16, 32, 48);
+        } else {
+          ctx.drawImage(img, 0, 0);
+        }
+        resolve(ctx.getImageData(0, 0, 64, 64).data);
+      };
+      img.onerror = () => resolve(null);
+      img.src = dataUrl;
+    });
+  }
+
+  function processSkinDataUrl(dataUrl, fileName) {
+    const img = new Image();
+    img.onload = async function() {
+      if ((img.width !== 64) || (img.height !== 64 && img.height !== 32)) {
+        toast(`Неверное разрешение (${img.width}×${img.height}). Скин должен быть 64×64 или 64×32!`);
+        return;
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 64;
+      canvas.height = 64;
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+
+      let detectedModel = 'classic';
+      if (img.height === 32) {
+        ctx.drawImage(img, 0, 0);
+        copySkinFlippedPart(ctx, img, 0, 16, 16, 16, 16, 48);
+        copySkinFlippedPart(ctx, img, 40, 16, 16, 16, 32, 48);
+        detectedModel = 'classic';
+      } else {
+        ctx.drawImage(img, 0, 0);
+        const p1 = ctx.getImageData(54, 20, 1, 1).data;
+        const p2 = ctx.getImageData(55, 20, 1, 1).data;
+        if (p1[3] === 0 && p2[3] === 0) {
+          detectedModel = 'slim';
+        }
+      }
+
+      const convertedUrl = canvas.toDataURL('image/png');
+      const newPixels = ctx.getImageData(0, 0, 64, 64).data;
+      const newHash = getSkinPixelHash(newPixels);
+
+      // Проверка на дубликат: не загружать одинаковые файлы скинов
+      let duplicate = null;
+      for (const s of savedSkins) {
+        if (!s || !s.data) continue;
+        if (s.data === convertedUrl || s.data === dataUrl) {
+          duplicate = s;
+          break;
+        }
+        if (s.hash && s.hash === newHash) {
+          duplicate = s;
+          break;
+        }
+      }
+
+      if (!duplicate) {
+        for (const s of savedSkins) {
+          if (!s || !s.data) continue;
+          const sPixels = await getSkinPixelsFromDataUrl(s.data);
+          if (sPixels && arePixelArraysEqual(newPixels, sPixels)) {
+            s.hash = newHash;
+            duplicate = s;
+            break;
+          }
+        }
+      }
+
+      if (duplicate) {
+        activeSkinId = duplicate.id;
+        skinModelType = duplicate.model || 'classic';
+        applySkinData(duplicate.data, duplicate.name, duplicate.model, true);
+        updateSkinCardsSelection();
+        toast('Этот скин уже добавлен в коллекцию!');
+        return;
+      }
+
+      const cleanName = (fileName || 'Скин').replace(/\.png$/i, '');
+      const newId = 'skin_' + Date.now();
+
+      const newSkin = {
+        id: newId,
+        name: cleanName,
+        data: convertedUrl,
+        model: detectedModel,
+        hash: newHash
+      };
+
+      savedSkins.push(newSkin);
+      activeSkinId = newId;
+      skinModelType = detectedModel;
+
+      persistSavedSkins();
+      applySkinData(convertedUrl, cleanName, detectedModel, true);
+      renderSavedSkinsGrid();
+      toast('Скин успешно добавлен и выбран!');
+    };
+    img.onerror = function() {
+      toast('Ошибка загрузки изображения скина');
+    };
+    img.src = dataUrl;
+  }
+
+  function updateSkinModelButtonLabel() {
+    const txt = document.getElementById('skinModelToggleText');
+    if (txt) {
+      const isSlim = (skinModelType === 'slim');
+      txt.textContent = isSlim ? 'Модель: Slim' : 'Модель: Classic';
+    }
+  }
+
+  function toggleCurrentSkinModel() {
+    const newModel = (skinModelType === 'slim') ? 'classic' : 'slim';
+    skinModelType = newModel;
+
+    const activeSkin = savedSkins.find(s => s.id === activeSkinId);
+    if (activeSkin) {
+      activeSkin.model = newModel;
+      persistSavedSkins();
+    }
+
+    applySkinData(currentSkinDataUrl, currentSkinFileName, newModel, true);
+    reRenderSkinCardThumbnail(activeSkinId);
+    toast(`Тип модели: ${newModel === 'slim' ? 'Slim (3px)' : 'Classic (4px)'}`);
+  }
+
+  function applySkinData(dataUrl, fileName, model, persist = true) {
+    currentSkinDataUrl = dataUrl;
+    currentSkinFileName = fileName || 'Steve';
+    skinModelType = model || 'classic';
+
+    updateSkinTextureFromData(dataUrl);
+    updateSkinGeometryBuffers();
+    updateSkinModelButtonLabel();
+
+    if (persist) {
+      localStorage.setItem('cv_skin_data', dataUrl);
+      localStorage.setItem('cv_skin_model', skinModelType);
+      localStorage.setItem('cv_skin_name', currentSkinFileName);
+      saveSkinToBackend(dataUrl, skinModelType, currentSkinFileName);
+    }
+  }
+
+  function persistSavedSkins() {
+    try {
+      localStorage.setItem('cv_saved_skins', JSON.stringify(savedSkins));
+      localStorage.setItem('cv_active_skin_id', activeSkinId);
+    } catch(e) {}
+  }
+
+  function saveSkinToBackend(dataUrl, model, fileName) {
+    if (!isBackend) return;
+    fetch('/api/save-skin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        skin: dataUrl,
+        model: model,
+        name: fileName
+      })
+    }).catch(e => console.warn('Skin backend save error:', e));
+  }
+
+  async function loadInitialSkin() {
+    try {
+      const saved = localStorage.getItem('cv_saved_skins');
+      if (saved) {
+        savedSkins = JSON.parse(saved);
+      }
+    } catch(e) {
+      savedSkins = [];
+    }
+
+    if (!Array.isArray(savedSkins)) savedSkins = [];
+
+    // Гарантируем Steve по умолчанию
+    if (!savedSkins.some(s => s.id === 'steve')) {
+      savedSkins.unshift({
+        id: 'steve',
+        name: 'Steve',
+        data: DEFAULT_STEVE_SKIN_BASE64,
+        model: 'classic',
+        isDefault: true
+      });
+    }
+
+    // Дедупликация сохраненных скинов при загрузке (если уже накопились дубликаты)
+    const uniqueSkins = [];
+    const seenData = new Set();
+    for (const s of savedSkins) {
+      if (!s || !s.data) continue;
+      if (!seenData.has(s.data)) {
+        seenData.add(s.data);
+        uniqueSkins.push(s);
+      }
+    }
+    savedSkins = uniqueSkins;
+
+    activeSkinId = localStorage.getItem('cv_active_skin_id') || 'steve';
+
+    // Проверяем скин из бэкенда
+    try {
+      const res = await fetch('/api/get-skin').catch(() => null);
+      if (res && res.ok) {
+        const data = await res.json();
+        if (data && data.ok && data.skin) {
+          const skinName = (data.name && data.name.trim()) ? data.name.replace(/\.png$/i, '') : 'Мой скин';
+          const skinModel = data.model || 'classic';
+
+          let existing = savedSkins.find(s => s.data === data.skin || (s.name === skinName && !s.isDefault));
+          if (!existing && data.skin !== DEFAULT_STEVE_SKIN_BASE64) {
+            existing = {
+              id: 'skin_' + Date.now(),
+              name: skinName,
+              data: data.skin,
+              model: skinModel
+            };
+            savedSkins.push(existing);
+            persistSavedSkins();
+          }
+          if (existing) {
+            activeSkinId = existing.id;
+          }
+        }
+      }
+    } catch(e) {}
+
+    let active = savedSkins.find(s => s.id === activeSkinId) || savedSkins[0];
+    if (active) {
+      activeSkinId = active.id;
+      skinModelType = active.model || 'classic';
+      applySkinData(active.data, active.name, active.model, false);
+    }
+
+    renderSavedSkinsGrid();
+  }
+
+  function downloadCurrentSkin() {
+    const a = document.createElement('a');
+    a.href = currentSkinDataUrl || DEFAULT_STEVE_SKIN_BASE64;
+    let fname = currentSkinFileName;
+    if (!fname || fname.toLowerCase() === 'steve') {
+      fname = 'skin';
+    }
+    if (!fname.toLowerCase().endsWith('.png')) {
+      fname += '.png';
+    }
+    a.download = fname;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast('Скин скачан');
+  }
+
   let currentView = 'main';
   function hideAllViews(){
-    ['viewMain', 'viewNews', 'viewGallery', 'viewRating'].forEach(id => {
+    ['viewMain', 'viewNews', 'viewSkin', 'viewGallery', 'viewRating'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';
     });
-    ['btnMain', 'btnNews', 'btnGallery', 'btnRating'].forEach(id => {
+    ['btnMain', 'btnNews', 'btnSkin', 'btnGallery', 'btnRating'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.classList.remove('active');
     });
@@ -4203,6 +5839,7 @@
   }
 
   loadSavedLauncherSettings();
+  loadInitialSkin();
   showMain();
   setStatus(false);
   checkBackendStatus();

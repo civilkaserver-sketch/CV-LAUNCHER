@@ -82,6 +82,14 @@ old_cl = '''        <!-- БЛОК «ЧТО НОВОГО» (НА ВСЮ ШИРИ�
                 <span class="bullet">—</span>
                 <div class="cl-text"><strong>7. Союзы</strong>: система альянсов между игроками с полным отключением урона (без тимкилла)</div>
               </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>8. Стол Моряка</strong>: улучшение и отделка лодок, новая водная физика и паруса</div>
+              </div>
+              <div class="changelog-item">
+                <span class="bullet">—</span>
+                <div class="cl-text"><strong>9. Оптимизация</strong>: умный подбор RAM, флаги ZGC, сбалансированные моды и режим производительности</div>
+              </div>
             </div>
           </div>
           <div class="changelog-latest" id="changelogLatest" style="display:none">
