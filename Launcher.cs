@@ -190,7 +190,9 @@ namespace CivilizationLauncher
 
                     if (totalGb <= 16.5) return 6144;      // 16 GB RAM -> 6 GB
 
-                    return 8192;                           // 24-32+ GB RAM -> 8 GB (потолок для клиента Fabric 1.21)
+                    if (totalGb <= 24.5) return 7168;      // 24 GB RAM -> 7 GB
+
+                    return 6144;                           // 32+ GB RAM -> 6 GB (резервируем native для Sodium/Voxy/LWJGL)
 
                 }
 
@@ -5532,11 +5534,11 @@ namespace CivilizationLauncher
 
                 string p1 = Path.Combine(mcDir, string.Format(@"runtime\{0}\windows\{0}\bin\javaw.exe", r));
 
-                if (File.Exists(p1)) return p1;
+                if (File.Exists(p1) && GetJavaMajor(p1) >= 21) return p1;
 
                 string p2 = Path.Combine(mcDir, string.Format(@"runtime\{0}\bin\javaw.exe", r));
 
-                if (File.Exists(p2)) return p2;
+                if (File.Exists(p2) && GetJavaMajor(p2) >= 21) return p2;
 
             }
 
@@ -5622,13 +5624,13 @@ namespace CivilizationLauncher
 
                 string jw = Path.Combine(jh, @"bin\javaw.exe");
 
-                if (File.Exists(jw)) return jw;
+                if (File.Exists(jw) && GetJavaMajor(jw) >= 21) return jw;
 
             }
 
 
 
-            return "javaw.exe";
+            return null;
 
         }
 
@@ -5975,15 +5977,24 @@ namespace CivilizationLauncher
 
                 string javaExe = FindJavaExe(mcDir);
 
-
+                if (string.IsNullOrEmpty(javaExe) || !File.Exists(javaExe))
+                {
+                    Log("Java 21 is missing before game launch. Triggering EnsureJava on the fly...");
+                    try
+                    {
+                        EnsureJava(mcDir, null);
+                        javaExe = FindJavaExe(mcDir);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("EnsureJava during launch failed: " + ex.Message);
+                    }
+                }
 
                 // Если javaw не найден или classpath пуст, запасной вариант — TLauncher в фоне / свернуто
-
                 if (string.IsNullOrEmpty(javaExe) || !File.Exists(javaExe) || cpList.Count == 0)
-
                 {
-
-                    Log(string.Format("Direct launch not possible (javaExe='{0}', cpCount={1}). Trying TLauncher...", javaExe, cpList.Count));
+                    Log(string.Format("Direct launch not possible (javaExe='{0}', cpCount={1}). Trying TLauncher...", javaExe ?? "null", cpList.Count));
 
                     string tlExe = FindTLauncherExe(mcDir);
 
@@ -6005,7 +6016,7 @@ namespace CivilizationLauncher
 
                     }
 
-                    error = "Не найден Java 21 и TLauncher.exe для запуска игры";
+                    error = "Не найден Java 21 и не удалось его автоматически загрузить. Проверьте интернет-соединение.";
 
                     Log("Launch error: " + error);
 
@@ -6080,6 +6091,8 @@ namespace CivilizationLauncher
                 args.Append("-Djava.net.preferIPv6Addresses=system ");
 
                 args.Append("-Djava.net.preferIPv4Stack=true ");
+
+                args.Append("-Dvoxy.geometryBufferSizeOverrideMB=384 ");
 
                 args.Append(string.Format("-Xmx{0}M ", ramMb));
 
@@ -7761,7 +7774,9 @@ namespace CivilizationLauncher
 
             {
 
-                string srcExe = Path.Combine(srcHome, @"bin\java.exe");
+                string srcExe = Path.Combine(srcHome, @"bin\javaw.exe");
+
+                if (!File.Exists(srcExe)) srcExe = Path.Combine(srcHome, @"bin\java.exe");
 
                 if (!File.Exists(srcExe)) return false;
 
@@ -7779,7 +7794,7 @@ namespace CivilizationLauncher
 
                 if (!Directory.Exists(winDir)) Directory.CreateDirectory(winDir);
 
-                if (Directory.Exists(runtimeDir)) Directory.Delete(runtimeDir, true);
+                if (Directory.Exists(runtimeDir)) ForceDeleteDirectory(runtimeDir);
 
                 Directory.CreateDirectory(runtimeDir);
 
@@ -7819,7 +7834,11 @@ namespace CivilizationLauncher
 
 
 
-                int mActual = GetJavaMajor(Path.Combine(runtimeDir, @"bin\java.exe"));
+                string testExe = Path.Combine(runtimeDir, @"bin\javaw.exe");
+
+                if (!File.Exists(testExe)) testExe = Path.Combine(runtimeDir, @"bin\java.exe");
+
+                int mActual = GetJavaMajor(testExe);
 
                 return mActual >= need;
 
@@ -7837,7 +7856,7 @@ namespace CivilizationLauncher
 
             string arch = Environment.Is64BitOperatingSystem ? "x64" : "x86";
 
-            string url = string.Format("https://api.adoptium.net/v3/binary/latest/{0}/ga/windows/{1}/jre/hotspot/normal/eclipse", major, arch);
+            string url = string.Format("https://api.adoptium.net/v3/binary/latest/{0}/ga/windows/{1}/jre/hotspot/normal/eclipse?project=jdk", major, arch);
 
             string zip = Path.Combine(Path.GetTempPath(), string.Format("temurin-jre-{0}.zip", major));
 
@@ -7845,19 +7864,29 @@ namespace CivilizationLauncher
 
 
 
-            if (File.Exists(zip)) File.Delete(zip);
+            if (File.Exists(zip)) try { File.Delete(zip); } catch { }
 
-            if (Directory.Exists(ext)) Directory.Delete(ext, true);
+            ForceDeleteDirectory(ext);
 
 
 
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-            DownloadFileCancellable(url, zip, (pct) =>
+            long estTotal = 49L * 1024 * 1024;
+
+            DownloadFileCancellable(url, zip, (rec, tot) =>
 
             {
 
-                SetProgress(90 + (pct / 10), string.Format("Загрузка Java {0} ({1}%)...", major, pct), true, false, null);
+                long target = (tot > 0) ? tot : estTotal;
+
+                int pct = Math.Max(0, Math.Min(99, (int)((rec * 100) / target)));
+
+                double mbRec = rec / (1024.0 * 1024.0);
+
+                double mbTot = target / (1024.0 * 1024.0);
+
+                SetProgress(90 + (int)(pct * 0.08), string.Format("Загрузка Java {0}: {1:F1} / {2:F1} MB ({3}%)...", major, mbRec, mbTot, pct), true, false, null);
 
             });
 
@@ -7867,7 +7896,7 @@ namespace CivilizationLauncher
 
             {
 
-                throw new Exception("Не удалось скачать Java 21");
+                throw new Exception("Не удалось скачать архив Java " + major);
 
             }
 
@@ -7875,7 +7904,7 @@ namespace CivilizationLauncher
 
             ZipFile.ExtractToDirectory(zip, ext);
 
-            File.Delete(zip);
+            try { File.Delete(zip); } catch { }
 
 
 
@@ -7917,7 +7946,9 @@ namespace CivilizationLauncher
 
             string runtimeDir = Path.Combine(mcDir, string.Format(@"runtime\{0}\windows\{0}", comp));
 
-            string runtimeJava = Path.Combine(runtimeDir, @"bin\java.exe");
+            string runtimeJava = Path.Combine(runtimeDir, @"bin\javaw.exe");
+
+            if (!File.Exists(runtimeJava)) runtimeJava = Path.Combine(runtimeDir, @"bin\java.exe");
 
             int major = GetJavaMajor(runtimeJava);
 
@@ -7933,7 +7964,11 @@ namespace CivilizationLauncher
 
             {
 
-                int m = GetJavaMajor(Path.Combine(jh, @"bin\java.exe"));
+                string jExe = Path.Combine(jh, @"bin\javaw.exe");
+
+                if (!File.Exists(jExe)) jExe = Path.Combine(jh, @"bin\java.exe");
+
+                int m = GetJavaMajor(jExe);
 
                 if (m >= need)
 
@@ -7976,6 +8011,8 @@ namespace CivilizationLauncher
                 SetProgress(97, "Установка Java 21...", true, false, null);
 
                 bool res = InstallJavaHome(downloaded, runtimeDir, comp, need);
+
+                try { ForceDeleteDirectory(downloaded); } catch { }
 
                 Log("Java installation result: " + res);
 
@@ -8784,6 +8821,8 @@ namespace CivilizationLauncher
             using (var done = new ManualResetEvent(false))
 
             {
+
+                try { wc.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"; } catch { }
 
                 Exception dlError = null;
 

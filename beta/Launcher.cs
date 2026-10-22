@@ -5292,11 +5292,11 @@ namespace CivilizationLauncher
 
                 string p1 = Path.Combine(mcDir, string.Format(@"runtime\{0}\windows\{0}\bin\javaw.exe", r));
 
-                if (File.Exists(p1)) return p1;
+                if (File.Exists(p1) && GetJavaMajor(p1) >= 21) return p1;
 
                 string p2 = Path.Combine(mcDir, string.Format(@"runtime\{0}\bin\javaw.exe", r));
 
-                if (File.Exists(p2)) return p2;
+                if (File.Exists(p2) && GetJavaMajor(p2) >= 21) return p2;
 
             }
 
@@ -5382,13 +5382,13 @@ namespace CivilizationLauncher
 
                 string jw = Path.Combine(jh, @"bin\javaw.exe");
 
-                if (File.Exists(jw)) return jw;
+                if (File.Exists(jw) && GetJavaMajor(jw) >= 21) return jw;
 
             }
 
 
 
-            return "javaw.exe";
+            return null;
 
         }
 
@@ -5735,15 +5735,24 @@ namespace CivilizationLauncher
 
                 string javaExe = FindJavaExe(mcDir);
 
-
+                if (string.IsNullOrEmpty(javaExe) || !File.Exists(javaExe))
+                {
+                    Log("Java 21 is missing before game launch. Triggering EnsureJava on the fly...");
+                    try
+                    {
+                        EnsureJava(mcDir, null);
+                        javaExe = FindJavaExe(mcDir);
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("EnsureJava during launch failed: " + ex.Message);
+                    }
+                }
 
                 // Если javaw не найден или classpath пуст, запасной вариант — TLauncher в фоне / свернуто
-
                 if (string.IsNullOrEmpty(javaExe) || !File.Exists(javaExe) || cpList.Count == 0)
-
                 {
-
-                    Log(string.Format("Direct launch not possible (javaExe='{0}', cpCount={1}). Trying TLauncher...", javaExe, cpList.Count));
+                    Log(string.Format("Direct launch not possible (javaExe='{0}', cpCount={1}). Trying TLauncher...", javaExe ?? "null", cpList.Count));
 
                     string tlExe = FindTLauncherExe(mcDir);
 
@@ -5765,7 +5774,7 @@ namespace CivilizationLauncher
 
                     }
 
-                    error = "Не найден Java 21 и TLauncher.exe для запуска игры";
+                    error = "Не найден Java 21 и не удалось его автоматически загрузить. Проверьте интернет-соединение.";
 
                     Log("Launch error: " + error);
 
