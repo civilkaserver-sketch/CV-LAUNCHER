@@ -2314,10 +2314,10 @@
         </div>
       </div>
 
-      <!-- 3. СЕТЬ И RADMIN VPN -->
+      <!-- 3. СЕТЕВАЯ ДИАГНОСТИКА -->
       <div class="settings-group">
         <div class="settings-group-header">
-          <div class="settings-title">Сетевая диагностика (Radmin VPN)</div>
+          <div class="settings-title">Сетевая диагностика</div>
         </div>
         <div class="settings-card-box">
           <div class="settings-toggle-row">
@@ -2947,25 +2947,66 @@
     if(modalBtn){ modalBtn.disabled = true; modalBtn.textContent = 'Загрузка...'; }
 
     toast('Загрузка обновления лаунчера...');
-    showLauncherRestartOverlay('Обновление лаунчера', 'Новая версия загружается, подождите несколько секунд...');
+    showLauncherRestartOverlay('Обновление лаунчера', 'Подключение к GitHub...');
 
     try {
       const res = await fetch('/api/update-launcher', { method: 'POST' });
-      if(res.ok){
-        setTimeout(() => {
-          checkLauncherRestart();
-        }, 2000);
-      } else {
+      if(!res.ok){
         toast('Ошибка при запросе обновления лаунчера');
         hideLauncherRestartOverlay();
         isUpdatingLauncher = false;
         if(topBtn){ topBtn.disabled = false; topBtn.textContent = 'Обновить лаунчер'; }
         if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить'; }
+        return;
       }
+
+      let serverWentDown = false;
+      let checkAttempts = 0;
+      const progressTimer = setInterval(async () => {
+        checkAttempts++;
+        try {
+          const sRes = await fetch('/api/status', { cache: 'no-store' });
+          if(sRes.ok){
+            const sData = await sRes.json();
+            if(serverWentDown){
+              // Сервер перезапустился — обновление успешно завершено!
+              clearInterval(progressTimer);
+              location.reload();
+              return;
+            }
+            if(sData.launcherUpdateState === 'downloading'){
+              const pct = sData.launcherUpdatePct || 0;
+              const msg = sData.launcherUpdateMsg || '';
+              showLauncherRestartOverlay('Загрузка обновления (' + pct + '%)', msg ? ('Скачано ' + msg) : 'Загрузка с GitHub...');
+            } else if(sData.launcherUpdateState === 'restarting'){
+              showLauncherRestartOverlay('Установка обновления', 'Замена файлов и перезапуск лаунчера...');
+            } else if(sData.launcherUpdateState === 'error'){
+              clearInterval(progressTimer);
+              hideLauncherRestartOverlay();
+              isUpdatingLauncher = false;
+              toast('Ошибка обновления: ' + (sData.launcherUpdateMsg || 'сбой загрузки'));
+              if(topBtn){ topBtn.disabled = false; topBtn.textContent = 'Обновить лаунчер'; }
+              if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить'; }
+            }
+          }
+        } catch(e) {
+          // Сервер перестал отвечать — старый процесс завершился и заменяется!
+          serverWentDown = true;
+          showLauncherRestartOverlay('Перезапуск лаунчера', 'Новая версия устанавливается и запускается...');
+          if(checkAttempts > 90){
+            clearInterval(progressTimer);
+            const t = document.getElementById('restartOverlayText');
+            if(t) t.textContent = 'Если лаунчер не перезапустился автоматически, запустите его вручную.';
+          }
+        }
+      }, 700);
+
     } catch(e) {
-      setTimeout(() => {
-        checkLauncherRestart();
-      }, 2000);
+      toast('Ошибка запуска обновления: ' + e.message);
+      hideLauncherRestartOverlay();
+      isUpdatingLauncher = false;
+      if(topBtn){ topBtn.disabled = false; topBtn.textContent = 'Обновить лаунчер'; }
+      if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить'; }
     }
   }
 
@@ -4552,7 +4593,6 @@
       if (data && data.content) {
         if (navigator.clipboard && navigator.clipboard.writeText) {
           await navigator.clipboard.writeText(data.content);
-          toast('Лог скопирован в буфер обмена');
         } else {
           const ta = document.createElement('textarea');
           ta.value = data.content;
@@ -4560,10 +4600,10 @@
           ta.select();
           document.execCommand('copy');
           document.body.removeChild(ta);
-          toast('Лог скопирован в буфер обмена');
         }
+        toast('Логи лаунчера + Minecraft скопированы в буфер!');
       } else {
-        toast('Файл лога пуст');
+        toast('Файлы логов пусты');
       }
     } catch(e) {
       toast('Ошибка копирования лога: ' + e.message);

@@ -2,8 +2,25 @@ import os
 import subprocess
 import sys
 
+import re
+
 launcher_dir = r"E:\Civilization DEV\launcher"
 assets_dir = os.path.join(launcher_dir, "assets")
+cs_path = os.path.join(launcher_dir, "Launcher.cs")
+
+# Automatically inject latest git commit SHA into Launcher.cs
+try:
+    sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=launcher_dir, text=True).strip()
+    if sha:
+        with open(cs_path, "r", encoding="utf-8") as f:
+            cs_text = f.read()
+        new_cs_text = re.sub(r'CurrentLauncherSha\s*=\s*"[^"]*"', f'CurrentLauncherSha = "{sha}"', cs_text)
+        if new_cs_text != cs_text:
+            with open(cs_path, "w", encoding="utf-8") as f:
+                f.write(new_cs_text)
+            print(f"Updated Launcher.cs CurrentLauncherSha to {sha}")
+except Exception as ex:
+    print(f"Warning: could not retrieve git SHA: {ex}")
 
 base_resources = [
     "/resource:ui.html,ui.html",

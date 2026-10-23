@@ -3481,37 +3481,24 @@ namespace CivilizationLauncher
 
 
                 SendJson(ctx, new Dictionary<string, object> {
-
                     { "installed", installed },
-
                     { "updateAvailable", updateAvailable },
-
                     { "localSha", localSha ?? "" },
-
                     { "remoteSha", remoteSha ?? "" },
-
                     { "launcherUpdateAvailable", launcherUpdateAvailable },
-
+                    { "launcherUpdateState", launcherUpdateState },
+                    { "launcherUpdatePct", launcherUpdatePct },
+                    { "launcherUpdateMsg", launcherUpdateMsg },
                     { "currentLauncherSha", curLauncherSha ?? "" },
-
                     { "remoteLauncherSha", remoteLauncherSha ?? "" },
-
                     { "mcDir", mcDir ?? "" },
-
                     { "installedAt", installedAt },
-
                     { "javaMajor", jMaj },
-
                     { "javaNeed", jNeed },
-
                     { "javaOk", jMaj >= jNeed },
-
                     { "smartRamMb", CalculateOptimalRamMb() },
-
                     { "totalRamGb", Math.Round(GetTotalPhysicalRamGb(), 1) },
-
                     { "performanceMode", IsPerformanceModeEnabled() }
-
                 });
 
                 return;
@@ -3605,103 +3592,60 @@ namespace CivilizationLauncher
 
 
             if (endpoint == "update-launcher")
-
             {
-
                 if (IsDevWorkspace())
-
                 {
-
                     Log("update-launcher rejected: .git workspace detected. Local changes will not be overwritten.");
-
                     SendJson(ctx, new Dictionary<string, object> {
-
                         { "ok", false },
-
                         { "message", "Обновление отключено: обнаружен репозиторий разработки (.git)." }
-
                     });
-
                     return;
-
                 }
 
+                launcherUpdateState = "downloading";
+                launcherUpdatePct = 0;
+                launcherUpdateMsg = "Подключение к GitHub...";
+
                 ThreadPool.QueueUserWorkItem((s) => {
-
                     try
-
                     {
-
                         Log("=== Starting self-update for launcher ===");
-
                         string tempDir = Path.GetTempPath();
-
                         string newExePath = Path.Combine(tempDir, "CV_Launcher_new.exe");
-
                         string newUiPath = Path.Combine(tempDir, "ui_new.html");
 
-
-
                         string remoteSha = FetchLauncherRemoteShaSynchronous();
-
-                        Log("Downloading new launcher binary from GitHub...");
-
-                        bool okExe = DownloadFileFromRepo("CV Launcher.exe", newExePath);
+                        Log("Downloading new launcher binary from GitHub with progress...");
+                        bool okExe = DownloadFileFromRepo("CV Launcher.exe", newExePath, (pct, msg) => {
+                            launcherUpdatePct = pct;
+                            launcherUpdateMsg = msg;
+                        });
 
                         if (!okExe)
-
                         {
-
+                            launcherUpdateState = "error";
+                            launcherUpdateMsg = "Не удалось скачать CV Launcher.exe с GitHub";
                             Log("Failed to download CV Launcher.exe");
-
                             return;
-
                         }
 
-
-
-                        Log("Downloading new ui.html from GitHub...");
-
-                        bool okUi = DownloadFileFromRepo("ui.html", newUiPath);
-
-                        if (!okUi)
-
-                        {
-
-                            Log("Warning: failed to download ui.html");
-
-                        }
-
-
-
-                        Log("Files downloaded successfully, triggering updater batch...");
-
+                        Log("Launcher binary downloaded successfully, triggering updater batch...");
                         ExecuteLauncherUpdate(newExePath, newUiPath, remoteSha);
-
                     }
-
                     catch (Exception ex)
-
                     {
-
+                        launcherUpdateState = "error";
+                        launcherUpdateMsg = ex.Message;
                         Log("update-launcher error: " + ex.ToString());
-
                     }
-
                 });
-
-
 
                 SendJson(ctx, new Dictionary<string, object> {
-
                     { "ok", true },
-
                     { "message", "Загрузка обновления начата..." }
-
                 });
-
                 return;
-
             }
 
 
@@ -4163,61 +4107,162 @@ namespace CivilizationLauncher
 
 
             if (endpoint == "get-log")
-
             {
+                var sb = new StringBuilder();
+                sb.AppendLine("================================================================================");
+                sb.AppendLine("           СИСТЕМНЫЕ ЛОГИ CIVILIZATION (ЛАУНЧЕР + MINECRAFT)");
+                sb.AppendLine("           Дата: " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                sb.AppendLine("           ОС: " + Environment.OSVersion.VersionString + (Environment.Is64BitOperatingSystem ? " (64-bit)" : " (32-bit)") + " | RAM: " + Math.Round(GetTotalPhysicalRamGb(), 1) + " GB");
+                sb.AppendLine("           Пользователь: " + Environment.UserName + " | ПК: " + Environment.MachineName);
+                sb.AppendLine("================================================================================");
+                sb.AppendLine();
 
+                // 1. ЛОГ ЛАУНЧЕРА
                 string logPath = GetLogPath();
-
-                string content = "";
-
+                sb.AppendLine("--------------------------------------------------------------------------------");
+                sb.AppendLine(" [1/3] ЛОГ ЛАУНЧЕРА (launcher.log - последние 500 строк)");
+                sb.AppendLine(" Файл: " + (logPath ?? "не найден"));
+                sb.AppendLine("--------------------------------------------------------------------------------");
                 try
-
                 {
-
-                    if (File.Exists(logPath))
-
+                    if (!string.IsNullOrEmpty(logPath) && File.Exists(logPath))
                     {
-
                         using (var fs = new FileStream(logPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-
                         using (var sr = new StreamReader(fs, Encoding.UTF8))
-
                         {
-
                             var q = new Queue<string>();
-
                             string line;
-
                             while ((line = sr.ReadLine()) != null)
-
                             {
-
                                 q.Enqueue(line);
-
-                                if (q.Count > 600) q.Dequeue();
-
+                                if (q.Count > 500) q.Dequeue();
                             }
-
-                            content = string.Join("\r\n", q.ToArray());
-
+                            sb.AppendLine(string.Join("\r\n", q.ToArray()));
                         }
-
                     }
-
+                    else
+                    {
+                        sb.AppendLine("(Файл launcher.log пока пуст или не найден)");
+                    }
                 }
-
                 catch (Exception ex)
-
                 {
-
-                    content = "Error reading log: " + ex.Message;
-
+                    sb.AppendLine("Ошибка чтения launcher.log: " + ex.Message);
                 }
 
-                SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", logPath }, { "content", content } });
+                sb.AppendLine();
 
+                // 2. ЛОГ MINECRAFT (latest.log)
+                sb.AppendLine("--------------------------------------------------------------------------------");
+                sb.AppendLine(" [2/3] ЛОГ КЛИЕНТА MINECRAFT (latest.log - последние 600 строк)");
+                string mcDir = GetTargetMcDir();
+                var candidateLogs = new List<string>();
+                if (!string.IsNullOrEmpty(mcDir))
+                {
+                    candidateLogs.Add(Path.Combine(mcDir, @"versions\Civilization\logs\latest.log"));
+                    candidateLogs.Add(Path.Combine(mcDir, @"logs\latest.log"));
+                }
+                string appDataMc = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), ".minecraft");
+                candidateLogs.Add(Path.Combine(appDataMc, @"versions\Civilization\logs\latest.log"));
+                candidateLogs.Add(Path.Combine(appDataMc, @"logs\latest.log"));
+
+                string foundMcLog = null;
+                foreach (var lp in candidateLogs)
+                {
+                    if (File.Exists(lp))
+                    {
+                        foundMcLog = lp;
+                        break;
+                    }
+                }
+
+                sb.AppendLine(" Файл: " + (foundMcLog ?? "latest.log не найден"));
+                sb.AppendLine("--------------------------------------------------------------------------------");
+                try
+                {
+                    if (foundMcLog != null && File.Exists(foundMcLog))
+                    {
+                        using (var fs = new FileStream(foundMcLog, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                        using (var sr = new StreamReader(fs, Encoding.UTF8))
+                        {
+                            var q = new Queue<string>();
+                            string line;
+                            while ((line = sr.ReadLine()) != null)
+                            {
+                                q.Enqueue(line);
+                                if (q.Count > 600) q.Dequeue();
+                            }
+                            sb.AppendLine(string.Join("\r\n", q.ToArray()));
+                        }
+                    }
+                    else
+                    {
+                        sb.AppendLine("(Файл latest.log не найден — возможно, игра ещё не запускалась)");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    sb.AppendLine("Ошибка чтения latest.log: " + ex.Message);
+                }
+
+                sb.AppendLine();
+
+                // 3. КРАШ-РЕПОРТ MINECRAFT (если был вылет)
+                sb.AppendLine("--------------------------------------------------------------------------------");
+                sb.AppendLine(" [3/3] СВЕЖИЙ КРАШ-РЕПОРТ MINECRAFT (crash-reports)");
+                var candidateCrashDirs = new List<string>();
+                if (!string.IsNullOrEmpty(mcDir))
+                {
+                    candidateCrashDirs.Add(Path.Combine(mcDir, @"versions\Civilization\crash-reports"));
+                    candidateCrashDirs.Add(Path.Combine(mcDir, @"crash-reports"));
+                }
+                candidateCrashDirs.Add(Path.Combine(appDataMc, @"versions\Civilization\crash-reports"));
+                candidateCrashDirs.Add(Path.Combine(appDataMc, @"crash-reports"));
+
+                FileInfo latestCrash = null;
+                foreach (var cDir in candidateCrashDirs)
+                {
+                    if (Directory.Exists(cDir))
+                    {
+                        try
+                        {
+                            var di = new DirectoryInfo(cDir);
+                            foreach (var f in di.GetFiles("crash-*.txt"))
+                            {
+                                if (latestCrash == null || f.LastWriteTime > latestCrash.LastWriteTime)
+                                {
+                                    latestCrash = f;
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+
+                if (latestCrash != null && (DateTime.Now - latestCrash.LastWriteTime).TotalHours < 72)
+                {
+                    sb.AppendLine(" Файл: " + latestCrash.FullName + " (от " + latestCrash.LastWriteTime.ToString("yyyy-MM-dd HH:mm:ss") + ")");
+                    sb.AppendLine("--------------------------------------------------------------------------------");
+                    try
+                    {
+                        string crashText = File.ReadAllText(latestCrash.FullName, Encoding.UTF8);
+                        if (crashText.Length > 15000) crashText = crashText.Substring(0, 15000) + "\r\n... [обрезано]";
+                        sb.AppendLine(crashText);
+                    }
+                    catch (Exception ex)
+                    {
+                        sb.AppendLine("Ошибка чтения краш-репорта: " + ex.Message);
+                    }
+                }
+                else
+                {
+                    sb.AppendLine(" (Свежих краш-репортов не обнаружено — вылетов за последние 72ч не зафиксировано)");
+                }
+
+                sb.AppendLine("================================================================================");
+
+                SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", logPath }, { "content", sb.ToString() } });
                 return;
-
             }
 
 
@@ -6935,7 +6980,10 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "07dfee4";
+        private static string CurrentLauncherSha = "4e2117609cab1e278578533a9784682384f8f962";
+        public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
+        public static int launcherUpdatePct = 0;
+        public static string launcherUpdateMsg = "";
 
         private static string cachedLauncherRemoteSha = null;
 
@@ -6975,13 +7023,25 @@ namespace CivilizationLauncher
 
             {
 
-                string p = Path.Combine(appDir ?? AppDomain.CurrentDomain.BaseDirectory, "version.sha");
+                string p = Path.Combine(GetLauncherDataDir(), "version.sha");
 
                 if (File.Exists(p))
 
                 {
 
                     string s = File.ReadAllText(p).Trim();
+
+                    if (!string.IsNullOrEmpty(s)) return s;
+
+                }
+
+                string legacy = Path.Combine(appDir ?? AppDomain.CurrentDomain.BaseDirectory, "version.sha");
+
+                if (File.Exists(legacy))
+
+                {
+
+                    string s = File.ReadAllText(legacy).Trim();
 
                     if (!string.IsNullOrEmpty(s)) return s;
 
@@ -7205,220 +7265,141 @@ namespace CivilizationLauncher
 
 
 
-        static bool DownloadFileFromRepo(string repoFileName, string destinationPath)
-
+        static bool DownloadFileFromRepo(string repoFileName, string destinationPath, Action<int, string> onProgress = null)
         {
-
-            try
-
+            for (int attempt = 1; attempt <= 3; attempt++)
             {
-
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-                string url = "https://api.github.com/repos/civilkaserver-sketch/CV-LAUNCHER/contents/" + Uri.EscapeDataString(repoFileName) + "?ref=main";
-
-                var req = (HttpWebRequest)WebRequest.Create(url);
-
-                req.UserAgent = "CV-Launcher";
-
-                req.Timeout = 60000;
-
-                req.Headers.Add("Authorization", "Bearer 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");
-
-                req.Accept = "application/vnd.github.v3.raw";
-
-
-
-                using (var resp = req.GetResponse())
-
-                using (var stream = resp.GetResponseStream())
-
-                using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
-
+                try
                 {
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                    string url = "https://api.github.com/repos/civilkaserver-sketch/CV-LAUNCHER/contents/" + Uri.EscapeDataString(repoFileName) + "?ref=main";
+                    var req = (HttpWebRequest)WebRequest.Create(url);
+                    req.UserAgent = "CV-Launcher";
+                    req.Timeout = 120000;
+                    req.ReadWriteTimeout = 300000;
+                    req.Headers.Add("Authorization", "Bearer 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");
+                    req.Accept = "application/vnd.github.v3.raw";
 
-                    byte[] buffer = new byte[65536];
-
-                    int read;
-
-                    while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
-
+                    using (var resp = req.GetResponse())
                     {
-
-                        fs.Write(buffer, 0, read);
-
+                        long totalBytes = resp.ContentLength;
+                        using (var stream = resp.GetResponseStream())
+                        using (var fs = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                        {
+                            byte[] buffer = new byte[65536];
+                            long totalRead = 0;
+                            int read;
+                            while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                            {
+                                fs.Write(buffer, 0, read);
+                                totalRead += read;
+                                if (totalBytes > 0 && onProgress != null)
+                                {
+                                    int pct = (int)((totalRead * 100) / totalBytes);
+                                    string msg = string.Format("{0:F1} / {1:F1} МБ", totalRead / (1024.0 * 1024.0), totalBytes / (1024.0 * 1024.0));
+                                    onProgress(pct, msg);
+                                }
+                            }
+                        }
                     }
 
+                    var fi = new FileInfo(destinationPath);
+                    if (fi.Exists && fi.Length > 1024)
+                    {
+                        return true;
+                    }
                 }
-
-
-
-                var fi = new FileInfo(destinationPath);
-
-                if (fi.Exists && fi.Length > 1024)
-
+                catch (Exception ex)
                 {
-
-                    return true;
-
+                    Log(string.Format("DownloadFileFromRepo ({0}) попытка {1}/3 ошибка: {2}", repoFileName, attempt, ex.Message));
+                    if (attempt < 3) Thread.Sleep(2000);
                 }
-
             }
-
-            catch (Exception ex)
-
-            {
-
-                Log("DownloadFileFromRepo (" + repoFileName + ") error: " + ex.Message);
-
-            }
-
             return false;
-
         }
 
-
-
         static void ExecuteLauncherUpdate(string newExePath, string newUiPath, string remoteSha)
-
         {
-
             try
-
             {
-
                 if (IsDevWorkspace())
-
                 {
-
                     Log("ExecuteLauncherUpdate aborted: .git directory detected. Local files will not be replaced.");
-
                     return;
-
                 }
 
-                string currentExe = Process.GetCurrentProcess().MainModule.FileName;
+                launcherUpdateState = "restarting";
+                launcherUpdatePct = 100;
+                launcherUpdateMsg = "Перезапуск лаунчера...";
 
-                string currentDir = AppDomain.CurrentDomain.BaseDirectory.TrimEnd('\\');
-
-                string currentUi = Path.Combine(currentDir, "ui.html");
-
-                string versionShaFile = Path.Combine(currentDir, "version.sha");
-
-
+                Process curProc = Process.GetCurrentProcess();
+                int curPid = curProc.Id;
+                string currentExe = curProc.MainModule.FileName;
+                string currentExeName = Path.GetFileName(currentExe);
+                string currentDir = Path.GetDirectoryName(currentExe);
+                string versionShaFile = Path.Combine(GetLauncherDataDir(), "version.sha");
 
                 string tempDir = Path.GetTempPath();
-
                 string batPath = Path.Combine(tempDir, "cv_launcher_updater.bat");
-
-
-
                 string newShaFile = Path.Combine(tempDir, "version_new.sha");
 
                 if (!string.IsNullOrEmpty(remoteSha))
-
                 {
-
-                    File.WriteAllText(newShaFile, remoteSha);
-
+                    try { File.WriteAllText(newShaFile, remoteSha); } catch { }
+                    try { File.WriteAllText(versionShaFile, remoteSha); } catch { }
                 }
 
-
-
                 var sb = new StringBuilder();
-
                 sb.AppendLine("@echo off");
-
                 sb.AppendLine("chcp 65001 > nul");
-
                 sb.AppendLine("timeout /t 1 /nobreak > nul");
-
-                sb.AppendLine("taskkill /f /im \"CV Launcher.exe\" > nul 2>&1");
-
+                sb.AppendLine(string.Format("taskkill /f /pid {0} > nul 2>&1", curPid));
+                sb.AppendLine(string.Format("taskkill /f /im \"{0}\" > nul 2>&1", currentExeName));
+                sb.AppendLine("set /a attempts=0");
                 sb.AppendLine(":retry_copy_exe");
-
+                sb.AppendLine("set /a attempts+=1");
                 sb.AppendLine(string.Format("copy /y \"{0}\" \"{1}\" > nul 2>&1", newExePath, currentExe));
-
                 sb.AppendLine("if errorlevel 1 (");
-
+                sb.AppendLine("    if %attempts% geq 20 goto copy_failed");
                 sb.AppendLine("    timeout /t 1 /nobreak > nul");
-
                 sb.AppendLine("    goto retry_copy_exe");
-
                 sb.AppendLine(")");
-
-                sb.AppendLine(string.Format("if exist \"{0}\" (", newUiPath));
-
-                sb.AppendLine(string.Format("    copy /y \"{0}\" \"{1}\" > nul 2>&1", newUiPath, currentUi));
-
-                sb.AppendLine(string.Format("    del /f /q \"{0}\" > nul 2>&1", newUiPath));
-
-                sb.AppendLine(")");
-
                 sb.AppendLine(string.Format("if exist \"{0}\" (", newShaFile));
-
                 sb.AppendLine(string.Format("    copy /y \"{0}\" \"{1}\" > nul 2>&1", newShaFile, versionShaFile));
-
                 sb.AppendLine(string.Format("    del /f /q \"{0}\" > nul 2>&1", newShaFile));
-
                 sb.AppendLine(")");
-
                 sb.AppendLine(string.Format("del /f /q \"{0}\" > nul 2>&1", newExePath));
-
                 sb.AppendLine(string.Format("cd /d \"{0}\"", currentDir));
-
                 sb.AppendLine(string.Format("start \"\" \"{0}\"", currentExe));
-
                 sb.AppendLine("del \"%~f0\" & exit");
-
-
+                sb.AppendLine(":copy_failed");
+                sb.AppendLine(string.Format("start \"\" \"{0}\"", currentExe));
+                sb.AppendLine("del \"%~f0\" & exit");
 
                 File.WriteAllText(batPath, sb.ToString(), Encoding.GetEncoding(65001));
 
-
-
                 Log("Launching updater batch: " + batPath);
-
                 var psi = new ProcessStartInfo
-
                 {
-
                     FileName = "cmd.exe",
-
                     Arguments = "/c \"" + batPath + "\"",
-
                     WindowStyle = ProcessWindowStyle.Hidden,
-
                     UseShellExecute = true
-
                 };
-
                 Process.Start(psi);
 
-
-
                 ThreadPool.QueueUserWorkItem((s) => {
-
-                    Thread.Sleep(600);
-
+                    Thread.Sleep(500);
                     Log("Terminating process for updater restart...");
-
                     Environment.Exit(0);
-
                 });
-
             }
-
             catch (Exception ex)
-
             {
-
+                launcherUpdateState = "error";
+                launcherUpdateMsg = ex.Message;
                 Log("ExecuteLauncherUpdate error: " + ex.Message);
-
-                throw;
-
             }
-
         }
 
 
