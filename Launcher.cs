@@ -50,6 +50,35 @@ namespace CivilizationLauncher
 
         private static string appDir;
 
+        public static bool IsDevEnvironment
+        {
+            get
+            {
+                try
+                {
+                    string baseDir = appDir ?? AppDomain.CurrentDomain.BaseDirectory;
+                    return File.Exists(Path.Combine(baseDir, "Launcher.cs"));
+                }
+                catch { return false; }
+            }
+        }
+
+        public static string GetLauncherDataDir()
+        {
+            if (IsDevEnvironment) return appDir ?? AppDomain.CurrentDomain.BaseDirectory;
+            string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CivilizationLauncher");
+            try { if (!Directory.Exists(dir)) Directory.CreateDirectory(dir); } catch { }
+            return dir;
+        }
+
+        public static string GetLauncherSkinsDir()
+        {
+            string baseDir = GetLauncherDataDir();
+            string dir = Path.Combine(baseDir, "skins");
+            try { if (!Directory.Exists(dir)) Directory.CreateDirectory(dir); } catch { }
+            return dir;
+        }
+
 
 
         private static string RepoZip = "https://github.com/civilkaserver-sketch/Civilka-version/archive/refs/heads/main.zip";
@@ -202,6 +231,65 @@ namespace CivilizationLauncher
 
             return 4096; // Безопасный дефолт
 
+        }
+
+        public static string SanitizeMinecraftUsername(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return "Player_" + new Random().Next(100, 999);
+
+            var translit = new Dictionary<char, string> {
+                {'а',"a"}, {'б',"b"}, {'в',"v"}, {'г',"g"}, {'д',"d"}, {'е',"e"}, {'ё',"e"},
+                {'ж',"zh"}, {'з',"z"}, {'и',"i"}, {'й',"y"}, {'к',"k"}, {'л',"l"}, {'м',"m"},
+                {'н',"n"}, {'о',"o"}, {'п',"p"}, {'р',"r"}, {'с',"s"}, {'т',"t"}, {'у',"u"},
+                {'ф',"f"}, {'х',"kh"}, {'ц',"ts"}, {'ч',"ch"}, {'ш',"sh"}, {'щ',"shch"},
+                {'ъ',""}, {'ы',"y"}, {'ь',""}, {'э',"e"}, {'ю',"yu"}, {'я',"ya"},
+                {'А',"A"}, {'Б',"B"}, {'В',"V"}, {'Г',"G"}, {'Д',"D"}, {'Е',"E"}, {'Ё',"E"},
+                {'Ж',"Zh"}, {'З',"Z"}, {'И',"I"}, {'Й',"Y"}, {'К',"K"}, {'Л',"L"}, {'М',"M"},
+                {'Н',"N"}, {'О',"O"}, {'П',"P"}, {'Р',"R"}, {'С',"S"}, {'Т',"T"}, {'У',"U"},
+                {'Ф',"F"}, {'Х',"Kh"}, {'Ц',"Ts"}, {'Ч',"Ch"}, {'Ш',"Sh"}, {'Щ',"Shch"},
+                {'Ъ',""}, {'Ы',"Y"}, {'Ь',""}, {'Э',"E"}, {'Ю',"Yu"}, {'Я',"Ya"}
+            };
+
+            var sb = new StringBuilder();
+            foreach (char c in name)
+            {
+                if (translit.ContainsKey(c)) sb.Append(translit[c]);
+                else if (char.IsWhiteSpace(c) || c == '-' || c == '.') sb.Append('_');
+                else sb.Append(c);
+            }
+
+            string clean = Regex.Replace(sb.ToString(), @"[^a-zA-Z0-9_]", "");
+            clean = clean.Trim('_');
+
+            if (clean.Length > 16) clean = clean.Substring(0, 16).TrimEnd('_');
+
+            if (clean.Length < 3)
+            {
+                clean = (clean + "_Player").PadRight(3, '1');
+                if (clean.Length > 16) clean = clean.Substring(0, 16);
+            }
+
+            return clean;
+        }
+
+        public static string GenerateOfflineUuid(string username)
+        {
+            try
+            {
+                using (var md5 = System.Security.Cryptography.MD5.Create())
+                {
+                    byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes("OfflinePlayer:" + username));
+                    hash[6] = (byte)((hash[6] & 0x0f) | 0x30); // version 3
+                    hash[8] = (byte)((hash[8] & 0x3f) | 0x80); // variant IETF
+                    var sb = new StringBuilder();
+                    for (int i = 0; i < hash.Length; i++) sb.Append(hash[i].ToString("x2"));
+                    return sb.ToString();
+                }
+            }
+            catch
+            {
+                return Guid.NewGuid().ToString("N");
+            }
         }
 
 
@@ -547,59 +635,38 @@ namespace CivilizationLauncher
 
 
         public static string GetLogPath()
-
         {
-
             if (activeLogPath != null) return activeLogPath;
 
-
-
             try
-
             {
-
-                string local = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launcher.log");
-
-                using (var fs = new FileStream(local, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
-
+                if (IsDevEnvironment)
                 {
-
-                    // can write
-
+                    string local = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "launcher.log");
+                    using (var fs = new FileStream(local, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
+                    {
+                    }
+                    activeLogPath = local;
+                    return activeLogPath;
                 }
-
-                activeLogPath = local;
-
-                return activeLogPath;
-
             }
-
             catch { }
-
-
 
             try
-
             {
-
                 string dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CivilizationLauncher");
-
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-                activeLogPath = Path.Combine(dir, "launcher.log");
-
+                string local = Path.Combine(dir, "launcher.log");
+                using (var fs = new FileStream(local, FileMode.OpenOrCreate, FileAccess.Write, FileShare.ReadWrite))
+                {
+                }
+                activeLogPath = local;
                 return activeLogPath;
-
             }
-
             catch { }
-
-
 
             activeLogPath = Path.Combine(Path.GetTempPath(), "civilization_launcher.log");
-
             return activeLogPath;
-
         }
 
 
@@ -763,7 +830,158 @@ namespace CivilizationLauncher
             public bool tcp25566Ok;
             public long tcp25566TimeMs;
             public string tcp25566Error;
+            public int playersOnline = -1;
+            public int playersMax = 0;
             public List<string> logLines = new List<string>();
+        }
+
+        public class ServerStatusInfo
+        {
+            public bool online;
+            public long pingMs;
+            public int playersOnline = -1;
+            public int playersMax = 0;
+            public string host = "26.194.58.43";
+            public int port = 25565;
+        }
+
+        private static ServerStatusInfo lastCachedServerStatus = null;
+        private static DateTime lastServerStatusCheck = DateTime.MinValue;
+        private static readonly object serverStatusLock = new object();
+
+        private static void WriteVarInt(Stream stream, int value)
+        {
+            while ((value & -128) != 0)
+            {
+                stream.WriteByte((byte)((value & 0x7F) | 0x80));
+                value = (int)((uint)value >> 7);
+            }
+            stream.WriteByte((byte)value);
+        }
+
+        private static int ReadVarInt(Stream stream)
+        {
+            int numRead = 0;
+            int result = 0;
+            byte read;
+            do
+            {
+                int val = stream.ReadByte();
+                if (val == -1) throw new EndOfStreamException();
+                read = (byte)val;
+                int value = (read & 0x7F);
+                result |= (value << (7 * numRead));
+                numRead++;
+                if (numRead > 5) throw new InvalidOperationException("VarInt is too big");
+            } while ((read & 0x80) != 0);
+            return result;
+        }
+
+        public static int QueryMinecraftOnlinePlayers(string host, int port, out int maxPlayers)
+        {
+            maxPlayers = 0;
+            try
+            {
+                using (var client = new System.Net.Sockets.TcpClient())
+                {
+                    var ar = client.BeginConnect(host, port, null, null);
+                    if (!ar.AsyncWaitHandle.WaitOne(2000) || !client.Connected) return -1;
+                    using (var stream = client.GetStream())
+                    {
+                        stream.ReadTimeout = 2500;
+                        stream.WriteTimeout = 2500;
+                        using (var ms = new MemoryStream())
+                        {
+                            WriteVarInt(ms, 0x00);
+                            WriteVarInt(ms, 772);
+                            byte[] hostBytes = Encoding.UTF8.GetBytes(host);
+                            WriteVarInt(ms, hostBytes.Length);
+                            ms.Write(hostBytes, 0, hostBytes.Length);
+                            ms.WriteByte((byte)(port >> 8));
+                            ms.WriteByte((byte)(port & 0xFF));
+                            WriteVarInt(ms, 1);
+
+                            byte[] handshakeBytes = ms.ToArray();
+                            WriteVarInt(stream, handshakeBytes.Length);
+                            stream.Write(handshakeBytes, 0, handshakeBytes.Length);
+                        }
+
+                        WriteVarInt(stream, 1);
+                        stream.WriteByte(0x00);
+
+                        int totalLen = ReadVarInt(stream);
+                        int packetId = ReadVarInt(stream);
+                        int strLen = ReadVarInt(stream);
+                        byte[] strBytes = new byte[strLen];
+                        int totalRead = 0;
+                        while (totalRead < strLen)
+                        {
+                            int r = stream.Read(strBytes, totalRead, strLen - totalRead);
+                            if (r <= 0) break;
+                            totalRead += r;
+                        }
+                        string json = Encoding.UTF8.GetString(strBytes, 0, totalRead);
+                        var mOnline = Regex.Match(json, @"""online""\s*:\s*(\d+)");
+                        var mMax = Regex.Match(json, @"""max""\s*:\s*(\d+)");
+                        if (mMax.Success) int.TryParse(mMax.Groups[1].Value, out maxPlayers);
+                        if (mOnline.Success)
+                        {
+                            int online;
+                            if (int.TryParse(mOnline.Groups[1].Value, out online)) return online;
+                        }
+                    }
+                }
+            }
+            catch { }
+            return -1;
+        }
+
+        public static ServerStatusInfo GetCachedServerStatus(bool force = false)
+        {
+            lock (serverStatusLock)
+            {
+                if (!force && lastCachedServerStatus != null && (DateTime.UtcNow - lastServerStatusCheck).TotalSeconds < 7)
+                {
+                    return lastCachedServerStatus;
+                }
+
+                var status = new ServerStatusInfo();
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                try
+                {
+                    using (var tcp = new System.Net.Sockets.TcpClient())
+                    {
+                        var ar = tcp.BeginConnect(status.host, status.port, null, null);
+                        bool ok = ar.AsyncWaitHandle.WaitOne(2500);
+                        sw.Stop();
+                        if (ok && tcp.Connected)
+                        {
+                            status.online = true;
+                            status.pingMs = sw.ElapsedMilliseconds;
+
+                            int maxP = 0;
+                            int onP = QueryMinecraftOnlinePlayers(status.host, status.port, out maxP);
+                            if (onP >= 0)
+                            {
+                                status.playersOnline = onP;
+                                status.playersMax = maxP;
+                            }
+                        }
+                        else
+                        {
+                            status.online = false;
+                        }
+                    }
+                }
+                catch
+                {
+                    status.online = false;
+                }
+
+                lastCachedServerStatus = status;
+                lastServerStatusCheck = DateTime.UtcNow;
+                return status;
+            }
         }
 
         static NetworkDiagResult RunNetworkDiagnostics(bool writeToLog)
@@ -862,6 +1080,18 @@ namespace CivilizationLauncher
                         res.tcp25565Ok = true;
                         res.tcp25565TimeMs = sw25565.ElapsedMilliseconds;
                         emit(string.Format("[Сеть] Порт 25565 (Minecraft Сервер): ДОСТУПЕН! Ответ за {0} ms", res.tcp25565TimeMs));
+                        try
+                        {
+                            int maxP = 0;
+                            int onP = QueryMinecraftOnlinePlayers(res.targetHost, 25565, out maxP);
+                            if (onP >= 0)
+                            {
+                                res.playersOnline = onP;
+                                res.playersMax = maxP;
+                                emit(string.Format("[Сеть] Онлайн игроков на сервере: {0} / {1}", onP, maxP));
+                            }
+                        }
+                        catch { }
                     }
                     else
                     {
@@ -2567,6 +2797,9 @@ namespace CivilizationLauncher
 
         {
 
+            // Не распаковывать и не засорять файлы (Desktop/Downloads), если запущен собранный exe вне исходного репозитория разработки
+            if (!IsDevEnvironment) return;
+
             try
 
             {
@@ -2944,26 +3177,6 @@ namespace CivilizationLauncher
             {
 
                 bytes = GetEmbeddedResource(resName);
-
-                if (bytes != null)
-
-                {
-
-                    try
-
-                    {
-
-                        string dir = Path.GetDirectoryName(filePath);
-
-                        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-                        File.WriteAllBytes(filePath, bytes);
-
-                    }
-
-                    catch { }
-
-                }
 
             }
 
@@ -4023,6 +4236,30 @@ namespace CivilizationLauncher
                 return;
             }
 
+            if (endpoint == "server-status")
+            {
+                ThreadPool.QueueUserWorkItem((s) => {
+                    try
+                    {
+                        var status = GetCachedServerStatus();
+                        SendJson(ctx, new Dictionary<string, object> {
+                            { "ok", true },
+                            { "online", status.online },
+                            { "ping", status.pingMs },
+                            { "players", status.playersOnline >= 0 ? status.playersOnline : 0 },
+                            { "maxPlayers", status.playersMax },
+                            { "host", status.host },
+                            { "port", status.port }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        SendJson(ctx, new Dictionary<string, object> { { "ok", false }, { "online", false }, { "error", ex.Message } });
+                    }
+                });
+                return;
+            }
+
             if (endpoint == "network-diag")
             {
                 ThreadPool.QueueUserWorkItem((s) => {
@@ -4044,6 +4281,8 @@ namespace CivilizationLauncher
                             { "localRadminFound", diag.localRadminFound },
                             { "localRadminIp", diag.localRadminIp ?? "" },
                             { "isHostSelf", diag.isHostSelf },
+                            { "playersOnline", diag.playersOnline },
+                            { "playersMax", diag.playersMax },
                             { "logs", diag.logLines }
                         });
                     }
@@ -4749,7 +4988,7 @@ namespace CivilizationLauncher
 
                             string civDir = !string.IsNullOrEmpty(mcDir) ? Path.Combine(mcDir, @"versions\Civilization") : null;
 
-                            string localSkinDir = Path.Combine(appDir, "skins");
+                            string localSkinDir = GetLauncherSkinsDir();
 
 
 
@@ -4881,7 +5120,7 @@ namespace CivilizationLauncher
 
                 {
 
-                    string localSkinDir = Path.Combine(appDir, "skins");
+                    string localSkinDir = GetLauncherSkinsDir();
 
                     string skinFile = Path.Combine(localSkinDir, "current_skin.png");
 
@@ -5896,6 +6135,13 @@ namespace CivilizationLauncher
 
                 catch { }
 
+                username = SanitizeMinecraftUsername(username);
+                if (string.IsNullOrEmpty(uuid) || uuid.Length != 32 || !Regex.IsMatch(uuid, "^[a-fA-F0-9]{32}$"))
+                {
+                    uuid = GenerateOfflineUuid(username);
+                }
+                Log(string.Format("[Account] Подготовлен аккаунт для запуска: {0} (UUID: {1})", username, uuid));
+
 
 
                 string currentModel = SkinManager.GetCurrentSkinModel(appDir);
@@ -6206,6 +6452,10 @@ namespace CivilizationLauncher
                 args.Append("-Dos.name=\"Windows 10\" ");
 
                 args.Append("-Dos.version=10.0 ");
+
+                args.Append("-Dfile.encoding=UTF-8 ");
+
+                args.Append("-Dsun.jnu.encoding=UTF-8 ");
 
                 args.Append("-XX:HeapDumpPath=MojangTricksIntelDriversForPerformance_javaw.exe_minecraft.exe.heapdump ");
 
@@ -11069,7 +11319,7 @@ namespace CivilizationLauncher
 
             {
 
-                string localSkinDir = Path.Combine(appDir, "skins");
+                string localSkinDir = (Directory.Exists(Path.Combine(appDir, "skins"))) ? Path.Combine(appDir, "skins") : Program.GetLauncherSkinsDir();
 
                 string localPng = Path.Combine(localSkinDir, "current_skin.png");
 
@@ -11207,7 +11457,7 @@ namespace CivilizationLauncher
 
             {
 
-                string localSkinDir = Path.Combine(appDir, "skins");
+                string localSkinDir = (Directory.Exists(Path.Combine(appDir, "skins"))) ? Path.Combine(appDir, "skins") : Program.GetLauncherSkinsDir();
 
                 string jsonFile = Path.Combine(localSkinDir, "current_skin.json");
 

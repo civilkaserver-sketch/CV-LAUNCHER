@@ -32,10 +32,17 @@ args = [
 ] + base_resources + ["Launcher.cs"]
 
 print(f"Embedding {len(base_resources)} resources into CV Launcher.exe...")
-result = subprocess.run(args, cwd=launcher_dir, capture_output=True, text=True)
-print(result.stdout)
+result = subprocess.run(args, cwd=launcher_dir, capture_output=True, text=True, errors="replace")
+try:
+    print(result.stdout)
+except Exception:
+    sys.stdout.buffer.write(result.stdout.encode('utf-8', errors='replace') + b'\n')
+
 if result.stderr:
-    print(result.stderr)
+    try:
+        print(result.stderr)
+    except Exception:
+        sys.stderr.buffer.write(result.stderr.encode('utf-8', errors='replace') + b'\n')
 
 if result.returncode == 0:
     print("[SUCCESS] CV Launcher.exe built successfully with ALL assets embedded!")
