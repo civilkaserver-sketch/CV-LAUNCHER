@@ -748,34 +748,197 @@ namespace CivilizationLauncher
 
 
 
-        static void LogServerReachability()
+        public class NetworkDiagResult
         {
-            ThreadPool.QueueUserWorkItem(_ =>
+            public bool localRadminFound;
+            public string localRadminIp;
+            public string targetHost;
+            public int targetPort;
+            public bool isHostSelf;
+            public bool pingOk;
+            public long pingTimeMs;
+            public bool tcp25565Ok;
+            public long tcp25565TimeMs;
+            public string tcp25565Error;
+            public bool tcp25566Ok;
+            public long tcp25566TimeMs;
+            public string tcp25566Error;
+            public List<string> logLines = new List<string>();
+        }
+
+        static NetworkDiagResult RunNetworkDiagnostics(bool writeToLog)
+        {
+            var res = new NetworkDiagResult();
+            res.targetHost = "26.194.58.43";
+            res.targetPort = 25565;
+
+            Action<string> emit = (msg) =>
             {
-                try
+                res.logLines.Add(msg);
+                if (writeToLog) Log(msg);
+            };
+
+            emit("================================================================================");
+            emit("[СЕТЕВАЯ ДИАГНОСТИКА СЕРВЕРА CIVILIZATION]");
+            emit(string.Format("Целевой сервер: {0}:{1}", res.targetHost, res.targetPort));
+
+            try
+            {
+                foreach (var ni in System.Net.NetworkInformation.NetworkInterface.GetAllNetworkInterfaces())
                 {
-                    string host = "26.194.58.43";
-                    int port = 25565;
-                    Log(string.Format("[NetworkCheck] Проверка подключения к серверу Civilization ({0}:{1})...", host, port));
-                    using (var tcp = new System.Net.Sockets.TcpClient())
+                    string name = ni.Name ?? "";
+                    string desc = ni.Description ?? "";
+                    if (name.IndexOf("Radmin", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        desc.IndexOf("Radmin", StringComparison.OrdinalIgnoreCase) >= 0)
                     {
-                        var ar = tcp.BeginConnect(host, port, null, null);
-                        bool success = ar.AsyncWaitHandle.WaitOne(3500);
-                        if (success && tcp.Connected)
+                        var ipProps = ni.GetIPProperties();
+                        foreach (var u in ipProps.UnicastAddresses)
                         {
-                            Log(string.Format("[NetworkCheck] УСПЕХ: Сервер Civilization ({0}:{1}) доступен по Radmin VPN!", host, port));
-                        }
-                        else
-                        {
-                            Log(string.Format("[NetworkCheck] ВНИМАНИЕ: Порт {0}:{1} не ответил за 3.5с. Если это сервер хоста, проверьте запуск сервера и Radmin VPN!", host, port));
+                            if (u.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                            {
+                                res.localRadminFound = true;
+                                res.localRadminIp = u.Address.ToString();
+                                break;
+                            }
                         }
                     }
                 }
-                catch (Exception ex)
+            }
+            catch (Exception ex)
+            {
+                emit("[Сеть] Ошибка сканирования сетевых карт: " + ex.Message);
+            }
+
+            if (res.localRadminFound)
+            {
+                emit(string.Format("[Сеть] Локальный IP в Radmin VPN: {0}", res.localRadminIp));
+                if (res.localRadminIp == res.targetHost)
                 {
-                    Log("[NetworkCheck] Ошибка проверки соединения: " + ex.Message);
+                    res.isHostSelf = true;
+                    emit("[Сеть] Этот компьютер является ХОСТОМ сервера (IP совпадает с целевым)");
                 }
-            });
+            }
+            else
+            {
+                emit("[Сеть/ВНИМАНИЕ] Сетевой адаптер Radmin VPN не найден или отключён!");
+            }
+
+            // Ping
+            try
+            {
+                using (var p = new System.Net.NetworkInformation.Ping())
+                {
+                    var reply = p.Send(res.targetHost, 2500);
+                    if (reply != null && reply.Status == System.Net.NetworkInformation.IPStatus.Success)
+                    {
+                        res.pingOk = true;
+                        res.pingTimeMs = reply.RoundtripTime;
+                        emit(string.Format("[Сеть] ICMP Ping до {0}: УСПЕШНО ({1} ms)", res.targetHost, res.pingTimeMs));
+                    }
+                    else
+                    {
+                        res.pingOk = false;
+                        string status = reply != null ? reply.Status.ToString() : "Таймаут";
+                        emit(string.Format("[Сеть] ICMP Ping до {0}: НЕТ ОТВЕТА ({1})", res.targetHost, status));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                emit(string.Format("[Сеть] Ошибка Ping до {0}: {1}", res.targetHost, ex.Message));
+            }
+
+            // TCP 25565
+            var sw25565 = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                using (var tcp = new System.Net.Sockets.TcpClient())
+                {
+                    var ar = tcp.BeginConnect(res.targetHost, 25565, null, null);
+                    bool ok = ar.AsyncWaitHandle.WaitOne(3500);
+                    sw25565.Stop();
+                    if (ok && tcp.Connected)
+                    {
+                        res.tcp25565Ok = true;
+                        res.tcp25565TimeMs = sw25565.ElapsedMilliseconds;
+                        emit(string.Format("[Сеть] Порт 25565 (Minecraft Сервер): ДОСТУПЕН! Ответ за {0} ms", res.tcp25565TimeMs));
+                    }
+                    else
+                    {
+                        res.tcp25565Ok = false;
+                        res.tcp25565Error = "Превышено время ожидания ответа (Connection timed out, 3.5s)";
+                        emit("[Сеть/ОШИБКА] Порт 25565 (Minecraft Сервер): " + res.tcp25565Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                sw25565.Stop();
+                res.tcp25565Ok = false;
+                res.tcp25565Error = ex.Message;
+                emit("[Сеть/ОШИБКА] Порт 25565 (Minecraft Сервер): " + ex.Message);
+            }
+
+            // TCP 25566 (Mod Update Server)
+            var sw25566 = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                using (var tcp = new System.Net.Sockets.TcpClient())
+                {
+                    var ar = tcp.BeginConnect(res.targetHost, 25566, null, null);
+                    bool ok = ar.AsyncWaitHandle.WaitOne(3500);
+                    sw25566.Stop();
+                    if (ok && tcp.Connected)
+                    {
+                        res.tcp25566Ok = true;
+                        res.tcp25566TimeMs = sw25566.ElapsedMilliseconds;
+                        emit(string.Format("[Сеть] Порт 25566 (Сервер обновлений мода): ДОСТУПЕН! Ответ за {0} ms", res.tcp25566TimeMs));
+                    }
+                    else
+                    {
+                        res.tcp25566Ok = false;
+                        res.tcp25566Error = "Превышено время ожидания (3.5s)";
+                        emit("[Сеть/ОШИБКА] Порт 25566 (Сервер обновлений): " + res.tcp25566Error);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                sw25566.Stop();
+                res.tcp25566Ok = false;
+                res.tcp25566Error = ex.Message;
+                emit("[Сеть/ОШИБКА] Порт 25566 (Сервер обновлений): " + ex.Message);
+            }
+
+            if (!res.tcp25565Ok)
+            {
+                emit("--------------------------------------------------------------------------------");
+                emit("[ПРИЧИНА И РЕШЕНИЕ]:");
+                if (!res.localRadminFound)
+                {
+                    emit("1. Radmin VPN не запущен на этом ПК. Запустите Radmin VPN.");
+                }
+                if (!res.pingOk)
+                {
+                    emit("2. Нет связи по Radmin VPN с 26.194.58.43. Убедитесь, что вы в одной комнате с хостом,");
+                    emit("   и в Radmin VPN горит зелёный кружок напротив ников игроков.");
+                }
+                emit("3. Если вы подключаетесь к другу-хосту: хосту необходимо запустить на своём Рабочем столе");
+                emit("   файл 'ОТКРЫТЬ_ПОРТЫ_РАДМИН.bat' от имени Администратора (чтобы открыть порт 25565 в Firewall).");
+                emit("--------------------------------------------------------------------------------");
+            }
+            else
+            {
+                emit("[Сеть] ВСЁ В ПОРЯДКЕ: Соединение с сервером установлено, можно заходить в игру!");
+            }
+            emit("================================================================================");
+
+            return res;
+        }
+
+        static void LogServerReachability()
+        {
+            ThreadPool.QueueUserWorkItem(_ => RunNetworkDiagnostics(true));
         }
 
         static void CheckAndLogMinecraftCrash(string mcDir)
@@ -3857,9 +4020,39 @@ namespace CivilizationLauncher
                 try { if (File.Exists(logPath)) size = new FileInfo(logPath).Length; } catch { }
 
                 SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", logPath }, { "size", size } });
-
                 return;
+            }
 
+            if (endpoint == "network-diag")
+            {
+                ThreadPool.QueueUserWorkItem((s) => {
+                    try
+                    {
+                        var diag = RunNetworkDiagnostics(true);
+                        SendJson(ctx, new Dictionary<string, object> {
+                            { "ok", true },
+                            { "targetHost", diag.targetHost },
+                            { "targetPort", diag.targetPort },
+                            { "tcp25565Ok", diag.tcp25565Ok },
+                            { "tcp25565TimeMs", diag.tcp25565TimeMs },
+                            { "tcp25565Error", diag.tcp25565Error ?? "" },
+                            { "tcp25566Ok", diag.tcp25566Ok },
+                            { "tcp25566TimeMs", diag.tcp25566TimeMs },
+                            { "tcp25566Error", diag.tcp25566Error ?? "" },
+                            { "pingOk", diag.pingOk },
+                            { "pingTimeMs", diag.pingTimeMs },
+                            { "localRadminFound", diag.localRadminFound },
+                            { "localRadminIp", diag.localRadminIp ?? "" },
+                            { "isHostSelf", diag.isHostSelf },
+                            { "logs", diag.logLines }
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        SendJson(ctx, new Dictionary<string, object> { { "ok", false }, { "error", ex.Message } });
+                    }
+                });
+                return;
             }
 
 

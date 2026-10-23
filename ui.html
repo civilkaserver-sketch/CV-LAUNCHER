@@ -1979,6 +1979,10 @@
           <h1 class="banner-title">CIVILIZATION</h1>
 
           <div class="banner-sub">Minecraft 1.21.8 · Fabric · 18 модов</div>
+          <div id="networkStatusBadge" style="display:inline-flex;align-items:center;gap:8px;font-size:11px;color:var(--muted);margin-top:6px;cursor:pointer;width:fit-content;user-select:none;" onclick="openSettingsModal();setTimeout(runNetworkDiagnosticsUI, 120);" title="Нажмите для полной проверки Radmin VPN">
+            <span id="networkStatusDot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#888;"></span>
+            <span id="networkStatusText">Проверка сервера 26.194.58.43...</span>
+          </div>
 
           <div class="banner-actions">
             <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
@@ -2311,6 +2315,23 @@
               <button class="btn line" onclick="openLogFile()">Открыть</button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- 3. СЕТЬ И RADMIN VPN -->
+      <div class="settings-group">
+        <div class="settings-group-header">
+          <div class="settings-title">Сетевая диагностика (Radmin VPN)</div>
+        </div>
+        <div class="settings-card-box">
+          <div class="settings-toggle-row">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Сервер: 26.194.58.43:25565</div>
+              <div class="settings-toggle-desc" id="networkDiagStatusText">Нажмите кнопку для проверки связи</div>
+            </div>
+            <button class="btn line" id="btnRunNetworkDiag" onclick="runNetworkDiagnosticsUI()">Проверить сеть</button>
+          </div>
+          <div id="networkDiagLogBox" style="display:none;margin-top:12px;padding:12px;background:#050508;border:1px solid var(--line);border-radius:4px;font-size:11px;font-family:monospace;white-space:pre-wrap;max-height:160px;overflow-y:auto;color:#c0c0d8;line-height:1.5;"></div>
         </div>
       </div>
 
@@ -2762,7 +2783,51 @@
           }
         }
       }
-    } catch(e) {}
+  let isCheckingNetwork = false;
+  let hasCheckedNetworkOnce = false;
+  async function runNetworkDiagnosticsUI() {
+    if(isCheckingNetwork) return;
+    isCheckingNetwork = true;
+    const btn = document.getElementById('btnRunNetworkDiag');
+    const st = document.getElementById('networkDiagStatusText');
+    const box = document.getElementById('networkDiagLogBox');
+    const badgeDot = document.getElementById('networkStatusDot');
+    const badgeText = document.getElementById('networkStatusText');
+    if (btn) { btn.disabled = true; btn.textContent = 'Проверка...'; }
+    if (st) st.textContent = 'Подключение к Radmin VPN и серверу...';
+    if (badgeText) badgeText.textContent = 'Проверка сети...';
+    if (box) {
+      box.style.display = 'block';
+      box.textContent = 'Тестирование подключения к 26.194.58.43:25565... Пожалуйста, подождите.';
+    }
+
+    try {
+      const res = await fetch('/api/network-diag');
+      if (res.ok) {
+        const d = await res.json();
+        if (d.ok) {
+          if (d.tcp25565Ok) {
+            if (st) st.innerHTML = '<span style="color:#4ade80">● Онлайн (ответ ' + d.tcp25565TimeMs + ' ms)</span>';
+            if (badgeDot) badgeDot.style.background = '#4ade80';
+            if (badgeText) badgeText.textContent = 'Сервер онлайн (' + d.tcp25565TimeMs + 'ms)';
+          } else {
+            if (st) st.innerHTML = '<span style="color:#ef4444">● Недоступен (таймаут)</span>';
+            if (badgeDot) badgeDot.style.background = '#ef4444';
+            if (badgeText) badgeText.textContent = 'Сервер недоступен (Radmin таймаут)';
+          }
+          if (box && d.logs) {
+            box.textContent = d.logs.join('\n');
+          }
+        } else {
+          if (st) st.textContent = 'Ошибка: ' + (d.error || 'неизвестно');
+        }
+      }
+    } catch(e) {
+      if (st) st.textContent = 'Ошибка проверки: ' + e.message;
+    } finally {
+      isCheckingNetwork = false;
+      if (btn) { btn.disabled = false; btn.textContent = 'Проверить сеть'; }
+    }
   }
 
   let statusPollTimer = null;
@@ -2784,6 +2849,10 @@
           launcherSettings.performanceMode = !!data.performanceMode;
           const togglePerf = document.getElementById('performanceModeToggle');
           if(togglePerf) togglePerf.checked = !!data.performanceMode;
+        }
+        if(!hasCheckedNetworkOnce){
+          hasCheckedNetworkOnce = true;
+          setTimeout(runNetworkDiagnosticsUI, 400);
         }
       }
       await checkGameStatus();
