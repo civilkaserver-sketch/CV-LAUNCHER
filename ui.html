@@ -690,13 +690,6 @@
     border-radius:var(--r);
     background:var(--card);
     box-sizing:border-box;
-    cursor:pointer;
-    user-select:none;
-    transition:background .15s,border-color .15s,box-shadow .15s;
-  }
-  .server-status-bar:hover{
-    background:var(--card-hover);
-    border-color:var(--line-strong);
   }
   .server-status-dot{
     width:8px;
@@ -704,30 +697,15 @@
     border-radius:50%;
     background:#e74c3c;
     flex-shrink:0;
-    transition:background .25s,box-shadow .25s;
   }
-  .server-status-dot.online{ background:#2ecc71; box-shadow:0 0 8px rgba(46,204,113,0.6); }
-  .server-status-dot.offline{ background:#e74c3c; box-shadow:none; }
-  .server-status-dot.checking{ background:#eab308; box-shadow:none; }
+  .server-status-dot.online{ background:#2ecc71; }
+  .server-status-dot.offline{ background:#e74c3c; }
   .server-status-label{
-    font-size:11px;
-    letter-spacing:1.5px;
+    font-size:10px;
+    letter-spacing:2px;
     color:var(--dim);
     text-transform:uppercase;
     flex-shrink:0;
-    font-weight:600;
-  }
-  .server-status-ping{
-    font-size:11px;
-    color:var(--dim);
-    letter-spacing:.5px;
-    padding:2px 8px;
-    border-radius:4px;
-    border:1px solid var(--line);
-    background:rgba(255,255,255,.03);
-    font-family:monospace;
-    font-weight:600;
-    transition:color .2s,border-color .2s,background .2s;
   }
   .server-status-value{
     font-size:12px;
@@ -737,23 +715,19 @@
   .server-status-players{
     font-size:13px;
     color:var(--text);
-    letter-spacing:.5px;
+    letter-spacing:.4px;
     font-weight:bold;
-    font-family:monospace;
-    min-width:14px;
-    text-align:right;
   }
   .server-status-sep{
     width:1px;
-    height:18px;
+    height:20px;
     background:var(--line);
     flex-shrink:0;
   }
   .server-status-addr{
     font-size:11px;
     color:var(--dim);
-    letter-spacing:.8px;
-    font-family:monospace;
+    letter-spacing:.5px;
     margin-left:auto;
     white-space:nowrap;
   }
@@ -2092,19 +2066,14 @@
         </div>
 
         <!-- СТАТУС СЕРВЕРА -->
-        <div class="server-status-bar" id="serverStatusBar" onclick="openSettingsModal();setTimeout(runNetworkDiagnosticsUI, 120);" title="Нажмите для проверки сети и Radmin VPN">
+        <div class="server-status-bar" id="serverStatusBar">
           <div style="display:flex;align-items:center;gap:10px;">
             <div class="server-status-dot offline" id="serverStatusDot"></div>
-            <div class="server-status-label" id="serverStatusLabel">СЕРВЕР CIVILIZATION</div>
-            <div class="server-status-ping" id="serverStatusPing">ПРОВЕРКА...</div>
+            <div class="server-status-label" id="serverStatusLabel">СЕРВЕР</div>
           </div>
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div class="server-status-addr" id="serverStatusAddr">26.194.58.43:25565</div>
-            <div class="server-status-sep"></div>
-            <div style="display:flex;align-items:center;gap:6px;">
-              <div class="server-status-label">ИГРОКОВ:</div>
-              <div class="server-status-players" id="serverStatusPlayers">0</div>
-            </div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="server-status-label">ОНЛАЙН</div>
+            <div class="server-status-players" id="serverStatusPlayers">0</div>
           </div>
         </div>
 
@@ -2838,7 +2807,7 @@
         if (d.ok) {
           if (d.tcp25565Ok) {
             if (st) st.innerHTML = '<span style="color:#4ade80">● Онлайн (ответ ' + d.tcp25565TimeMs + ' ms)</span>';
-            updateServerStatus(true, d.playersOnline >= 0 ? d.playersOnline : 0, d.playersMax, d.tcp25565TimeMs);
+            updateServerStatus(true, d.playersOnline >= 0 ? d.playersOnline : 0);
           } else {
             if (st) st.innerHTML = '<span style="color:#ef4444">● Недоступен (таймаут)</span>';
             updateServerStatus(false);
@@ -5989,44 +5958,16 @@
   setInterval(checkScreenshotsUpdate, 1500);
 
   // --- Статус сервера ---
-  function updateServerStatus(online, players, maxPlayers, ping) {
+  function updateServerStatus(online, players) {
     const dot = document.getElementById('serverStatusDot');
     const pls = document.getElementById('serverStatusPlayers');
-    const pingEl = document.getElementById('serverStatusPing');
     if (!dot) return;
-
-    if (online === null) {
-      dot.className = 'server-status-dot checking';
-      if (pingEl) {
-        pingEl.textContent = 'ПРОВЕРКА...';
-        pingEl.style.color = 'var(--dim)';
-        pingEl.style.borderColor = 'var(--line)';
-      }
-      return;
-    }
-
     if (online) {
       dot.className = 'server-status-dot online';
-      if (pls) {
-        pls.textContent = (maxPlayers && maxPlayers > 0) ? (players + ' / ' + maxPlayers) : (players !== undefined ? players : '0');
-        pls.style.color = '#4ade80';
-      }
-      if (pingEl) {
-        pingEl.textContent = (ping !== undefined && ping !== null ? (ping + ' ms') : 'ОНЛАЙН');
-        pingEl.style.color = '#4ade80';
-        pingEl.style.borderColor = 'rgba(74,222,128,0.35)';
-      }
+      if (pls) pls.textContent = players !== undefined ? players : '0';
     } else {
       dot.className = 'server-status-dot offline';
-      if (pls) {
-        pls.textContent = '0';
-        pls.style.color = 'var(--dim)';
-      }
-      if (pingEl) {
-        pingEl.textContent = 'ОФЛАЙН';
-        pingEl.style.color = '#ef4444';
-        pingEl.style.borderColor = 'rgba(239,68,68,0.35)';
-      }
+      if (pls) pls.textContent = '0';
     }
   }
 
@@ -6036,7 +5977,7 @@
       if (res && res.ok) {
         const data = await res.json();
         if (data.ok && data.online) {
-          updateServerStatus(true, data.players, data.maxPlayers, data.ping);
+          updateServerStatus(true, data.players);
         } else {
           updateServerStatus(false);
         }
