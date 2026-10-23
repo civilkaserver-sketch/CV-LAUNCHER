@@ -748,176 +748,118 @@ namespace CivilizationLauncher
 
 
 
-        static void CheckAndLogMinecraftCrash(string mcDir)
-
+        static void LogServerReachability()
         {
-
-            try
-
+            ThreadPool.QueueUserWorkItem(_ =>
             {
+                try
+                {
+                    string host = "26.194.58.43";
+                    int port = 25565;
+                    Log(string.Format("[NetworkCheck] Проверка подключения к серверу Civilization ({0}:{1})...", host, port));
+                    using (var tcp = new System.Net.Sockets.TcpClient())
+                    {
+                        var ar = tcp.BeginConnect(host, port, null, null);
+                        bool success = ar.AsyncWaitHandle.WaitOne(3500);
+                        if (success && tcp.Connected)
+                        {
+                            Log(string.Format("[NetworkCheck] УСПЕХ: Сервер Civilization ({0}:{1}) доступен по Radmin VPN!", host, port));
+                        }
+                        else
+                        {
+                            Log(string.Format("[NetworkCheck] ВНИМАНИЕ: Порт {0}:{1} не ответил за 3.5с. Если это сервер хоста, проверьте запуск сервера и Radmin VPN!", host, port));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log("[NetworkCheck] Ошибка проверки соединения: " + ex.Message);
+                }
+            });
+        }
 
+        static void CheckAndLogMinecraftCrash(string mcDir)
+        {
+            try
+            {
                 Log("--- Scanning for Minecraft crash details ---");
-
                 string[] crashDirs = new string[] {
-
                     Path.Combine(mcDir, @"versions\Civilization\crash-reports"),
-
                     Path.Combine(mcDir, "crash-reports")
-
                 };
 
-
-
                 FileInfo latestCrash = null;
-
                 foreach (var cd in crashDirs)
-
                 {
-
                     if (Directory.Exists(cd))
-
                     {
-
                         var dirInfo = new DirectoryInfo(cd);
-
                         foreach (var f in dirInfo.GetFiles("crash-*.txt"))
-
                         {
-
-                            if ((DateTime.Now - f.LastWriteTime).TotalMinutes < 15)
-
-                            {
-
-                                if (latestCrash == null || f.LastWriteTime > latestCrash.LastWriteTime)
-
-                                    latestCrash = f;
-
-                            }
-
+                            if (latestCrash == null || f.LastWriteTime > latestCrash.LastWriteTime)
+                                latestCrash = f;
                         }
-
                     }
-
                 }
-
-
 
                 if (latestCrash != null)
-
                 {
-
                     Log("Found recent Minecraft crash report: " + latestCrash.FullName);
-
                     try
-
                     {
-
                         string[] lines = File.ReadAllLines(latestCrash.FullName, Encoding.UTF8);
-
-                        int count = Math.Min(60, lines.Length);
-
+                        int count = Math.Min(80, lines.Length);
                         Log("=== Crash Report Summary (Top " + count + " lines) ===");
-
                         for (int i = 0; i < count; i++)
-
                         {
-
                             Log("  " + lines[i]);
-
                         }
-
                         Log("=== End of Crash Report Summary ===");
-
                     }
-
                     catch (Exception ex)
-
                     {
-
                         Log("Failed to read crash report: " + ex.Message);
-
                     }
-
-                    return;
-
                 }
 
-
-
                 string[] logCandidates = new string[] {
-
                     Path.Combine(mcDir, @"versions\Civilization\logs\latest.log"),
-
                     Path.Combine(mcDir, @"logs\latest.log")
-
                 };
 
                 foreach (var lp in logCandidates)
-
                 {
-
                     if (File.Exists(lp))
-
                     {
-
                         var fi = new FileInfo(lp);
-
-                        if ((DateTime.Now - fi.LastWriteTime).TotalMinutes < 15)
-
+                        if (fi.Length > 0)
                         {
-
                             Log("Reading tail of Minecraft log: " + lp);
-
                             try
-
                             {
-
                                 using (var fs = new FileStream(lp, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-
                                 using (var sr = new StreamReader(fs, Encoding.UTF8))
-
                                 {
-
                                     var q = new Queue<string>();
-
                                     string line;
-
                                     while ((line = sr.ReadLine()) != null)
-
                                     {
-
                                         q.Enqueue(line);
-
-                                        if (q.Count > 40) q.Dequeue();
-
+                                        if (q.Count > 80) q.Dequeue();
                                     }
-
                                     Log("=== Minecraft latest.log Tail (Last " + q.Count + " lines) ===");
-
                                     foreach (var l in q) Log("  " + l);
-
                                     Log("=== End of latest.log Tail ===");
-
                                 }
-
                             }
-
                             catch (Exception ex)
-
                             {
-
                                 Log("Failed to read latest.log: " + ex.Message);
-
                             }
-
                             break;
-
                         }
-
                     }
-
                 }
-
             }
 
             catch (Exception ex)
@@ -6101,77 +6043,30 @@ namespace CivilizationLauncher
 
 
                 int javaMajor = GetJavaMajor(javaExe);
-
-                if (javaMajor >= 21)
-
-                {
-
-                    // Ультранизколатентный сборщик мусора Generational ZGC для Java 21+ (паузы <1мс, устранение микрофризов)
-
-                    args.Append("-XX:+UseZGC ");
-
-                    args.Append("-XX:+ZGenerational ");
-
-                    Log(string.Format("[JVM] Выбран сборщик мусора: Generational ZGC (-XX:+UseZGC -XX:+ZGenerational), Java version: {0}", javaMajor));
-
-                }
-
-                else
-
-                {
-
-                    // Fallback на G1GC для более старых версий Java (< 21)
-
-                    args.Append("-XX:+UseG1GC ");
-
-                    args.Append("-XX:G1NewSizePercent=20 ");
-
-                    args.Append("-XX:G1ReservePercent=20 ");
-
-                    args.Append("-XX:MaxGCPauseMillis=50 ");
-
-                    args.Append("-XX:G1HeapRegionSize=32M ");
-
-                    Log(string.Format("[JVM] Выбран сборщик мусора: G1GC (Java version: {0} < 21)", javaMajor));
-
-                }
-
-
+                args.Append("-XX:+UseG1GC ");
+                args.Append("-XX:G1NewSizePercent=20 ");
+                args.Append("-XX:G1ReservePercent=20 ");
+                args.Append("-XX:MaxGCPauseMillis=50 ");
+                args.Append("-XX:G1HeapRegionSize=32M ");
+                Log(string.Format("[JVM] Выбран стабильный сборщик мусора: G1GC (Java version: {0})", javaMajor));
 
                 if (isFabric)
-
                 {
-
                     args.Append("-DFabricMcEmu=\" net.minecraft.client.main.Main \" ");
-
                 }
-
                 else if (isForge)
-
                 {
-
                     args.Append("-Dfml.ignoreInvalidMinecraftCertificates=true ");
-
                     args.Append("-Dfml.ignorePatchDiscrepancies=true ");
-
                     args.Append(string.Format("-Dminecraft.applet.TargetDirectory=\"{0}\" ", civDir));
-
                     args.Append(string.Format("-DlibraryDirectory=\"{0}\" ", Path.Combine(mcDir, "libraries")));
-
                     args.Append(string.Format("-DLibLoader.modsFolder=\"{0}\" ", Path.Combine(civDir, "mods")));
 
-                }
-
-
-
-                string log4j = Path.Combine(mcDir, @"assets\log_configs\client-1.12.xml");
-
-                if (File.Exists(log4j))
-
-                {
-
-                    args.Append(string.Format("-Dlog4j.configurationFile=\"{0}\" ", log4j));
-
+                    string log4j = Path.Combine(mcDir, @"assets\log_configs\client-1.12.xml");
+                    if (File.Exists(log4j))
+                    {
+                        args.Append(string.Format("-Dlog4j.configurationFile=\"{0}\" ", log4j));
+                    }
                 }
 
 
@@ -6243,49 +6138,50 @@ namespace CivilizationLauncher
                 psi.Arguments = args.ToString();
 
                 psi.WorkingDirectory = civDir;
-
                 psi.UseShellExecute = false;
+                psi.RedirectStandardOutput = true;
+                psi.RedirectStandardError = true;
+                psi.CreateNoWindow = true;
 
-
+                LogServerReachability();
 
                 activeGameProcess = Process.Start(psi);
-
                 if (activeGameProcess != null)
-
                 {
-
                     int pid = activeGameProcess.Id;
-
                     Log(string.Format("Game process spawned successfully! PID: {0}", pid));
 
-                    ThreadPool.QueueUserWorkItem(state =>
-
+                    activeGameProcess.OutputDataReceived += (s, e) =>
                     {
-
-                        try
-
+                        if (!string.IsNullOrEmpty(e.Data))
                         {
+                            Log("[Game/STDOUT] " + e.Data);
+                        }
+                    };
+                    activeGameProcess.ErrorDataReceived += (s, e) =>
+                    {
+                        if (!string.IsNullOrEmpty(e.Data))
+                        {
+                            Log("[Game/STDERR] " + e.Data);
+                        }
+                    };
+                    try { activeGameProcess.BeginOutputReadLine(); } catch { }
+                    try { activeGameProcess.BeginErrorReadLine(); } catch { }
 
+                    ThreadPool.QueueUserWorkItem(state =>
+                    {
+                        try
+                        {
                             Process proc = (Process)state;
-
                             proc.WaitForExit();
-
                             int exitCode = -1;
-
                             try { exitCode = proc.ExitCode; } catch { }
-
                             Log(string.Format("Game process (PID: {0}) exited with code: {1}", pid, exitCode));
-
                             if (exitCode != 0)
-
                             {
-
                                 Log(string.Format("Non-zero exit code detected ({0}). Checking for crash reports...", exitCode));
-
                                 Thread.Sleep(1000);
-
                                 CheckAndLogMinecraftCrash(mcDir);
-
                             }
 
                         }
