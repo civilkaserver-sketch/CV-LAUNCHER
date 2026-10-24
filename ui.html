@@ -384,13 +384,9 @@
     border-color:var(--line);
     background:var(--card);
   }
-  #bannerCard .banner-badge.installed{
-    display:none !important;
-  }
+  #bannerCard .banner-badge.installed,
   #bannerCard .banner-badge.update{
-    color:var(--accent);
-    border-color:rgba(235,94,40,.35);
-    background:var(--card);
+    display:none !important;
   }
 
   .banner-title{
@@ -2666,16 +2662,12 @@
     const moreWrap = document.getElementById('moreWrap');
     const moreBtn = document.getElementById('btnMore');
 
-    // Бейдж: «Не установлено», «Доступно обновление» или скрыт когда установлено
+    // Бейдж: «Не установлено» или скрыт когда установлено
     if(badge){
       if(!ok){
         badge.style.display = 'inline-block';
         badge.className = 'banner-badge not-installed';
         if(badgeText) badgeText.textContent = 'Не установлено';
-      } else if(updateAvailable){
-        badge.style.display = 'inline-block';
-        badge.className = 'banner-badge update';
-        if(badgeText) badgeText.textContent = 'Доступно обновление';
       } else {
         badge.style.display = 'none';
         badge.className = 'banner-badge installed';
