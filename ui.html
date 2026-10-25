@@ -3862,33 +3862,64 @@
     container.innerHTML = list.map((item, idx) => renderNewsCard(item, idx)).join('');
   }
 
+  let currentNewsDataStr = '';
+
   async function loadAndRenderNews() {
+    // 1. Fetch live news directly from GitHub repository in real time
     try {
-      const res = await fetch('/api/news');
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          currentNewsData = data;
-          renderAllNews(currentNewsData);
+      const ghRes = await fetch('https://raw.githubusercontent.com/civilkaserver-sketch/CV-LAUNCHER/main/news.json?t=' + Date.now(), { cache: 'no-store' });
+      if (ghRes.ok) {
+        const ghData = await ghRes.json();
+        if (Array.isArray(ghData) && ghData.length > 0) {
+          const jsonStr = JSON.stringify(ghData);
+          if (jsonStr !== currentNewsDataStr) {
+            currentNewsDataStr = jsonStr;
+            currentNewsData = ghData;
+            renderAllNews(currentNewsData);
+          }
           return;
         }
       }
     } catch (e) { }
 
+    // 2. Fallback to local launcher endpoint /api/news
     try {
-      const res = await fetch('news.json');
+      const res = await fetch('/api/news?t=' + Date.now(), { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          currentNewsData = data;
-          renderAllNews(currentNewsData);
+          const jsonStr = JSON.stringify(data);
+          if (jsonStr !== currentNewsDataStr) {
+            currentNewsDataStr = jsonStr;
+            currentNewsData = data;
+            renderAllNews(currentNewsData);
+          }
           return;
         }
       }
     } catch (e) { }
 
-    currentNewsData = (typeof DEFAULT_NEWS !== 'undefined' && Array.isArray(DEFAULT_NEWS)) ? DEFAULT_NEWS : [];
-    renderAllNews(currentNewsData);
+    // 3. Fallback to embedded news.json
+    try {
+      const res = await fetch('news.json?t=' + Date.now(), { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const jsonStr = JSON.stringify(data);
+          if (jsonStr !== currentNewsDataStr) {
+            currentNewsDataStr = jsonStr;
+            currentNewsData = data;
+            renderAllNews(currentNewsData);
+          }
+          return;
+        }
+      }
+    } catch (e) { }
+
+    if (!currentNewsData || currentNewsData.length === 0) {
+      currentNewsData = (typeof DEFAULT_NEWS !== 'undefined' && Array.isArray(DEFAULT_NEWS)) ? DEFAULT_NEWS : [];
+      renderAllNews(currentNewsData);
+    }
   }
 
   function toggleNewsCardIndex(index) {
@@ -6024,6 +6055,9 @@
   checkServerStatus();
   setInterval(checkServerStatus, 15000);
   loadAndRenderNews();
+  // Real-time news updates: periodic check every 60s and on window focus
+  setInterval(loadAndRenderNews, 60000);
+  window.addEventListener('focus', loadAndRenderNews);
 </script>
 </body>
 </html>
