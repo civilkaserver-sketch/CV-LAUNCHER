@@ -7049,7 +7049,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "e03722ae85c7d98bbbcd2c38006b26ec25f4b589";
+        private static string CurrentLauncherSha = "d30c6f67a614a8fd894a89f4435f9fdeb0d732ad";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -9438,7 +9438,7 @@ namespace CivilizationLauncher
 
 
 
-        static void DownloadFileCancellable(string url, string destPath, Action<long, long> onProgress)
+        static void DownloadFileCancellable(string url, string destPath, Action<long, long> onProgress, string authHeader = null)
 
         {
 
@@ -9451,6 +9451,14 @@ namespace CivilizationLauncher
             {
 
                 try { wc.Headers[HttpRequestHeader.UserAgent] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"; } catch { }
+
+                if (!string.IsNullOrEmpty(authHeader))
+
+                {
+
+                    try { wc.Headers[HttpRequestHeader.Authorization] = authHeader; } catch { }
+
+                }
 
                 Exception dlError = null;
 
@@ -9624,6 +9632,251 @@ namespace CivilizationLauncher
 
 
 
+        static List<string> GetTrackedFilesList(Dictionary<string, object> state)
+        {
+            var list = new List<string>();
+            if (state != null && state.ContainsKey("files"))
+            {
+                var arr = state["files"] as ArrayList;
+                if (arr != null)
+                {
+                    foreach (var item in arr)
+                    {
+                        if (item != null) list.Add(item.ToString());
+                    }
+                }
+            }
+            return list;
+        }
+
+        static bool TryFastDiffUpdate(string mcDir)
+        {
+            try
+            {
+                var state = LoadState();
+                if (state == null || !state.ContainsKey("commitSha"))
+                {
+                    Log("FastDiffUpdate: no commitSha in state, fallback to full download.");
+                    return false;
+                }
+
+                string localSha = (state["commitSha"] ?? "").ToString().Trim();
+                if (string.IsNullOrEmpty(localSha))
+                {
+                    Log("FastDiffUpdate: localSha is empty, fallback to full download.");
+                    return false;
+                }
+
+                string remoteSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
+                if (string.IsNullOrEmpty(remoteSha))
+                {
+                    Log("FastDiffUpdate: could not fetch remoteSha, fallback to full download.");
+                    return false;
+                }
+
+                if (string.Equals(localSha, remoteSha, StringComparison.OrdinalIgnoreCase))
+                {
+                    Log(string.Format("FastDiffUpdate: localSha == remoteSha ({0}), already up to date.", localSha));
+                    SetProgress(100, "Сборка уже обновлена!", false, true, null);
+                    return true;
+                }
+
+                Log(string.Format("FastDiffUpdate: comparing {0} -> {1}", localSha, remoteSha));
+                SetProgress(15, "Проверка изменений обновления...", true, false, null);
+
+                string compareUrl = string.Format("https://api.github.com/repos/civilkaserver-sketch/Civilka-version/compare/{0}...{1}", localSha, remoteSha);
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                var req = (HttpWebRequest)WebRequest.Create(compareUrl);
+                req.UserAgent = "CivilizationLauncher";
+                req.Timeout = 15000;
+                req.Headers.Add("Authorization", "Bearer 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");
+
+                string json = null;
+                using (var resp = req.GetResponse())
+                using (var sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    json = sr.ReadToEnd();
+                }
+
+                var root = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
+                if (root == null || !root.ContainsKey("files"))
+                {
+                    Log("FastDiffUpdate: compare returned invalid payload, fallback to full download.");
+                    return false;
+                }
+
+                var filesList = root["files"] as ArrayList;
+                if (filesList == null)
+                {
+                    Log("FastDiffUpdate: files is null, fallback to full download.");
+                    return false;
+                }
+
+                if (filesList.Count == 0)
+                {
+                    Log("FastDiffUpdate: 0 changed files reported by compare, saving new SHA.");
+                    var curFiles = GetTrackedFilesList(state);
+                    SaveState(mcDir, curFiles, remoteSha);
+                    RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
+                    SetProgress(100, "Обновление успешно завершено!", false, true, null);
+                    return true;
+                }
+
+                if (filesList.Count > 100)
+                {
+                    Log(string.Format("FastDiffUpdate: {0} files changed, exceeding diff limit (100). Fallback to full download.", filesList.Count));
+                    return false;
+                }
+
+                Log(string.Format("FastDiffUpdate: found {0} changed file(s). Performing quick update...", filesList.Count));
+
+                var trackedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                if (state.ContainsKey("files"))
+                {
+                    var arr = state["files"] as ArrayList;
+                    if (arr != null)
+                    {
+                        foreach (var item in arr)
+                        {
+                            if (item != null) trackedFiles.Add(item.ToString());
+                        }
+                    }
+                }
+
+                var filesToDownload = new List<Dictionary<string, object>>();
+                var filesToDelete = new List<string>();
+
+                foreach (var item in filesList)
+                {
+                    var f = item as Dictionary<string, object>;
+                    if (f == null || !f.ContainsKey("filename")) continue;
+
+                    string fn = f["filename"].ToString().Trim().Replace('/', '\\');
+                    string status = f.ContainsKey("status") ? f["status"].ToString() : "";
+
+                    if (fn.Equals("README.md", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Equals(".gitattributes", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Equals(".gitignore", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Equals("install.bat", StringComparison.OrdinalIgnoreCase) ||
+                        fn.Equals("update.bat", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    if (IsProtectedPath(fn))
+                    {
+                        Log("FastDiffUpdate: skipping protected file " + fn);
+                        continue;
+                    }
+
+                    if (status == "removed")
+                    {
+                        filesToDelete.Add(fn);
+                    }
+                    else
+                    {
+                        if (status == "renamed" && f.ContainsKey("previous_filename"))
+                        {
+                            string prev = f["previous_filename"].ToString().Trim().Replace('/', '\\');
+                            if (!IsProtectedPath(prev)) filesToDelete.Add(prev);
+                        }
+                        filesToDownload.Add(f);
+                    }
+                }
+
+                foreach (var delRel in filesToDelete)
+                {
+                    try
+                    {
+                        string targetPath = Path.Combine(mcDir, delRel);
+                        if (File.Exists(targetPath))
+                        {
+                            File.Delete(targetPath);
+                            Log("FastDiffUpdate: removed obsolete file " + delRel);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log("FastDiffUpdate: could not delete " + delRel + ": " + ex.Message);
+                    }
+                    trackedFiles.Remove(delRel);
+                }
+
+                int totalToDl = filesToDownload.Count;
+                for (int i = 0; i < totalToDl; i++)
+                {
+                    CheckCancelled();
+                    var f = filesToDownload[i];
+                    string fn = f["filename"].ToString().Trim().Replace('/', '\\');
+                    string targetPath = Path.Combine(mcDir, fn);
+                    string targetDir = Path.GetDirectoryName(targetPath);
+                    if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
+
+                    string downloadUrl = string.Format("https://raw.githubusercontent.com/civilkaserver-sketch/Civilka-version/{0}/{1}", remoteSha, fn.Replace('\\', '/'));
+                    string fileNameOnly = Path.GetFileName(fn);
+
+                    int basePct = 20 + (int)((double)i / (double)totalToDl * 65.0);
+                    int nextPct = 20 + (int)((double)(i + 1) / (double)totalToDl * 65.0);
+
+                    SetProgress(basePct, string.Format("Загрузка обновления: {0} ({1}/{2})...", fileNameOnly, i + 1, totalToDl), true, false, null);
+
+                    string tempFile = targetPath + ".tmp_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+                    try
+                    {
+                        DownloadFileCancellable(downloadUrl, tempFile, (recv, total) =>
+                        {
+                            if (total > 0)
+                            {
+                                double fileFraction = (double)recv / (double)total;
+                                int currentPct = basePct + (int)(fileFraction * (nextPct - basePct));
+                                double mbRecv = (double)recv / (1024.0 * 1024.0);
+                                double mbTotal = (double)total / (1024.0 * 1024.0);
+                                SetProgress(currentPct, string.Format("Загрузка {0}: {1:F1} / {2:F1} МБ ({3}/{4})", fileNameOnly, mbRecv, mbTotal, i + 1, totalToDl), true, false, null);
+                            }
+                        }, "Bearer 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");
+
+                        if (File.Exists(targetPath))
+                        {
+                            File.Delete(targetPath);
+                        }
+                        File.Move(tempFile, targetPath);
+                        trackedFiles.Add(fn);
+                        Log(string.Format("FastDiffUpdate: updated {0} ({1}/{2})", fn, i + 1, totalToDl));
+                    }
+                    finally
+                    {
+                        if (File.Exists(tempFile))
+                        {
+                            try { File.Delete(tempFile); } catch { }
+                        }
+                    }
+                }
+
+                CheckCancelled();
+
+                SetProgress(90, "Обновление конфигурации профиля...", true, false, null);
+                RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
+                EnsureJava(mcDir, null);
+                EnsureAssets(mcDir);
+
+                var finalFilesList = new List<string>(trackedFiles);
+                SaveState(mcDir, finalFilesList, remoteSha);
+
+                SetProgress(100, "Обновление успешно завершено!", false, true, null);
+                Log(string.Format("=== FastDiffUpdate finished successfully ({0} files updated, {1} deleted, SHA={2}) ===", filesToDownload.Count, filesToDelete.Count, remoteSha));
+                return true;
+            }
+            catch (OperationCancelled)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Log("FastDiffUpdate failed with exception, falling back to full download: " + ex.ToString());
+                return false;
+            }
+        }
+
         static void DoUpdate(string mcDir)
 
         {
@@ -9636,13 +9889,23 @@ namespace CivilizationLauncher
 
                 SetProgress(10, "Проверяем наличие обновлений...", true, false, null);
 
-                Thread.Sleep(700);
+                Thread.Sleep(500);
 
                 CheckCancelled();
 
 
 
                 if (!Directory.Exists(mcDir)) Directory.CreateDirectory(mcDir);
+
+
+
+                if (TryFastDiffUpdate(mcDir))
+
+                {
+
+                    return;
+
+                }
 
 
 
