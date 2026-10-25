@@ -6488,6 +6488,8 @@ namespace CivilizationLauncher
 
                 }
 
+                try { EnsureAssets(mcDir, root); } catch (Exception ex) { Log("[Assets] EnsureAssets launch error: " + ex.Message); }
+
 
 
                 // 4. Построение аргументов команды
@@ -6980,7 +6982,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "b31ba2d304d1206947c262474b5483d89dd34915";
+        private static string CurrentLauncherSha = "b2eab222f76cb2249d2bf3c17b500b0563ec52fe";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -8358,6 +8360,314 @@ namespace CivilizationLauncher
 
 
 
+        static void EnsureAssets(string mcDir, Dictionary<string, object> root = null)
+
+        {
+
+            try
+
+            {
+
+                string assetIndex = "26";
+
+                string assetIndexUrl = "https://piston-meta.mojang.com/v1/packages/132cc61be8a3e4365a2c20399799864c2f4e602d/26.json";
+
+
+
+                if (root == null)
+
+                {
+
+                    string civDir = Path.Combine(mcDir, @"versions\Civilization");
+
+                    string jsonPath = Path.Combine(civDir, "Civilization.json");
+
+                    if (File.Exists(jsonPath))
+
+                    {
+
+                        try
+
+                        {
+
+                            string jsonTxt = File.ReadAllText(jsonPath, Encoding.UTF8);
+
+                            root = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(jsonTxt);
+
+                        }
+
+                        catch { }
+
+                    }
+
+                }
+
+
+
+                if (root != null)
+
+                {
+
+                    if (root.ContainsKey("assets") && root["assets"] != null)
+
+                    {
+
+                        string ai = root["assets"].ToString().Trim();
+
+                        if (!string.IsNullOrEmpty(ai)) assetIndex = ai;
+
+                    }
+
+                    if (root.ContainsKey("assetIndex") && root["assetIndex"] is Dictionary<string, object>)
+
+                    {
+
+                        var aiDict = (Dictionary<string, object>)root["assetIndex"];
+
+                        if (aiDict.ContainsKey("id") && aiDict["id"] != null)
+
+                        {
+
+                            string ai = aiDict["id"].ToString().Trim();
+
+                            if (!string.IsNullOrEmpty(ai)) assetIndex = ai;
+
+                        }
+
+                        if (aiDict.ContainsKey("url") && aiDict["url"] != null)
+
+                        {
+
+                            string url = aiDict["url"].ToString().Trim();
+
+                            if (!string.IsNullOrEmpty(url)) assetIndexUrl = url;
+
+                        }
+
+                    }
+
+                }
+
+
+
+                string assetsDir = Path.Combine(mcDir, "assets");
+
+                string indexFilePath = Path.Combine(assetsDir, "indexes", assetIndex + ".json");
+
+                string indexDir = Path.GetDirectoryName(indexFilePath);
+
+
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+
+
+                if (!File.Exists(indexFilePath))
+
+                {
+
+                    Log(string.Format("[Assets] Asset index missing. Downloading {0}.json...", assetIndex));
+
+                    if (!Directory.Exists(indexDir)) Directory.CreateDirectory(indexDir);
+
+                    using (var wc = new WebClient())
+
+                    {
+
+                        wc.Headers.Add("User-Agent", "CV-Launcher");
+
+                        wc.DownloadFile(assetIndexUrl, indexFilePath);
+
+                    }
+
+                    Log("[Assets] Asset index downloaded successfully.");
+
+                }
+
+
+
+                var targetLangFiles = new string[] {
+
+                    "minecraft/lang/ru_ru.json",
+
+                    "minecraft/lang/uk_ua.json",
+
+                    "minecraft/lang/be_by.json",
+
+                    "minecraft/lang/kk_kz.json"
+
+                };
+
+
+
+                var langHashes = new List<string>();
+
+
+
+                if (File.Exists(indexFilePath))
+
+                {
+
+                    try
+
+                    {
+
+                        string indexJson = File.ReadAllText(indexFilePath, Encoding.UTF8);
+
+                        var indexRoot = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(indexJson);
+
+                        if (indexRoot != null && indexRoot.ContainsKey("objects") && indexRoot["objects"] is Dictionary<string, object>)
+
+                        {
+
+                            var objs = (Dictionary<string, object>)indexRoot["objects"];
+
+                            foreach (var langKey in targetLangFiles)
+
+                            {
+
+                                if (objs.ContainsKey(langKey) && objs[langKey] is Dictionary<string, object>)
+
+                                {
+
+                                    var lObj = (Dictionary<string, object>)objs[langKey];
+
+                                    if (lObj.ContainsKey("hash") && lObj["hash"] != null)
+
+                                    {
+
+                                        string h = lObj["hash"].ToString().Trim();
+
+                                        if (!string.IsNullOrEmpty(h) && !langHashes.Contains(h)) langHashes.Add(h);
+
+                                    }
+
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                    catch (Exception ex)
+
+                    {
+
+                        Log(string.Format("[Assets] Warning parsing index json: {0}", ex.Message));
+
+                    }
+
+                }
+
+
+
+                if (langHashes.Count == 0)
+
+                {
+
+                    langHashes.Add("e5572ca1507224dc231272b15dbf45851d36d9af");
+
+                    langHashes.Add("e3c58e2ec87d68c8671ec6be4b30e261f7b1fe9e");
+
+                }
+
+
+
+                foreach (string hash in langHashes)
+
+                {
+
+                    if (string.IsNullOrEmpty(hash) || hash.Length < 2) continue;
+
+                    string sub = hash.Substring(0, 2);
+
+                    string objPath = Path.Combine(assetsDir, "objects", sub, hash);
+
+                    if (!File.Exists(objPath))
+
+                    {
+
+                        string objDir = Path.GetDirectoryName(objPath);
+
+                        if (!Directory.Exists(objDir)) Directory.CreateDirectory(objDir);
+
+                        string objUrl = string.Format("https://resources.download.minecraft.net/{0}/{1}", sub, hash);
+
+                        try
+
+                        {
+
+                            Log(string.Format("[Assets] Downloading language asset ({0})...", hash));
+
+                            using (var wc = new WebClient())
+
+                            {
+
+                                wc.Headers.Add("User-Agent", "CV-Launcher");
+
+                                wc.DownloadFile(objUrl, objPath);
+
+                            }
+
+                            Log(string.Format("[Assets] Language asset {0} downloaded successfully.", hash));
+
+                        }
+
+                        catch (Exception ex)
+
+                        {
+
+                            Log(string.Format("[Assets] Warning: Failed to download language asset {0}: {1}", hash, ex.Message));
+
+                        }
+
+                    }
+
+                }
+
+
+
+                try
+
+                {
+
+                    string optPath = Path.Combine(mcDir, @"versions\Civilization\options.txt");
+
+                    if (File.Exists(optPath))
+
+                    {
+
+                        string opt = File.ReadAllText(optPath, Encoding.UTF8);
+
+                        if (opt.Contains("lang:en_us"))
+
+                        {
+
+                            File.WriteAllText(optPath, opt.Replace("lang:en_us", "lang:ru_ru"), Encoding.UTF8);
+
+                        }
+
+                    }
+
+                }
+
+                catch { }
+
+            }
+
+            catch (Exception ex)
+
+            {
+
+                Log(string.Format("[Assets] Error in EnsureAssets: {0}", ex.Message));
+
+            }
+
+        }
+
+
+
         static void CopyDirectory(string sourceDir, string targetDir)
 
         {
@@ -8469,6 +8779,14 @@ namespace CivilizationLauncher
             SetProgress(60, "Копирование библиотек Fabric...", true, false, null);
 
             CopyTracked(Path.Combine(sourceDir, "libraries"), Path.Combine(mcDir, "libraries"), "libraries", files);
+
+            if (Directory.Exists(Path.Combine(sourceDir, "assets")))
+
+            {
+
+                CopyTracked(Path.Combine(sourceDir, "assets"), Path.Combine(mcDir, "assets"), "assets", files);
+
+            }
 
 
 
@@ -9278,6 +9596,8 @@ namespace CivilizationLauncher
 
                 EnsureJava(mcDir, sourceDir);
 
+                EnsureAssets(mcDir);
+
 
 
                 SetProgress(100, "Установка успешно завершена!", false, true, null);
@@ -9397,6 +9717,8 @@ namespace CivilizationLauncher
 
 
                 EnsureJava(mcDir, sourceDir);
+
+                EnsureAssets(mcDir);
 
 
 
