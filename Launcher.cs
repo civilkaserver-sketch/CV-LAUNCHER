@@ -6982,7 +6982,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "88a0dbdc8c1184b26dae801079e1d87691c951aa";
+        private static string CurrentLauncherSha = "963d7ea5e63cf9a564edd06bd15c16e6da4b675e";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -8487,89 +8487,56 @@ namespace CivilizationLauncher
 
 
                 var targetLangFiles = new string[] {
-
+                    "pack.mcmeta",
                     "minecraft/lang/ru_ru.json",
-
                     "minecraft/lang/uk_ua.json",
-
                     "minecraft/lang/be_by.json",
-
                     "minecraft/lang/kk_kz.json"
-
                 };
-
-
 
                 var langHashes = new List<string>();
 
-
-
                 if (File.Exists(indexFilePath))
-
                 {
-
                     try
-
                     {
-
                         string indexJson = File.ReadAllText(indexFilePath, Encoding.UTF8);
-
                         var indexRoot = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(indexJson);
-
                         if (indexRoot != null && indexRoot.ContainsKey("objects") && indexRoot["objects"] is Dictionary<string, object>)
-
                         {
-
                             var objs = (Dictionary<string, object>)indexRoot["objects"];
-
                             foreach (var langKey in targetLangFiles)
-
                             {
-
                                 if (objs.ContainsKey(langKey) && objs[langKey] is Dictionary<string, object>)
-
                                 {
-
                                     var lObj = (Dictionary<string, object>)objs[langKey];
-
                                     if (lObj.ContainsKey("hash") && lObj["hash"] != null)
-
                                     {
-
                                         string h = lObj["hash"].ToString().Trim();
-
                                         if (!string.IsNullOrEmpty(h) && !langHashes.Contains(h)) langHashes.Add(h);
-
                                     }
-
                                 }
-
                             }
-
                         }
-
                     }
-
                     catch (Exception ex)
-
                     {
-
                         Log(string.Format("[Assets] Warning parsing index json: {0}", ex.Message));
-
                     }
-
                 }
 
-
-
-                if (langHashes.Count == 0)
-
+                // Ensure critical MC 1.21.8 language definition assets are always present
+                if (!langHashes.Contains("6cb57c8bf7f43ecb75339be01e23b5be0c83f0c9"))
                 {
-
-                    langHashes.Add("e5572ca1507224dc231272b15dbf45851d36d9af");
-
-                    langHashes.Add("e3c58e2ec87d68c8671ec6be4b30e261f7b1fe9e");
-
+                    langHashes.Add("6cb57c8bf7f43ecb75339be01e23b5be0c83f0c9"); // pack.mcmeta LanguageMetadataSection
+                }
+                if (!langHashes.Contains("e5572ca1507224dc231272b15dbf45851d36d9af"))
+                {
+                    langHashes.Add("e5572ca1507224dc231272b15dbf45851d36d9af"); // ru_ru.json
+                }
+                if (!langHashes.Contains("e3c58e2ec87d68c8671ec6be4b30e261f7b1fe9e"))
+                {
+                    langHashes.Add("e3c58e2ec87d68c8671ec6be4b30e261f7b1fe9e"); // uk_ua.json
                 }
 
 
@@ -8704,202 +8671,158 @@ namespace CivilizationLauncher
 
 
 
-        static void CopyTracked(string src, string dst, string prefix, List<string> files)
-
+        static bool IsProtectedPath(string rel)
         {
+            if (string.IsNullOrEmpty(rel)) return false;
+            string norm = rel.Replace('/', '\\').Trim('\\');
+            string fileName = Path.GetFileName(norm);
 
+            // User configuration and state files that should NEVER be overwritten or deleted
+            if (fileName.Equals("options.txt", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("optionsof.txt", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("optionsshaders.txt", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("servers.dat", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("servers.dat_old", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("usercache.json", StringComparison.OrdinalIgnoreCase) ||
+                fileName.Equals("profile.json", StringComparison.OrdinalIgnoreCase) ||
+                fileName.StartsWith("xaerominimap", StringComparison.OrdinalIgnoreCase) ||
+                fileName.StartsWith("xaeroworldmap", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Strip version directory prefix if present
+            int idx = norm.IndexOf(@"versions\Civilization\", StringComparison.OrdinalIgnoreCase);
+            if (idx >= 0) norm = norm.Substring(idx + @"versions\Civilization\".Length);
+
+            // Entire user directories that must be protected
+            if (norm.StartsWith("config\\", StringComparison.OrdinalIgnoreCase) || norm.Equals("config", StringComparison.OrdinalIgnoreCase) ||
+                norm.StartsWith("shaderpacks\\", StringComparison.OrdinalIgnoreCase) || norm.Equals("shaderpacks", StringComparison.OrdinalIgnoreCase) ||
+                norm.StartsWith("screenshots\\", StringComparison.OrdinalIgnoreCase) || norm.Equals("screenshots", StringComparison.OrdinalIgnoreCase) ||
+                norm.StartsWith("saves\\", StringComparison.OrdinalIgnoreCase) || norm.Equals("saves", StringComparison.OrdinalIgnoreCase) ||
+                norm.StartsWith("xaero\\", StringComparison.OrdinalIgnoreCase) || norm.Equals("xaero", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        static bool IsOfficialMod(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName)) return false;
+            string name = fileName.ToLowerInvariant();
+            string[] officialPrefixes = new string[] {
+                "c2me", "cloth-config", "entityculling", "fabric-api", "fallingtree",
+                "ferritecore", "immediatelyfast", "iris", "krypton", "lithium",
+                "modmenu", "ok_zoomer", "placeholder-api", "playertrading",
+                "sodium", "voxy", "xaerominimap", "xaeroworldmap"
+            };
+            foreach (var p in officialPrefixes)
+            {
+                if (name.StartsWith(p)) return true;
+            }
+            return false;
+        }
+
+        static void CopyTracked(string src, string dst, string prefix, List<string> files)
+        {
             if (!Directory.Exists(src)) return;
-
             if (!Directory.Exists(dst)) Directory.CreateDirectory(dst);
 
-
-
             string[] allFiles = Directory.GetFiles(src, "*", SearchOption.AllDirectories);
-
             for (int i = 0; i < allFiles.Length; i++)
-
             {
-
                 if ((i & 31) == 0) CheckCancelled();
-
                 string item = allFiles[i];
-
-                string rel = item.Substring(src.Length).TrimStart('\\');
-
+                string rel = item.Substring(src.Length).TrimStart('\\', '/');
                 string target = Path.Combine(dst, rel);
-
                 string td = Path.GetDirectoryName(target);
-
                 if (!Directory.Exists(td)) Directory.CreateDirectory(td);
 
-
-
-                bool isProtected = rel.Equals("options.txt", StringComparison.OrdinalIgnoreCase)
-
-                    || rel.Equals("servers.dat", StringComparison.OrdinalIgnoreCase)
-
-                    || rel.StartsWith("config\\", StringComparison.OrdinalIgnoreCase)
-
-                    || rel.StartsWith("config/", StringComparison.OrdinalIgnoreCase)
-
-                    || rel.StartsWith("shaderpacks\\", StringComparison.OrdinalIgnoreCase)
-
-                    || rel.StartsWith("shaderpacks/", StringComparison.OrdinalIgnoreCase);
-
-
+                bool isProtected = IsProtectedPath(rel);
 
                 if (File.Exists(target) && isProtected)
-
                 {
-
                     files.Add(Path.Combine(prefix, rel));
-
                     continue;
-
                 }
-
-
 
                 File.Copy(item, target, true);
-
                 files.Add(Path.Combine(prefix, rel));
-
             }
-
         }
-
-
 
         static List<string> InstallFiles(string sourceDir, string mcDir)
-
         {
-
             var files = new List<string>();
-
             SetProgress(60, "Копирование библиотек Fabric...", true, false, null);
-
             CopyTracked(Path.Combine(sourceDir, "libraries"), Path.Combine(mcDir, "libraries"), "libraries", files);
-
             if (Directory.Exists(Path.Combine(sourceDir, "assets")))
-
             {
-
                 CopyTracked(Path.Combine(sourceDir, "assets"), Path.Combine(mcDir, "assets"), "assets", files);
-
             }
-
-
 
             try
-
             {
-
                 string targetMods = Path.Combine(mcDir, @"versions\Civilization\mods");
-
                 string sourceMods = Path.Combine(sourceDir, @"versions\Civilization\mods");
-
                 if (Directory.Exists(targetMods) && Directory.Exists(sourceMods))
-
                 {
-
                     var newModFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
                     foreach (var mf in Directory.GetFiles(sourceMods, "*.jar"))
-
                     {
-
                         newModFiles.Add(Path.GetFileName(mf));
-
                     }
-
                     foreach (var existingMod in Directory.GetFiles(targetMods, "*.jar"))
-
                     {
-
                         string fn = Path.GetFileName(existingMod);
-
-                        if (!newModFiles.Contains(fn))
-
+                        // ONLY delete if it is an old version of an official mod!
+                        // Custom user-installed mods (JEI, replaymod, etc.) are strictly kept!
+                        if (IsOfficialMod(fn) && !newModFiles.Contains(fn))
                         {
-
                             try
-
                             {
-
                                 File.Delete(existingMod);
-
-                                Log("Deleted obsolete mod: " + fn);
-
+                                Log("Deleted obsolete official mod: " + fn);
                             }
-
                             catch (Exception ex)
-
                             {
-
                                 Log("Could not delete obsolete mod " + fn + ": " + ex.Message);
-
                             }
-
                         }
-
                     }
-
                 }
-
             }
-
             catch (Exception ex)
-
             {
-
                 Log("Error during cleaning obsolete mods: " + ex.Message);
-
             }
-
-
 
             SetProgress(75, "Копирование модов, ресурспаков и конфигов...", true, false, null);
-
             CopyTracked(Path.Combine(sourceDir, @"versions\Civilization"), Path.Combine(mcDir, @"versions\Civilization"), @"versions\Civilization", files);
 
-
-
             return files;
-
         }
 
-
-
         static void RemoveStale(string mcDir, List<string> oldFiles, List<string> newFiles)
-
         {
-
             if (oldFiles == null || oldFiles.Count == 0) return;
-
             var newSet = new HashSet<string>(newFiles, StringComparer.OrdinalIgnoreCase);
-
             int removed = 0;
-
             foreach (string o in oldFiles)
-
             {
+                // NEVER delete protected configs, saves, options, etc.
+                if (IsProtectedPath(o)) continue;
 
                 if (!newSet.Contains(o))
-
                 {
-
                     string p = Path.Combine(mcDir, o);
-
                     if (File.Exists(p))
-
                     {
-
                         try { File.Delete(p); removed++; } catch { }
-
                     }
-
                 }
-
             }
 
 
