@@ -2609,6 +2609,18 @@
   }
 
   function onMainActionClick(){
+    if(isSilentUpdating){
+      const b = document.getElementById('btnMainAction');
+      if(b){ b.textContent = 'Подготовка...'; b.disabled = true; }
+      const poll = setInterval(() => {
+        if(!isSilentUpdating){
+          clearInterval(poll);
+          if(b) b.disabled = false;
+          startGame();
+        }
+      }, 300);
+      return;
+    }
     if(!installed){
       if(installing) stopInstall();
       else run('install');
@@ -2822,6 +2834,44 @@
   }
 
   let statusPollTimer = null;
+  let isSilentUpdating = false;
+  async function runSilentBackgroundUpdate(){
+    if(isSilentUpdating || installing || gameRunning) return;
+    isSilentUpdating = true;
+    try {
+      const res = await fetch('/api/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mcDir: currentPath })
+      });
+      if(res.ok){
+        const timer = setInterval(async () => {
+          try {
+            const pRes = await fetch('/api/progress');
+            if(pRes.ok){
+              const pData = await pRes.json();
+              if(!pData.active){
+                clearInterval(timer);
+                isSilentUpdating = false;
+                if(pData.done){
+                  updateAvailable = false;
+                  setStatus(true);
+                }
+              }
+            }
+          } catch(e) {
+            clearInterval(timer);
+            isSilentUpdating = false;
+          }
+        }, 1200);
+      } else {
+        isSilentUpdating = false;
+      }
+    } catch(e) {
+      isSilentUpdating = false;
+    }
+  }
+
   async function checkBackendStatus(){
     if(!isBackend) return;
     try {
@@ -2832,8 +2882,8 @@
         const prevUpdate = updateAvailable;
         updateAvailable = !data.installed ? false : (data.updateAvailable || false);
         setStatus(data.installed);
-        if(!prevUpdate && updateAvailable){
-          toast('Доступно обновление сборки Civilization!');
+        if(!prevUpdate && updateAvailable && !installing && !gameRunning){
+          runSilentBackgroundUpdate();
         }
         handleLauncherUpdateUI(data.launcherUpdateAvailable, data.currentLauncherSha, data.remoteLauncherSha);
         if(typeof data.performanceMode !== 'undefined'){

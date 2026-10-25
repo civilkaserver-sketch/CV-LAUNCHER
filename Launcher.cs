@@ -1267,6 +1267,49 @@ namespace CivilizationLauncher
 
 
 
+        static void RunSilentBackgroundUpdate()
+        {
+            try
+            {
+                // 1. Silent launcher update check:
+                if (!IsDevWorkspace())
+                {
+                    string curLauncherSha = GetCurrentLauncherSha();
+                    string remoteLauncherSha = FetchLauncherRemoteShaSynchronous();
+                    if (!string.IsNullOrEmpty(remoteLauncherSha) && !remoteLauncherSha.StartsWith(curLauncherSha, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Log("[SilentUpdater] Newer launcher version detected: " + remoteLauncherSha);
+                        string tempExe = Path.Combine(Path.GetTempPath(), "CV_Launcher_new.exe");
+                        if (DownloadFileFromRepo("CV Launcher.exe", tempExe, null))
+                        {
+                            ExecuteLauncherUpdate(tempExe, null, remoteLauncherSha);
+                            return;
+                        }
+                    }
+                }
+
+                // 2. Silent modpack update check:
+                string mcDir = GetActiveMcDir();
+                if (!string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir))
+                {
+                    string remoteSha = FetchRemoteShaSynchronous();
+                    string localSha = "";
+                    var state = LoadState();
+                    if (state != null && state.ContainsKey("commitSha")) localSha = (string)state["commitSha"];
+                    if (!string.IsNullOrEmpty(remoteSha) && !string.Equals(localSha, remoteSha, StringComparison.OrdinalIgnoreCase))
+                    {
+                        Log("[SilentUpdater] Newer modpack detected (remote=" + remoteSha + ", local=" + localSha + "). Starting quiet update...");
+                        DoUpdate(mcDir);
+                        Log("[SilentUpdater] Modpack updated cleanly to SHA: " + remoteSha);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("[SilentUpdater] Error: " + ex.Message);
+            }
+        }
+
         [STAThread]
 
         static void Main(string[] args)
@@ -1274,6 +1317,30 @@ namespace CivilizationLauncher
         {
 
             AppDomain.CurrentDomain.UnhandledException += (s, e) => Log("Unhandled: " + (e.ExceptionObject != null ? e.ExceptionObject.ToString() : "unknown"));
+
+            bool isSilentMode = false;
+            if (args != null)
+            {
+                foreach (var arg in args)
+                {
+                    if (string.Equals(arg, "--silent", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(arg, "--background", StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(arg, "-silent", StringComparison.OrdinalIgnoreCase))
+                    {
+                        isSilentMode = true;
+                        break;
+                    }
+                }
+            }
+
+            if (isSilentMode)
+            {
+                appDir = AppDomain.CurrentDomain.BaseDirectory;
+                Log("[SilentMode] Running in quiet background mode without UI...");
+                RunSilentBackgroundUpdate();
+                Log("[SilentMode] Silent background update finished. Exiting process.");
+                return;
+            }
 
             appDir = AppDomain.CurrentDomain.BaseDirectory;
 
@@ -6982,7 +7049,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "77c95e36b896de63fcbc74460252eb45ce797e04";
+        private static string CurrentLauncherSha = "a8bed3dda24bd9c8fb145ce06b2b47a155625b24";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
