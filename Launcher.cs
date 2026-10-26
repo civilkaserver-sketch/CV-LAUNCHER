@@ -7049,7 +7049,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "d30c6f67a614a8fd894a89f4435f9fdeb0d732ad";
+        private static string CurrentLauncherSha = "1886817ac2d9cca15dd0c9012dc4af529fb0c40c";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -8663,29 +8663,34 @@ namespace CivilizationLauncher
 
 
                 try
-
                 {
-
-                    string optPath = Path.Combine(mcDir, @"versions\Civilization\options.txt");
-
-                    if (File.Exists(optPath))
-
+                    string[] checkPaths = new string[] {
+                        Path.Combine(mcDir, @"versions\Civilization\options.txt"),
+                        Path.Combine(mcDir, "options.txt")
+                    };
+                    foreach (string optPath in checkPaths)
                     {
-
-                        string opt = File.ReadAllText(optPath, Encoding.UTF8);
-
-                        if (opt.Contains("lang:en_us"))
-
+                        if (File.Exists(optPath))
                         {
-
-                            File.WriteAllText(optPath, opt.Replace("lang:en_us", "lang:ru_ru"), Encoding.UTF8);
-
+                            string opt = File.ReadAllText(optPath, Encoding.UTF8);
+                            bool changed = false;
+                            if (opt.Contains("lang:en_us"))
+                            {
+                                opt = opt.Replace("lang:en_us", "lang:ru_ru");
+                                changed = true;
+                            }
+                            if (opt.Contains("Philips") || opt.Contains("TAT2139"))
+                            {
+                                opt = Regex.Replace(opt, @"soundDevice:""[^""]*""", @"soundDevice:""""");
+                                changed = true;
+                            }
+                            if (changed)
+                            {
+                                File.WriteAllText(optPath, opt, Encoding.UTF8);
+                            }
                         }
-
                     }
-
                 }
-
                 catch { }
 
             }
