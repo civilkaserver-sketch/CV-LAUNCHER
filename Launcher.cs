@@ -121,6 +121,11 @@ namespace CivilizationLauncher
 
 
 
+        // 0 = обновление не идёт, 1 = идёт (защита от параллельных запусков DoUpdate).
+        private static int updateInProgress = 0;
+
+
+
         [DllImport("shell32.dll", SetLastError = true)]
 
         private static extern void SetCurrentProcessExplicitAppUserModelID([MarshalAs(UnmanagedType.LPWStr)] string AppID);
@@ -1299,7 +1304,7 @@ namespace CivilizationLauncher
                     if (!string.IsNullOrEmpty(remoteSha) && !string.Equals(localSha, remoteSha, StringComparison.OrdinalIgnoreCase))
                     {
                         Log("[SilentUpdater] Newer modpack detected (remote=" + remoteSha + ", local=" + localSha + "). Starting quiet update...");
-                        DoUpdate(mcDir);
+                        DoUpdate(mcDir, false);
                         Log("[SilentUpdater] Modpack updated cleanly to SHA: " + remoteSha);
                     }
                 }
@@ -3443,6 +3448,18 @@ namespace CivilizationLauncher
 
 
 
+        // Сетевая/временная ошибка обновления. Такую ошибку НЕЛЬЗЯ лечить полной
+        // перезаливкой 300 МБ: файлы уже частично обновлены, повтор должен быть дешёвым.
+        class TransientUpdateException : Exception
+
+        {
+
+            public TransientUpdateException(string msg) : base(msg) { }
+
+        }
+
+
+
         static void CheckCancelled()
 
         {
@@ -3900,6 +3917,20 @@ namespace CivilizationLauncher
             if (endpoint == "update")
 
             {
+
+                if (Volatile.Read(ref updateInProgress) != 0)
+
+                {
+
+                    Log("update endpoint: update already running, request ignored.");
+
+                    SendJson(ctx, new Dictionary<string, object> { { "status", "already-running" } });
+
+                    return;
+
+                }
+
+
 
                 string body = ReadBody(ctx);
 
@@ -5594,9 +5625,10 @@ namespace CivilizationLauncher
 
                                 string title = p.MainWindowTitle ?? "";
 
-                                if (title.IndexOf("Civilization", StringComparison.OrdinalIgnoreCase) >= 0 ||
-
-                                    title.IndexOf("Minecraft", StringComparison.OrdinalIgnoreCase) >= 0)
+                                // Только "Minecraft": здесь перебирается и java.exe (сервер тоже java.exe),
+                                // а консоль сервера может иметь в заголовке путь "...\Civilization DEV\server".
+                                // Иначе запущенный сервер считался бы игрой и блокировал обновление.
+                                if (title.IndexOf("Minecraft", StringComparison.OrdinalIgnoreCase) >= 0)
 
                                 {
 
@@ -7049,7 +7081,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "1886817ac2d9cca15dd0c9012dc4af529fb0c40c";
+        private static string CurrentLauncherSha = "6c308f4dc7d1b7e479cdcc3dcfa4e9018ecd3e90";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -7414,8 +7446,10 @@ namespace CivilizationLauncher
 
                 if (!string.IsNullOrEmpty(remoteSha))
                 {
+                    // version.sha пишем НЕ здесь: только после успешной подмены exe
+                    // (это делает bat-апдейтер). Иначе при неудачной копии лаунчер
+                    // считает себя обновлённым и больше не предложит апдейт.
                     try { File.WriteAllText(newShaFile, remoteSha); } catch { }
-                    try { File.WriteAllText(versionShaFile, remoteSha); } catch { }
                 }
 
                 var sb = new StringBuilder();
@@ -7473,39 +7507,67 @@ namespace CivilizationLauncher
 
 
 
-        static void SaveState(string mcDir, List<string> files, string commitSha = null)
+        static bool SaveState(string mcDir, List<string> files, string commitSha = null)
 
         {
 
-            try
+            for (int attempt = 1; attempt <= 3; attempt++)
 
             {
 
-                if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
-
-                var dict = LoadState() ?? new Dictionary<string, object>();
-
-                dict["mcDir"] = mcDir;
-
-                dict["installedAt"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-                dict["files"] = files;
-
-                if (!string.IsNullOrEmpty(commitSha))
+                try
 
                 {
 
-                    dict["commitSha"] = commitSha;
+                    if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
+
+                    var dict = LoadState() ?? new Dictionary<string, object>();
+
+                    dict["mcDir"] = mcDir;
+
+                    dict["installedAt"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+                    dict["files"] = files;
+
+                    if (!string.IsNullOrEmpty(commitSha))
+
+                    {
+
+                        dict["commitSha"] = commitSha;
+
+                    }
+
+                    string json = new JavaScriptSerializer().Serialize(dict);
+
+                    // Пишем через временный файл: обрыв/антивирус не должны оставить
+                    // обрезанный state.json, иначе игрок будет «обновляться» бесконечно.
+                    string tmp = StateFile + ".tmp";
+
+                    File.WriteAllText(tmp, json, Encoding.UTF8);
+
+                    if (File.Exists(StateFile)) File.Replace(tmp, StateFile, null);
+
+                    else File.Move(tmp, StateFile);
+
+                    return true;
 
                 }
 
-                string json = new JavaScriptSerializer().Serialize(dict);
+                catch (Exception ex)
 
-                File.WriteAllText(StateFile, json, Encoding.UTF8);
+                {
+
+                    Log(string.Format("SaveState attempt {0}/3 failed: {1}", attempt, ex.Message));
+
+                    Thread.Sleep(200 * attempt);
+
+                }
 
             }
 
-            catch { }
+            Log("SaveState FAILED: state.json was not written. Update state is now stale.");
+
+            return false;
 
         }
 
@@ -8786,7 +8848,7 @@ namespace CivilizationLauncher
             string name = fileName.ToLowerInvariant();
             string[] officialPrefixes = new string[] {
                 "c2me", "cloth-config", "entityculling", "fabric-api", "fallingtree",
-                "ferritecore", "immediatelyfast", "iris", "krypton", "lithium",
+                "ferritecore", "fusion", "immediatelyfast", "iris", "krypton", "lithium",
                 "modmenu", "ok_zoomer", "placeholder-api", "playertrading",
                 "sodium", "voxy", "xaerominimap", "xaeroworldmap"
             };
@@ -8846,22 +8908,41 @@ namespace CivilizationLauncher
                     {
                         newModFiles.Add(Path.GetFileName(mf));
                     }
+
+                    // Какие моды ставил именно лаунчер — берём из state (список файлов).
+                    var prevPackMods = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    string prevModsPrefix = @"versions\Civilization\mods\";
+                    foreach (string tracked in GetTrackedFilesList(LoadState()))
+                    {
+                        string norm = tracked.Replace('/', '\\');
+                        if (norm.StartsWith(prevModsPrefix, StringComparison.OrdinalIgnoreCase) &&
+                            norm.EndsWith(".jar", StringComparison.OrdinalIgnoreCase))
+                        {
+                            prevPackMods.Add(Path.GetFileName(norm));
+                        }
+                    }
+
                     foreach (var existingMod in Directory.GetFiles(targetMods, "*.jar"))
                     {
                         string fn = Path.GetFileName(existingMod);
-                        // ONLY delete if it is an old version of an official mod!
-                        // Custom user-installed mods (JEI, replaymod, etc.) are strictly kept!
-                        if (IsOfficialMod(fn) && !newModFiles.Contains(fn))
+                        if (newModFiles.Contains(fn)) continue;
+
+                        // Удаляем ТОЛЬКО то, что раньше поставил сам лаунчер.
+                        // Моды игрока (replaymod, JEI, собственные сборки sodium и т.п.) не трогаем.
+                        bool wasInstalledByPack = prevPackMods.Count > 0
+                            ? prevPackMods.Contains(fn)
+                            : IsOfficialMod(fn); // state без списка файлов — старое поведение
+
+                        if (!wasInstalledByPack) continue;
+
+                        try
                         {
-                            try
-                            {
-                                File.Delete(existingMod);
-                                Log("Deleted obsolete official mod: " + fn);
-                            }
-                            catch (Exception ex)
-                            {
-                                Log("Could not delete obsolete mod " + fn + ": " + ex.Message);
-                            }
+                            File.Delete(existingMod);
+                            Log("Deleted obsolete pack mod: " + fn);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log("Could not delete obsolete mod " + fn + ": " + ex.Message);
                         }
                     }
                 }
@@ -9105,7 +9186,7 @@ namespace CivilizationLauncher
 
 
 
-        static string DownloadBuild(bool isUpdate = false)
+        static string DownloadBuild(bool isUpdate = false, string pinnedSha = null)
 
         {
 
@@ -9313,49 +9394,61 @@ namespace CivilizationLauncher
 
 
 
-            Log("Downloading zip archive from " + RepoZip + " to " + zipPath);
+            // Качаем ровно тот коммит, который потом запишем в state.json.
+            // Иначе получается «state новее, а файлы старые» и бесконечные обновления.
+            string zipUrl = string.IsNullOrEmpty(pinnedSha)
+                ? RepoZip
+                : string.Format("https://github.com/civilkaserver-sketch/Civilka-version/archive/{0}.zip", pinnedSha);
 
-            long estTotal = 370L * 1024 * 1024; // примерный размер архива сборки ~370 MB
+            Log("Downloading zip archive from " + zipUrl + " to " + zipPath);
 
-            DownloadFileCancellable(RepoZip, zipPath, (received, total) =>
-
+            const int zipAttempts = 3;
+            bool zipOk = false;
+            for (int attempt = 1; attempt <= zipAttempts && !zipOk; attempt++)
             {
+                CheckCancelled();
+                if (File.Exists(zipPath)) { try { File.Delete(zipPath); } catch { } }
+                try
+                {
+                    Log(string.Format("Zip download attempt {0}/{1}", attempt, zipAttempts));
+                    DownloadFileCancellable(zipUrl, zipPath, (received, total) =>
+                    {
+                        double mbRec = received / (1024.0 * 1024.0);
+                        string txt;
+                        int pct;
+                        if (total > 0)
+                        {
+                            double mbTot = total / (1024.0 * 1024.0);
+                            pct = Math.Max(0, Math.Min(99, (int)((received * 100) / total)));
+                            txt = string.Format("{0}{1:F1} / {2:F1} MB ({3}%)...", isUpdate ? "Загрузка обновления: " : "Загрузка сборки: ", mbRec, mbTot, pct);
+                        }
+                        else
+                        {
+                            // GitHub отдаёт архив chunked, без Content-Length. Не показываем
+                            // выдуманный знаменатель — только реально скачанное.
+                            pct = Math.Max(0, Math.Min(99, (int)(received * 100 / (300L * 1024 * 1024))));
+                            txt = string.Format("{0}{1:F1} MB скачано...", isUpdate ? "Загрузка обновления: " : "Загрузка сборки: ", mbRec);
+                        }
+                        int p = isUpdate ? (25 + (int)(pct * 0.45)) : (10 + (int)(pct * 0.4));
+                        SetProgress(p, txt, true, false, null);
+                    });
 
-                long targetTotal = (total > 0) ? total : estTotal;
-
-                double mbRec = received / (1024.0 * 1024.0);
-
-                double mbTot = targetTotal / (1024.0 * 1024.0);
-
-                int pct = Math.Max(0, Math.Min(99, (int)((received * 100) / targetTotal)));
-
-
-
-                int p = isUpdate ? (25 + (int)(pct * 0.45)) : (10 + (int)(pct * 0.4));
-
-                string txt = isUpdate
-
-                    ? string.Format("Загрузка обновления: {0:F1} / {1:F1} MB ({2}%)...", mbRec, mbTot, pct)
-
-                    : string.Format("Загрузка сборки: {0:F1} / {1:F1} MB ({2}%)...", mbRec, mbTot, pct);
-
-                SetProgress(p, txt, true, false, null);
-
-            });
-
-
-
-            if (!File.Exists(zipPath))
-
-            {
-
-                Log("Zip archive was not found after download");
-
-                throw new Exception("Не удалось скачать архив сборки с GitHub.");
-
+                    if (File.Exists(zipPath) && new FileInfo(zipPath).Length > 1024 * 1024) zipOk = true;
+                    else Log("Zip archive is missing or too small after attempt " + attempt);
+                }
+                catch (OperationCancelled) { throw; }
+                catch (Exception ex)
+                {
+                    Log(string.Format("Zip download attempt {0}/{1} failed: {2}", attempt, zipAttempts, ex.Message));
+                    if (attempt < zipAttempts) Thread.Sleep(2000 * attempt);
+                }
             }
 
-
+            if (!zipOk)
+            {
+                Log("Zip archive could not be downloaded after all attempts");
+                throw new TransientUpdateException("не удалось скачать архив сборки с GitHub. Проверьте интернет и повторите обновление.");
+            }
 
             Log(string.Format("Zip archive downloaded successfully, size: {0} bytes", new FileInfo(zipPath).Length));
 
@@ -9367,7 +9460,17 @@ namespace CivilizationLauncher
 
             ForceDeleteDirectory(ExtractDir);
 
-            ZipFile.ExtractToDirectory(zipPath, ExtractDir);
+            try
+            {
+                ZipFile.ExtractToDirectory(zipPath, ExtractDir);
+            }
+            catch (Exception zex)
+            {
+                ForceDeleteDirectory(ExtractDir);
+                try { File.Delete(zipPath); } catch { }
+                Log("Zip extraction failed: " + zex.ToString());
+                throw new TransientUpdateException("архив сборки повреждён при загрузке. Повторите обновление.");
+            }
 
             try { File.Delete(zipPath); } catch { }
 
@@ -9555,6 +9658,195 @@ namespace CivilizationLauncher
 
 
 
+        // Длина файла на сервере (HEAD). null — если узнать не удалось.
+        static long? GetRemoteContentLength(string url, string authHeader)
+        {
+            try
+            {
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.Method = "HEAD";
+                req.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+                req.Timeout = 15000;
+                req.AllowAutoRedirect = true;
+                if (!string.IsNullOrEmpty(authHeader)) req.Headers[HttpRequestHeader.Authorization] = authHeader;
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                {
+                    if (resp.ContentLength > 0) return resp.ContentLength;
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        // Скачивание файла с докачкой (HTTP Range) и повторами.
+        // Недокачанный файл остаётся на диске как .part, поэтому следующий повтор
+        // продолжает с места обрыва, а не с нуля. Если всё же не вышло —
+        // бросает TransientUpdateException (не повод качать весь билд заново).
+        static void DownloadFileResumable(string url, string destPath, Action<long, long> onProgress, string authHeader, int attempts)
+
+        {
+
+            if (attempts < 1) attempts = 1;
+
+            Exception lastError = null;
+
+            for (int attempt = 1; attempt <= attempts; attempt++)
+
+            {
+
+                CheckCancelled();
+
+                long existing = 0;
+
+                try { if (File.Exists(destPath)) existing = new FileInfo(destPath).Length; } catch { existing = 0; }
+
+                try
+
+                {
+
+                    ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+                    var req = (HttpWebRequest)WebRequest.Create(url);
+
+                    req.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+                    req.Timeout = 30000;
+
+                    req.ReadWriteTimeout = 60000;
+
+                    req.AllowAutoRedirect = true;
+
+                    if (!string.IsNullOrEmpty(authHeader)) req.Headers[HttpRequestHeader.Authorization] = authHeader;
+
+                    if (existing > 0) req.AddRange(existing);
+
+                    using (var resp = (HttpWebResponse)req.GetResponse())
+
+                    {
+
+                        long startOffset = existing;
+
+                        long contentLen = resp.ContentLength;
+
+                        // Сервер не умеет Range — начинаем файл заново.
+                        if (startOffset > 0 && resp.StatusCode != HttpStatusCode.PartialContent)
+
+                        {
+
+                            startOffset = 0;
+
+                        }
+
+                        long total = contentLen > 0 ? contentLen + startOffset : -1;
+
+                        long received = startOffset;
+
+                        long lastReport = -1;
+
+                        using (var stream = resp.GetResponseStream())
+
+                        using (var fs = new FileStream(destPath, startOffset > 0 ? FileMode.Append : FileMode.Create, FileAccess.Write, FileShare.None))
+
+                        {
+
+                            byte[] buffer = new byte[131072];
+
+                            int read;
+
+                            while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+
+                            {
+
+                                fs.Write(buffer, 0, read);
+
+                                received += read;
+
+                                if (onProgress != null && received - lastReport >= 262144)
+
+                                {
+
+                                    lastReport = received;
+
+                                    try { onProgress(received, total); } catch { }
+
+                                }
+
+                                CheckCancelled();
+
+                            }
+
+                            fs.Flush();
+
+                        }
+
+                    }
+
+                    if (File.Exists(destPath) && new FileInfo(destPath).Length > 0) return;
+
+                    lastError = new Exception("файл не сохранился на диск");
+
+                }
+
+                catch (OperationCancelled) { throw; }
+
+                catch (WebException wex)
+
+                {
+
+                    var httpResp = wex.Response as HttpWebResponse;
+
+                    if (httpResp != null && (int)httpResp.StatusCode == 416)
+
+                    {
+
+                        // 416 = файл .part уже не меньше, чем на сервере.
+                        // Если размеры совпали — файл докачан целиком, повторно его не тянем.
+                        long? remoteLen = GetRemoteContentLength(url, authHeader);
+
+                        long localLen = 0;
+
+                        try { if (File.Exists(destPath)) localLen = new FileInfo(destPath).Length; } catch { }
+
+                        if (remoteLen.HasValue && remoteLen.Value > 0 && remoteLen.Value == localLen)
+
+                        {
+
+                            Log("Resumable download: " + Path.GetFileName(destPath) + " already complete (" + localLen + " bytes).");
+
+                            return;
+
+                        }
+
+                        try { File.Delete(destPath); } catch { }
+
+                    }
+
+                    lastError = wex;
+
+                    Log(string.Format("Resumable download attempt {0}/{1} failed ({2}): {3}", attempt, attempts, url, wex.Message));
+
+                }
+
+                catch (Exception ex)
+
+                {
+
+                    lastError = ex;
+
+                    Log(string.Format("Resumable download attempt {0}/{1} failed ({2}): {3}", attempt, attempts, url, ex.Message));
+
+                }
+
+                if (attempt < attempts) Thread.Sleep(1000 * attempt);
+
+            }
+
+            throw new TransientUpdateException(lastError != null ? lastError.Message : "неизвестная ошибка загрузки");
+
+        }
+
+
+
         static void DoInstall(string mcDir)
 
         {
@@ -9569,7 +9861,9 @@ namespace CivilizationLauncher
 
 
 
-                string sourceDir = DownloadBuild(false);
+                string installSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
+
+                string sourceDir = DownloadBuild(false, installSha);
 
                 CheckCancelled();
 
@@ -9587,9 +9881,15 @@ namespace CivilizationLauncher
 
                 RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
 
-                string currentSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
+                string currentSha = installSha ?? (cachedRemoteSha ?? FetchRemoteShaSynchronous());
 
-                SaveState(mcDir, files, currentSha);
+                if (!SaveState(mcDir, files, currentSha))
+
+                {
+
+                    throw new TransientUpdateException("файлы установлены, но state.json не записался (антивирус/права/диск).");
+
+                }
 
                 Log("Profile registered and state saved (SHA: " + currentSha + ").");
 
@@ -9721,7 +10021,7 @@ namespace CivilizationLauncher
                 {
                     Log("FastDiffUpdate: 0 changed files reported by compare, saving new SHA.");
                     var curFiles = GetTrackedFilesList(state);
-                    SaveState(mcDir, curFiles, remoteSha);
+                    if (!SaveState(mcDir, curFiles, remoteSha)) throw new TransientUpdateException("не удалось записать state.json");
                     RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
                     SetProgress(100, "Обновление успешно завершено!", false, true, null);
                     return true;
@@ -9799,6 +10099,13 @@ namespace CivilizationLauncher
                             File.Delete(targetPath);
                             Log("FastDiffUpdate: removed obsolete file " + delRel);
                         }
+                        // Не оставляем мусор: недокачанный .part удалённого из пака файла.
+                        string stalePartial = targetPath + ".part";
+                        if (File.Exists(stalePartial))
+                        {
+                            try { File.Delete(stalePartial); Log("FastDiffUpdate: removed stale partial " + delRel + ".part"); }
+                            catch { }
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -9808,6 +10115,7 @@ namespace CivilizationLauncher
                 }
 
                 int totalToDl = filesToDownload.Count;
+                var failedFiles = new List<string>();
                 for (int i = 0; i < totalToDl; i++)
                 {
                     CheckCancelled();
@@ -9825,20 +10133,34 @@ namespace CivilizationLauncher
 
                     SetProgress(basePct, string.Format("Загрузка обновления: {0} ({1}/{2})...", fileNameOnly, i + 1, totalToDl), true, false, null);
 
-                    string tempFile = targetPath + ".tmp_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+                    // Файл мог быть успешно заменён в прошлой попытке (тогда упал другой файл).
+                    // Если размер совпадает с серверным — не качаем 78 МБ заново.
+                    long? remoteLen = GetRemoteContentLength(downloadUrl, "Bearer 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");
+                    long localLen = 0;
+                    try { if (File.Exists(targetPath)) localLen = new FileInfo(targetPath).Length; } catch { }
+                    // Порог 4 МБ: у мелких текстовых файлов совпадение размера ничего не
+                    // доказывает, их дешевле скачать заново. Экономим только на jar/zip.
+                    if (remoteLen.HasValue && remoteLen.Value >= 4L * 1024 * 1024 && remoteLen.Value == localLen)
+                    {
+                        Log("FastDiffUpdate: " + fn + " is already up to date (size " + localLen + "), skipping download.");
+                        trackedFiles.Add(fn);
+                        continue;
+                    }
+
+                    // Постоянное имя .part: обрыв докачивается с того же места,
+                    // в том числе при следующем запуске лаунчера.
+                    string tempFile = targetPath + ".part";
                     try
                     {
-                        DownloadFileCancellable(downloadUrl, tempFile, (recv, total) =>
+                        DownloadFileResumable(downloadUrl, tempFile, (recv, total) =>
                         {
-                            if (total > 0)
-                            {
-                                double fileFraction = (double)recv / (double)total;
-                                int currentPct = basePct + (int)(fileFraction * (nextPct - basePct));
-                                double mbRecv = (double)recv / (1024.0 * 1024.0);
-                                double mbTotal = (double)total / (1024.0 * 1024.0);
-                                SetProgress(currentPct, string.Format("Загрузка {0}: {1:F1} / {2:F1} МБ ({3}/{4})", fileNameOnly, mbRecv, mbTotal, i + 1, totalToDl), true, false, null);
-                            }
-                        }, "Bearer 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");
+                            if (total <= 0) return;
+                            double fileFraction = (double)recv / (double)total;
+                            int currentPct = basePct + (int)(fileFraction * (nextPct - basePct));
+                            double mbRecv = (double)recv / (1024.0 * 1024.0);
+                            double mbTotal = (double)total / (1024.0 * 1024.0);
+                            SetProgress(currentPct, string.Format("Загрузка {0}: {1:F1} / {2:F1} МБ ({3}/{4})", fileNameOnly, mbRecv, mbTotal, i + 1, totalToDl), true, false, null);
+                        }, "Bearer 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", 4);
 
                         if (File.Exists(targetPath))
                         {
@@ -9848,13 +10170,28 @@ namespace CivilizationLauncher
                         trackedFiles.Add(fn);
                         Log(string.Format("FastDiffUpdate: updated {0} ({1}/{2})", fn, i + 1, totalToDl));
                     }
-                    finally
+                    catch (OperationCancelled) { throw; }
+                    catch (TransientUpdateException ex)
                     {
-                        if (File.Exists(tempFile))
-                        {
-                            try { File.Delete(tempFile); } catch { }
-                        }
+                        // Один файл не скачался — остальные всё равно обновляем.
+                        // .part остаётся на диске, повтор продолжит с места обрыва.
+                        Log("FastDiffUpdate: file failed, will retry later: " + fn + " — " + ex.Message);
+                        failedFiles.Add(fn);
                     }
+                    catch (Exception ex)
+                    {
+                        bool fileLocked = (ex is IOException) || (ex is UnauthorizedAccessException);
+                        Log("FastDiffUpdate: could not apply " + fn + ": " + ex.Message);
+                        failedFiles.Add(fileLocked ? fn + " — файл занят (закройте Minecraft)" : fn);
+                    }
+                }
+
+                if (failedFiles.Count > 0)
+                {
+                    // Не откатываемся в полную перезаливку 300 МБ из-за пары файлов.
+                    throw new TransientUpdateException(string.Format(
+                        "не удалось обновить {0} из {1} файл(ов): {2}. Нажмите «Обновить» ещё раз — загрузка продолжится с места обрыва.",
+                        failedFiles.Count, totalToDl, failedFiles[0]));
                 }
 
                 CheckCancelled();
@@ -9865,7 +10202,10 @@ namespace CivilizationLauncher
                 EnsureAssets(mcDir);
 
                 var finalFilesList = new List<string>(trackedFiles);
-                SaveState(mcDir, finalFilesList, remoteSha);
+                if (!SaveState(mcDir, finalFilesList, remoteSha))
+                {
+                    throw new TransientUpdateException("файлы обновлены, но не удалось записать state.json (антивирус/права/диск)");
+                }
 
                 SetProgress(100, "Обновление успешно завершено!", false, true, null);
                 Log(string.Format("=== FastDiffUpdate finished successfully ({0} files updated, {1} deleted, SHA={2}) ===", filesToDownload.Count, filesToDelete.Count, remoteSha));
@@ -9875,6 +10215,11 @@ namespace CivilizationLauncher
             {
                 throw;
             }
+            catch (TransientUpdateException)
+            {
+                // Сетевая/дисковая проблема: полную перезаливку не запускаем.
+                throw;
+            }
             catch (Exception ex)
             {
                 Log("FastDiffUpdate failed with exception, falling back to full download: " + ex.ToString());
@@ -9882,15 +10227,75 @@ namespace CivilizationLauncher
             }
         }
 
-        static void DoUpdate(string mcDir)
+        static void DoUpdate(string mcDir, bool userInitiated = true)
 
         {
 
-            Log("=== Starting Update: mcDir=" + mcDir + " ===");
+            // Один поток обновления за раз: тихий автоапдейт + клик «Обновить» +
+            // второй экземпляр лаунчера не должны качать и писать state.json параллельно.
+            if (Interlocked.CompareExchange(ref updateInProgress, 1, 0) != 0)
+
+            {
+
+                Log("Update is already running, duplicate request ignored.");
+
+                return;
+
+            }
 
             try
 
             {
+
+                DoUpdateCore(mcDir, userInitiated);
+
+            }
+
+            finally
+
+            {
+
+                Interlocked.Exchange(ref updateInProgress, 0);
+
+            }
+
+        }
+
+
+
+        static void DoUpdateCore(string mcDir, bool userInitiated)
+
+        {
+
+            Log("=== Starting Update: mcDir=" + mcDir + " (userInitiated=" + userInitiated + ") ===");
+
+            try
+
+            {
+
+                // Пока Minecraft запущен, его jar-файлы заняты: обновление гарантированно
+                // упрётся в IOException и игрок будет жать «Обновить» бесконечно.
+                if (IsGameRunning())
+
+                {
+
+                    Log("Update skipped: game is running.");
+
+                    if (userInitiated)
+
+                    {
+
+                        const string lockMsg = "Minecraft запущен — файлы мода заняты игрой. Закройте игру и повторите обновление.";
+
+                        SetProgress(0, lockMsg, false, false, lockMsg);
+
+                    }
+
+                    return;
+
+                }
+
+
 
                 SetProgress(10, "Проверяем наличие обновлений...", true, false, null);
 
@@ -9904,9 +10309,24 @@ namespace CivilizationLauncher
 
 
 
-                if (TryFastDiffUpdate(mcDir))
+                try
 
                 {
+
+                    if (TryFastDiffUpdate(mcDir)) return;
+
+                }
+
+                catch (TransientUpdateException tex)
+
+                {
+
+                    // Сетевая ошибка диффа не должна превращаться в заливку 300 МБ.
+                    cancelRequested = false;
+
+                    Log("Diff update aborted, full rebuild suppressed: " + tex.Message);
+
+                    SetProgress(0, "Обновление прервано: " + tex.Message, false, false, tex.Message);
 
                     return;
 
@@ -9916,7 +10336,9 @@ namespace CivilizationLauncher
 
                 SetProgress(20, "Обновление найдено, подготовка к загрузке...", true, false, null);
 
-                string sourceDir = DownloadBuild(true);
+                string targetSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
+
+                string sourceDir = DownloadBuild(true, targetSha);
 
                 CheckCancelled();
 
@@ -9966,9 +10388,15 @@ namespace CivilizationLauncher
 
                 RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
 
-                string currentSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
+                string currentSha = targetSha ?? (cachedRemoteSha ?? FetchRemoteShaSynchronous());
 
-                SaveState(mcDir, files, currentSha);
+                if (!SaveState(mcDir, files, currentSha))
+
+                {
+
+                    throw new TransientUpdateException("файлы установлены, но state.json не записался (антивирус/права/диск). Повторите обновление.");
+
+                }
 
                 Log("Profile registered and state saved (SHA: " + currentSha + ").");
 

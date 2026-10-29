@@ -2625,6 +2625,7 @@
       if(installing) stopInstall();
       else run('install');
     } else if(updateAvailable){
+      if(gameRunning){ toast('Закройте Minecraft — файлы мода заняты игрой'); return; }
       run('update');
     } else if(gameRunning){
       stopGame();
@@ -2856,6 +2857,13 @@
                 if(pData.done){
                   updateAvailable = false;
                   setStatus(true);
+                } else if(pData.error){
+                  // Ошибку тихого обновления нельзя проглатывать: иначе игрок
+                  // видит кнопку «Обновить» и жмёт её по десять раз.
+                  toast('Обновление не удалось: ' + pData.error);
+                  setStatus(installed);
+                } else if(pData.cancelled){
+                  setStatus(installed);
                 }
               }
             }
@@ -3179,7 +3187,7 @@
                 toast('Ошибка: ' + pData.error);
               } else if(pData.done){
                 if(action === 'install'){ setStatus(true); toast('Установка успешно завершена!'); }
-                else if(action === 'update'){ setStatus(true); toast('Обновление успешно завершено!'); }
+                else if(action === 'update'){ updateAvailable = false; setStatus(true); toast('Обновление успешно завершено!'); }
                 else if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
               }
               checkBackendStatus();
