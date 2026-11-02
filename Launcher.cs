@@ -6935,7 +6935,7 @@ namespace CivilizationLauncher
 
                 req.Timeout = 6000;
 
-                req.Headers.Add("Authorization", "Bearer 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");
+                req.Headers.Add("Authorization", "Bearer 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");
 
                 using (var resp = req.GetResponse())
 
@@ -7081,7 +7081,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "dbb43b76c6a56345c01e5cb993ac214b9bcc6eed";
+        private static string CurrentLauncherSha = "406380843ddccb8039d893cf28867533f10ba33e";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -7212,7 +7212,7 @@ namespace CivilizationLauncher
 
                 req.Timeout = 6000;
 
-                req.Headers.Add("Authorization", "Bearer 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");
+                req.Headers.Add("Authorization", "Bearer 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");
 
                 using (var resp = req.GetResponse())
 
@@ -7262,7 +7262,7 @@ namespace CivilizationLauncher
 
             {
 
-                var psi = new ProcessStartInfo("git", "ls-remote https://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@github.com/civilkaserver-sketch/CV-LAUNCHER.git refs/heads/main");
+                var psi = new ProcessStartInfo("git", "ls-remote https://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@github.com/civilkaserver-sketch/CV-LAUNCHER.git refs/heads/main");
 
                 psi.CreateNoWindow = true;
 
@@ -7378,7 +7378,7 @@ namespace CivilizationLauncher
                     req.UserAgent = "CV-Launcher";
                     req.Timeout = 120000;
                     req.ReadWriteTimeout = 300000;
-                    req.Headers.Add("Authorization", "Bearer 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");
+                    req.Headers.Add("Authorization", "Bearer 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");
                     req.Accept = "application/vnd.github.v3.raw";
 
                     using (var resp = req.GetResponse())
@@ -9994,7 +9994,7 @@ namespace CivilizationLauncher
                 var req = (HttpWebRequest)WebRequest.Create(compareUrl);
                 req.UserAgent = "CivilizationLauncher";
                 req.Timeout = 15000;
-                req.Headers.Add("Authorization", "Bearer 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");
+                req.Headers.Add("Authorization", "Bearer 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");
 
                 string json = null;
                 using (var resp = req.GetResponse())
@@ -10135,7 +10135,7 @@ namespace CivilizationLauncher
 
                     // Файл мог быть успешно заменён в прошлой попытке (тогда упал другой файл).
                     // Если размер совпадает с серверным — не качаем 78 МБ заново.
-                    long? remoteLen = GetRemoteContentLength(downloadUrl, "Bearer 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");
+                    long? remoteLen = GetRemoteContentLength(downloadUrl, "Bearer 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");
                     long localLen = 0;
                     try { if (File.Exists(targetPath)) localLen = new FileInfo(targetPath).Length; } catch { }
                     // Порог 4 МБ: у мелких текстовых файлов совпадение размера ничего не
@@ -10160,7 +10160,7 @@ namespace CivilizationLauncher
                             double mbRecv = (double)recv / (1024.0 * 1024.0);
                             double mbTotal = (double)total / (1024.0 * 1024.0);
                             SetProgress(currentPct, string.Format("Загрузка {0}: {1:F1} / {2:F1} МБ ({3}/{4})", fileNameOnly, mbRecv, mbTotal, i + 1, totalToDl), true, false, null);
-                        }, "Bearer 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", 4);
+                        }, "Bearer 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", 4);
 
                         if (File.Exists(targetPath))
                         {
