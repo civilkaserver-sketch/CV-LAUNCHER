@@ -6206,7 +6206,7 @@ namespace CivilizationLauncher
 
                 req.Timeout = 6000;
 
-                req.Headers.Add("Authorization", "Bearer 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");
+                // public repository, no token needed
 
                 using (var resp = req.GetResponse())
 
@@ -6446,7 +6446,7 @@ namespace CivilizationLauncher
 
                 req.Timeout = 6000;
 
-                req.Headers.Add("Authorization", "Bearer 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");
+                // public repository, no token needed
 
                 using (var resp = req.GetResponse())
 
@@ -6496,7 +6496,7 @@ namespace CivilizationLauncher
 
             {
 
-                var psi = new ProcessStartInfo("git", "ls-remote https://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@github.com/civilkaserver-sketch/CV-LAUNCHER.git refs/heads/main");
+                var psi = new ProcessStartInfo("git", "ls-remote https://github.com/civilkaserver-sketch/CV-LAUNCHER.git refs/heads/main");
 
                 psi.CreateNoWindow = true;
 
@@ -6616,7 +6616,7 @@ namespace CivilizationLauncher
 
                 req.Timeout = 60000;
 
-                req.Headers.Add("Authorization", "Bearer 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");
+                // public repository, no token needed
 
                 req.Accept = "application/vnd.github.v3.raw";
 
