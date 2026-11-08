@@ -81,7 +81,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string RepoZip = "https://github.com/civilkaserver-sketch/Civilka-version/archive/refs/heads/main.zip";
+        private static string RepoZip = "https://github.com/civilkaserver-sketch/Civilka-version/archive/refs/heads/26.3.zip";
 
         private static string StateDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CivilizationInstaller");
 
@@ -6577,7 +6577,7 @@ namespace CivilizationLauncher
 
 
 
-                string assetIndex = "26";
+                string assetIndex = "34";
 
                 if (root != null && root.ContainsKey("assets") && root["assets"] != null)
 
@@ -6624,6 +6624,10 @@ namespace CivilizationLauncher
                 args.Append("-Djava.net.preferIPv6Addresses=system ");
 
                 args.Append("-Djava.net.preferIPv4Stack=true ");
+
+                args.Append("--enable-native-access=ALL-UNNAMED ");
+
+                args.Append("--add-exports java.base/jdk.internal.misc=ALL-UNNAMED ");
 
                 args.Append("-Dvoxy.geometryBufferSizeOverrideMB=384 ");
 
@@ -6925,13 +6929,45 @@ namespace CivilizationLauncher
 
         {
 
+            string localVersionRepo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\version_repo");
+            if (!Directory.Exists(localVersionRepo) && IsDevEnvironment)
+            {
+                localVersionRepo = @"E:\Civilization DEV\version_repo";
+            }
+            if (Directory.Exists(localVersionRepo) && File.Exists(Path.Combine(localVersionRepo, @"versions\Civilization\Civilization.json")))
+            {
+                try
+                {
+                    var psiLocal = new ProcessStartInfo("git", "rev-parse HEAD");
+                    psiLocal.WorkingDirectory = localVersionRepo;
+                    psiLocal.CreateNoWindow = true;
+                    psiLocal.UseShellExecute = false;
+                    psiLocal.RedirectStandardOutput = true;
+                    using (var pl = Process.Start(psiLocal))
+                    {
+                        string outLocal = pl.StandardOutput.ReadToEnd().Trim();
+                        pl.WaitForExit(3000);
+                        if (!string.IsNullOrEmpty(outLocal) && outLocal.Length >= 20)
+                        {
+                            lock (updateCheckLock)
+                            {
+                                cachedRemoteSha = outLocal;
+                                lastRemoteCheck = DateTime.Now;
+                            }
+                            return outLocal;
+                        }
+                    }
+                }
+                catch { }
+            }
+
             try
 
             {
 
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
 
-                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/civilkaserver-sketch/Civilka-version/commits/main");
+                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/civilkaserver-sketch/Civilka-version/commits/26.3");
 
                 req.UserAgent = "CivilizationLauncher";
 
@@ -6981,7 +7017,7 @@ namespace CivilizationLauncher
 
             {
 
-                var psi = new ProcessStartInfo("git", "ls-remote https://github.com/civilkaserver-sketch/Civilka-version.git refs/heads/main");
+                var psi = new ProcessStartInfo("git", "ls-remote https://github.com/civilkaserver-sketch/Civilka-version.git refs/heads/26.3");
 
                 psi.CreateNoWindow = true;
 
@@ -7083,7 +7119,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "733175b348eb18a87bd8cdecfa9a9068b48ae4ac";
+        private static string CurrentLauncherSha = "940104a40075fe2aba2ed78424dc2c1da49c55da";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -8499,9 +8535,9 @@ namespace CivilizationLauncher
 
             {
 
-                string assetIndex = "26";
+                string assetIndex = "34";
 
-                string assetIndexUrl = "https://piston-meta.mojang.com/v1/packages/132cc61be8a3e4365a2c20399799864c2f4e602d/26.json";
+                string assetIndexUrl = "https://piston-meta.mojang.com/v1/packages/331e5c80937c9cd79647ab34bdc1cbb5ef09f456/34.json";
 
 
 
@@ -9194,6 +9230,19 @@ namespace CivilizationLauncher
 
             Log(string.Format("DownloadBuild started (isUpdate={0})", isUpdate));
 
+            // 0. Быстрое локальное обновление/установка из репозитория разработки, если доступен
+            string localVersionRepo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\version_repo");
+            if (!Directory.Exists(localVersionRepo) && IsDevEnvironment)
+            {
+                localVersionRepo = @"E:\Civilization DEV\version_repo";
+            }
+            if (Directory.Exists(localVersionRepo) && File.Exists(Path.Combine(localVersionRepo, @"versions\Civilization\Civilization.json")))
+            {
+                Log("Using local version_repo: " + localVersionRepo);
+                SetProgress(50, "Использование локального репозитория сборки...", true, false, null);
+                return localVersionRepo;
+            }
+
             string labelPrep = isUpdate ? "Подготовка к загрузке обновления..." : "Подготовка к загрузке сборки...";
 
             int initialPct = isUpdate ? 25 : 5;
@@ -9218,7 +9267,7 @@ namespace CivilizationLauncher
 
                     SetProgress(isUpdate ? 30 : 15, "Быстрое обновление через Git...", true, false, null);
 
-                    var psiFetch = new ProcessStartInfo("git", "fetch --depth 1 origin main");
+                    var psiFetch = new ProcessStartInfo("git", "fetch --depth 1 origin 26.3");
 
                     psiFetch.WorkingDirectory = CacheDir;
 
@@ -9248,7 +9297,7 @@ namespace CivilizationLauncher
 
                         {
 
-                            var psiReset = new ProcessStartInfo("git", "reset --hard origin/main");
+                            var psiReset = new ProcessStartInfo("git", "reset --hard origin/26.3");
 
                             psiReset.WorkingDirectory = CacheDir;
 
@@ -9304,7 +9353,7 @@ namespace CivilizationLauncher
 
                 ForceDeleteDirectory(CacheDir);
 
-                var psi = new ProcessStartInfo("git", string.Format("clone --depth 1 \"https://github.com/civilkaserver-sketch/Civilka-version.git\" \"{0}\"", CacheDir));
+                var psi = new ProcessStartInfo("git", string.Format("clone --depth 1 -b 26.3 \"https://github.com/civilkaserver-sketch/Civilka-version.git\" \"{0}\"", CacheDir));
 
                 psi.CreateNoWindow = true;
 
@@ -9480,7 +9529,7 @@ namespace CivilizationLauncher
 
 
 
-            string unpacked = Path.Combine(ExtractDir, "Civilka-version-main");
+            string unpacked = Path.Combine(ExtractDir, "Civilka-version-26.3");
 
             if (!Directory.Exists(unpacked))
 
