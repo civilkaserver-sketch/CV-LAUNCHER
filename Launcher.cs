@@ -6032,6 +6032,8 @@ namespace CivilizationLauncher
 
             string[] candidateRuntimes = new string[] {
 
+                "java-runtime-epsilon",
+
                 "java-runtime-delta",
 
                 "java-runtime-gamma",
@@ -7081,7 +7083,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "904da348bd2462d6aebd42d6a9c798522289a9b9";
+        private static string CurrentLauncherSha = "733175b348eb18a87bd8cdecfa9a9068b48ae4ac";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
