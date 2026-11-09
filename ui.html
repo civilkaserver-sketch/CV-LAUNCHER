@@ -1093,11 +1093,6 @@
     background: var(--card-hover);
     border-color: var(--line-strong);
   }
-  .screenshot-card.is-active{
-    border-color: rgba(255, 255, 255, 0.45) !important;
-    background: var(--card-hover) !important;
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
-  }
   .screenshot-meta{
     padding: 8px 12px;
     display: flex;
@@ -1145,16 +1140,23 @@
     opacity: 1 !important;
   }
   .screenshot-context-menu{
-    position: fixed !important;
-    bottom: auto !important;
-    left: auto !important;
-    right: auto !important;
-    top: auto !important;
-    z-index: 10000 !important;
-    min-width: 175px !important;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
+    position: fixed;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    padding: 4px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 10000;
+    min-width: 175px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
     user-select: none;
     box-sizing: border-box;
+  }
+  .screenshot-context-menu.show{
+    display: flex !important;
+    animation: menuFadeSlideIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   /* empty state */
@@ -2676,7 +2678,7 @@
 </div>
 
 <!-- Контекстное меню скриншота -->
-<div class="more-menu screenshot-context-menu" id="screenshotContextMenu" onclick="event.stopPropagation()">
+<div class="screenshot-context-menu" id="screenshotContextMenu" onclick="event.stopPropagation()">
   <button class="more-item" onclick="contextActionReveal(event)">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
     Показать в папке
@@ -3799,8 +3801,9 @@
     contextScreenshotIdx = idx;
 
     const cards = document.querySelectorAll('.screenshot-card');
-    cards.forEach((card, i) => {
-      if (i === idx) {
+    cards.forEach((card) => {
+      const cardIdx = parseInt(card.getAttribute('data-idx'), 10);
+      if (cardIdx === idx) {
         card.classList.add('is-active');
       } else {
         card.classList.remove('is-active');
@@ -3810,11 +3813,10 @@
     const menu = document.getElementById('screenshotContextMenu');
     if (!menu) return;
 
-    menu.classList.add('show');
     const menuWidth = 175;
     const menuHeight = 82;
-    let posX = e.clientX;
-    let posY = e.clientY;
+    let posX = (e && typeof e.clientX === 'number') ? e.clientX : 100;
+    let posY = (e && typeof e.clientY === 'number') ? e.clientY : 100;
     if (posX + menuWidth > window.innerWidth - 10) {
       posX = window.innerWidth - menuWidth - 10;
     }
@@ -3823,6 +3825,7 @@
     }
     menu.style.left = Math.max(10, posX) + 'px';
     menu.style.top = Math.max(10, posY) + 'px';
+    menu.classList.add('show');
   }
 
   function closeScreenshotContextMenu(){
