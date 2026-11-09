@@ -515,9 +515,20 @@
     right:0;
     min-width:190px;
   }
+  @keyframes menuFadeSlideIn {
+    0% {
+      opacity: 0;
+      transform: translateY(6px) scale(0.97);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
   .more-menu.show,
   .folder-menu.show{
     display:flex;
+    animation: menuFadeSlideIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   .more-item{
     background:transparent;
@@ -807,6 +818,7 @@
     gap: 3px;
     width: 100%;
     box-sizing: border-box;
+    margin-bottom: 3px;
   }
   .showcase-title {
     font-family: 'Minecraft Rus', monospace;
@@ -1560,9 +1572,23 @@
     padding:20px;
     box-sizing:border-box;
   }
+  @keyframes modalBackdropFadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+  @keyframes modalDialogPopIn {
+    0% {
+      opacity: 0;
+      transform: scale(0.95) translateY(-8px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+    }
+  }
   .modal-backdrop.show{
     display:flex;
-    opacity:1;
+    animation: modalBackdropFadeIn 0.2s ease forwards;
   }
   .modal-dialog{
     background:var(--card);
@@ -1575,12 +1601,10 @@
     flex-direction:column;
     box-shadow:none;
     overflow:hidden;
-    transform:scale(.97);
-    transition:transform .2s ease;
     box-sizing:border-box;
   }
   .modal-backdrop.show .modal-dialog{
-    transform:scale(1);
+    animation: modalDialogPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   .modal-header{
     height:64px;
