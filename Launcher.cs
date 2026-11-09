@@ -1741,7 +1741,7 @@ namespace CivilizationLauncher
 
                     "--app=\"{0}\" --window-size=1150,740 --user-data-dir=\"{1}\" " +
 
-                    "--no-startup-boost --disable-features=WebAppIconInTitlebar,Translate --disable-background-mode " +
+                    "--no-startup-boost --disable-http-cache --disable-features=WebAppIconInTitlebar,Translate --disable-background-mode " +
 
                     "--disable-background-networking --disable-component-update --disable-sync " +
 
@@ -2920,6 +2920,10 @@ namespace CivilizationLauncher
 
                     "assets/news_banner_1.png",
 
+                    "assets/news_banner_patch.svg",
+
+                    "assets/news_banner_patch.png",
+
                     "assets/bg.png"
 
                 };
@@ -3184,6 +3188,10 @@ namespace CivilizationLauncher
 
                     if (path.EndsWith(".png", StringComparison.OrdinalIgnoreCase)) mime = "image/png";
 
+                    else if (path.EndsWith(".webp", StringComparison.OrdinalIgnoreCase)) mime = "image/webp";
+
+                    else if (path.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || path.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase)) mime = "image/jpeg";
+
                     else if (path.EndsWith(".svg", StringComparison.OrdinalIgnoreCase)) mime = "image/svg+xml";
 
                     else if (path.EndsWith(".ico", StringComparison.OrdinalIgnoreCase)) mime = "image/x-icon";
@@ -3228,6 +3236,120 @@ namespace CivilizationLauncher
 
 
 
+        private static readonly object assetDownloadLock = new object();
+
+
+
+        static byte[] DownloadAssetFromGitHub(string assetRelPath)
+
+        {
+
+            if (string.IsNullOrEmpty(assetRelPath)) return null;
+
+            string cleanRel = Uri.UnescapeDataString(assetRelPath).Replace('\\', '/').TrimStart('/');
+
+            if (!cleanRel.StartsWith("assets/", StringComparison.OrdinalIgnoreCase) || cleanRel.Contains(".."))
+
+            {
+
+                return null;
+
+            }
+
+
+
+            try
+
+            {
+
+                string rawUrl = "https://raw.githubusercontent.com/civilkaserver-sketch/CV-LAUNCHER/main/" + cleanRel;
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create(rawUrl);
+
+                req.UserAgent = "CivilizationLauncher";
+
+                req.Timeout = 8000;
+
+                req.ReadWriteTimeout = 12000;
+
+                using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
+
+                {
+
+                    if (resp.StatusCode == HttpStatusCode.OK)
+
+                    {
+
+                        using (Stream stream = resp.GetResponseStream())
+
+                        using (MemoryStream ms = new MemoryStream())
+
+                        {
+
+                            stream.CopyTo(ms);
+
+                            byte[] downloaded = ms.ToArray();
+
+                            if (downloaded.Length > 0)
+
+                            {
+
+                                try
+
+                                {
+
+                                    string cachePath = Path.Combine(GetLauncherDataDir(), cleanRel.Replace('/', '\\'));
+
+                                    string dir = Path.GetDirectoryName(cachePath);
+
+                                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+                                    lock (assetDownloadLock)
+
+                                    {
+
+                                        if (!File.Exists(cachePath))
+
+                                        {
+
+                                            File.WriteAllBytes(cachePath, downloaded);
+
+                                        }
+
+                                    }
+
+                                }
+
+                                catch { }
+
+                                return downloaded;
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
+            }
+
+            catch (Exception ex)
+
+            {
+
+                Log("Asset download error (" + cleanRel + "): " + ex.Message);
+
+            }
+
+            return null;
+
+        }
+
+
+
         static void ServeFile(HttpListenerContext ctx, string filePath, string contentType, string resName = null)
 
         {
@@ -3248,7 +3370,43 @@ namespace CivilizationLauncher
 
             {
 
+                try
+
+                {
+
+                    string cachePath = Path.Combine(GetLauncherDataDir(), resName.Replace('/', '\\'));
+
+                    if (File.Exists(cachePath))
+
+                    {
+
+                        bytes = File.ReadAllBytes(cachePath);
+
+                    }
+
+                }
+
+                catch { }
+
+            }
+
+
+
+            if (bytes == null && !string.IsNullOrEmpty(resName))
+
+            {
+
                 bytes = GetEmbeddedResource(resName);
+
+            }
+
+
+
+            if (bytes == null && !string.IsNullOrEmpty(resName) && resName.StartsWith("assets/", StringComparison.OrdinalIgnoreCase))
+
+            {
+
+                bytes = DownloadAssetFromGitHub(resName);
 
             }
 
@@ -3271,6 +3429,12 @@ namespace CivilizationLauncher
             try
 
             {
+
+                ctx.Response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+
+                ctx.Response.AddHeader("Pragma", "no-cache");
+
+                ctx.Response.AddHeader("Expires", "0");
 
                 ctx.Response.ContentType = contentType;
 
@@ -3996,6 +4160,8 @@ namespace CivilizationLauncher
 
                 string explicitPath = null;
 
+                string subfolder = null;
+
                 try
 
                 {
@@ -4023,6 +4189,16 @@ namespace CivilizationLauncher
                                     string p = json["path"] as string;
 
                                     if (!string.IsNullOrEmpty(p)) explicitPath = p.Trim();
+
+                                }
+
+                                if (json != null && json.ContainsKey("subfolder"))
+
+                                {
+
+                                    string sf = json["subfolder"] as string;
+
+                                    if (!string.IsNullOrEmpty(sf)) subfolder = sf.Trim();
 
                                 }
 
@@ -4102,6 +4278,18 @@ namespace CivilizationLauncher
 
 
 
+                if (!string.IsNullOrEmpty(targetPath) && !string.IsNullOrEmpty(subfolder))
+
+                {
+
+                    string sub = Path.Combine(targetPath, subfolder);
+
+                    if (!Directory.Exists(sub)) { try { Directory.CreateDirectory(sub); } catch { } }
+
+                    if (Directory.Exists(sub)) targetPath = sub;
+
+                }
+
                 if (!string.IsNullOrEmpty(targetPath))
 
                 {
@@ -4119,6 +4307,54 @@ namespace CivilizationLauncher
             }
 
 
+
+            if (endpoint == "mods")
+
+            {
+
+                string mcDir = GetActiveMcDir();
+
+                string modsDir = Path.Combine(mcDir, @"versions\Civilization\mods");
+
+                var list = new System.Collections.Generic.List<Dictionary<string, object>>();
+
+                if (Directory.Exists(modsDir))
+
+                {
+
+                    foreach (string f in Directory.GetFiles(modsDir, "*.jar"))
+
+                    {
+
+                        var fi = new FileInfo(f);
+
+                        list.Add(new Dictionary<string, object> {
+
+                            { "name", Path.GetFileNameWithoutExtension(f) },
+
+                            { "filename", fi.Name },
+
+                            { "size", fi.Length }
+
+                        });
+
+                    }
+
+                }
+
+                SendJson(ctx, new Dictionary<string, object> {
+
+                    { "ok", true },
+
+                    { "count", list.Count },
+
+                    { "mods", list }
+
+                });
+
+                return;
+
+            }
 
             if (endpoint == "open-log")
 
@@ -7119,7 +7355,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "23f111e4fca52d76bc726131b2850c5b5b941110";
+        private static string CurrentLauncherSha = "c201c5337bd2e818c2c7088a6703b6ae8429d4ec";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";

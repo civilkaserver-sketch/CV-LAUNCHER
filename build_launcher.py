@@ -40,13 +40,15 @@ csc_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 args = [
     csc_path,
     "/target:winexe",
+    "/platform:x64",
+    "/optimize+",
     "/win32icon:icon.ico",
     '/out:CV Launcher.exe',
     "/r:System.IO.Compression.FileSystem.dll",
     "/r:System.Web.Extensions.dll",
     "/r:System.Windows.Forms.dll",
     "/r:System.Drawing.dll"
-] + base_resources + ["Launcher.cs"]
+] + base_resources + ["AssemblyInfo.cs", "Launcher.cs"]
 
 print(f"Embedding {len(base_resources)} resources into CV Launcher.exe...")
 result = subprocess.run(args, cwd=launcher_dir, capture_output=True, text=True, errors="replace")

@@ -41,9 +41,9 @@
     font-family:'Minecraft Rus','Courier New',monospace;
     background:var(--bg);
     color:var(--text);
-    font-size:15px;
+    font-size:14px;
     letter-spacing:.3px;
-    line-height:1.65;
+    line-height:1.6;
     -webkit-font-smoothing:none;
     overflow:hidden;
   }
@@ -217,16 +217,7 @@
     z-index:1;
   }
   .main::after{
-    content:'';
-    position:absolute;
-    bottom:0;
-    left:0;
-    right:0;
-    height:56px;
-    background:#0c0c0c;
-    border-radius:0;
-    z-index:1;
-    pointer-events:none;
+    display:none !important;
   }
   .top-bar{
     position:relative;
@@ -269,12 +260,26 @@
     background:var(--bg);
   }
   #viewMain{
-    min-height:100%;
-    box-sizing:border-box;
+    height:calc((100vh - 42px) / 1.2) !important;
+    max-height:calc((100vh - 42px) / 1.2) !important;
+    box-sizing:border-box !important;
+    padding:0 0 50px 0 !important;
+    display:flex !important;
+    flex-direction:column !important;
+    overflow:hidden !important;
+    zoom:1.2 !important;
   }
   #viewMain .inner{
-    margin:auto auto;
-    padding-bottom:20px;
+    margin:0 !important;
+    max-width:100% !important;
+    width:100% !important;
+    padding:0 !important;
+    display:flex !important;
+    flex-direction:column !important;
+    flex:1 !important;
+    height:100% !important;
+    min-height:0 !important;
+    box-sizing:border-box !important;
   }
   #viewSkin, #viewGallery, #viewNews, #viewRating{
     min-height:100%;
@@ -309,21 +314,25 @@
   #bannerCard{
     position:relative;
     overflow:hidden;
-    margin-bottom:16px;
-    min-height:345px;
+    margin-bottom:0;
+    height:270px;
+    min-height:270px;
+    flex:0 0 270px;
     display:flex;
     flex-direction:column;
     justify-content:flex-end;
-    padding:34px 36px 30px;
-    background:#111114;
-    border:1px solid var(--line);
-    border-radius:var(--r);
+    padding:24px 34px 28px;
+    background:#0c0c0c;
+    border:none;
+    border-radius:0;
+    width:100%;
+    box-sizing:border-box;
   }
   #bannerCard::before{
     content:'';
     position:absolute;
     inset:0;
-    background-image:var(--banner-bg, url('assets/pool/pool_1.png'));
+    background-image:var(--banner-bg, url('assets/bg.png'));
     background-position:center right;
     background-size:cover;
     background-repeat:no-repeat;
@@ -338,7 +347,7 @@
     background-position:center right !important;
     background-size:cover !important;
     background-repeat:no-repeat !important;
-    transition:opacity 1.5s ease-in-out !important;
+    transition:opacity 1.2s ease-in-out !important;
     pointer-events:none !important;
     z-index:0 !important;
   }
@@ -346,8 +355,20 @@
     content:'';
     position:absolute;
     inset:0;
-    background:linear-gradient(to right, rgba(12,12,12,0.96) 0%, rgba(12,12,12,0.85) 42%, rgba(12,12,12,0.32) 75%, rgba(12,12,12,0.02) 100%),
-               linear-gradient(to top, rgba(12,12,12,0.65) 0%, transparent 45%);
+    background:
+      linear-gradient(180deg,
+        rgba(12, 12, 12, 0) 0%,
+        rgba(12, 12, 12, 0) 42%,
+        rgba(12, 12, 12, 0.12) 60%,
+        rgba(12, 12, 12, 0.36) 74%,
+        rgba(12, 12, 12, 0.72) 88%,
+        #0c0c0c 100%
+      ),
+      linear-gradient(90deg,
+        rgba(12, 12, 12, 0.70) 0%,
+        rgba(12, 12, 12, 0.32) 26%,
+        transparent 55%
+      );
     pointer-events:none;
     z-index:1;
   }
@@ -408,6 +429,7 @@
     display:flex;
     align-items:center;
     gap:12px;
+    width:100%;
   }
   .banner-main-btn{
     min-width:145px;
@@ -535,13 +557,16 @@
 
   /* Прогресс-бар баннера — виден ТОЛЬКО при установке/обновлении */
   .banner-progress{
-    margin-top:18px;
+    margin:0 0 0 8px;
+    flex:1;
+    min-width:0;
     max-width:520px;
-    width:100%;
     display:none;
   }
   .banner-progress.show{
-    display:block;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
   }
   .banner-progress-row{
     display:flex;
@@ -602,7 +627,7 @@
   }
   .changelog-list-wrap{
     position:relative;
-    height:80px;
+    height:160px;
     overflow:hidden;
   }
   .changelog-list-wrap::after{
@@ -666,6 +691,148 @@
   }
   .changelog-more-link:hover{
     color:var(--text);
+  }
+
+  /* Двухколоночный макет под баннером: ЧТО НОВОГО + МОДЫ */
+    /* Карточки под баннером: ЧТО НОВОГО + SHOWCASE */
+  .home-bottom-section{
+    margin-top: 10px;
+    padding: 0 34px 0 34px;
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+  }
+  .home-grid{
+    display: flex;
+    gap: 16px;
+    align-items: stretch;
+    width: 100%;
+    box-sizing: border-box;
+    flex: 1;
+    min-height: 0;
+  }
+  .home-grid .changelog-card{
+    margin-top: 0 !important;
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .showcase-card{
+    margin: 0 !important;
+    position: relative;
+    overflow: hidden;
+    height: 100% !important;
+    aspect-ratio: 16 / 9 !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    background: #0e0e0e;
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    box-sizing: border-box;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 12px 16px 10px;
+    transition: border-color .25s ease, box-shadow .25s ease;
+    user-select: none;
+  }
+  .showcase-card:hover{
+    border-color: var(--line-strong);
+  }
+  .showcase-card::before{
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at center,
+      transparent 30%,
+      rgba(14, 14, 14, 0.62) 100%
+    );
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 1s ease;
+  }
+  .showcase-card:hover::before{
+    opacity: 1;
+  }
+  .showcase-bg-layer{
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-position: center !important;
+    background-size: 100% 100% !important;
+    background-repeat: no-repeat !important;
+    transition: opacity 1.2s ease-in-out, transform .6s ease !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+  }
+  .showcase-card::after{
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom,
+      transparent 0%,
+      transparent 52%,
+      rgba(14, 14, 14, 0.35) 72%,
+      rgba(14, 14, 14, 0.82) 90%,
+      rgba(14, 14, 14, 0.95) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+  }
+  .showcase-bottom{
+    position: relative;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .showcase-title{
+    font-family: 'Minecraft Rus', monospace;
+    font-size: 12.5px;
+    letter-spacing: 0.6px;
+    color: #fff;
+    line-height: 1.25;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95);
+    font-weight: normal;
+  }
+  .showcase-desc{
+    display: none;
+  }
+  .showcase-dots{
+    position: relative;
+    z-index: 5;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 5px;
+    width: 100% !important;
+    height: 6px !important;
+    box-sizing: border-box;
+    margin-top: 8px;
+  }
+  .showcase-dot{
+    display: block !important;
+    height: 4px !important;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.35) !important;
+    transition: background .25s ease !important;
+  }
+  .showcase-dot.active{
+    background: #ffffff !important;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.4) !important;
   }
   .changelog-latest{
     font-size:13px;
@@ -874,60 +1041,80 @@
   .gallery-count{
     font-size:13px;color:var(--muted);letter-spacing:1px;
   }
+  #viewGallery .inner{
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 34px 50px 34px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
   .gallery-grid{
-    display:grid;
-    grid-template-columns:repeat(2, 1fr);
-    gap:18px;
-    padding-bottom:40px;
-    margin-bottom:20px;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 14px !important;
+    padding-bottom: 40px !important;
+    margin-bottom: 20px !important;
   }
   .screenshot-card{
-    background:var(--card);
-    border:1px solid var(--line);
-    border-radius:var(--r);
-    overflow:hidden;
-    cursor:pointer;
-    transition:border-color .15s,transform .15s,background .15s;
-    display:flex;flex-direction:column;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--r);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color .15s, transform .15s, background .15s;
+    display: flex;
+    flex-direction: column;
   }
   .screenshot-card:hover{
-    background:var(--card-hover);
-    border-color:var(--line-strong);
-  }
-  .screenshot-thumb{
-    width:100%;
-    aspect-ratio:16 / 9;
-    background:#08080a;
-    position:relative;
-    overflow:hidden;
-  }
-  .screenshot-thumb img{
-    width:100%;height:100%;
-    object-fit:cover;
-    display:block;
-    transition:transform .2s ease,opacity .2s ease;
-  }
-  .screenshot-card:hover .screenshot-thumb img{
-    opacity:.92;
+    background: var(--card-hover);
+    border-color: var(--line-strong);
   }
   .screenshot-meta{
-    padding:11px 15px;
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-    font-size:12px;
-    border-top:1px solid var(--line);
-    background:inherit;
-    transition:background .15s;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 11px;
+    border-bottom: 1px solid var(--line);
+    border-top: none;
+    background: inherit;
+    transition: background .15s;
   }
   .screenshot-name{
-    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-    color:var(--text);letter-spacing:.5px;
-    transition:color .15s;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text);
+    letter-spacing: .4px;
+    font-size: 11px;
+    transition: color .15s;
   }
   .screenshot-card:hover .screenshot-name{
-    color:var(--text-hover);
+    color: var(--text-hover);
   }
   .screenshot-date{
-    color:var(--dim);white-space:nowrap;font-size:11px;
+    color: var(--dim);
+    white-space: nowrap;
+    font-size: 10px;
+  }
+  .screenshot-thumb{
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #08080a;
+    position: relative;
+    overflow: hidden;
+  }
+  .screenshot-thumb img{
+    width: 100%;
+    height: 100%;
+    object-fit: fill !important;
+    display: block;
+    transition: transform .2s ease;
+  }
+  .screenshot-card:hover .screenshot-thumb img{
+    opacity: 1 !important;
+    transform: scale(1.02);
   }
 
   /* empty state */
@@ -1638,13 +1825,13 @@
     color:var(--dim);
   }
   .modal-footer{
-    height: 60px;
-    flex: 0 0 60px;
+    height: 64px;
+    flex: 0 0 64px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0px 24px 24px 24px;
-    margin-top: 24px;
+    padding: 0 24px;
+    box-sizing: border-box;
     background: linear-gradient(to top, var(--card, #0c0c0c) 75%, transparent 100%);
   }
 
@@ -1837,7 +2024,7 @@
   .news-shot-plate img{
     width:100%;
     height:100%;
-    object-fit:cover;
+    object-fit:fill !important;
     display:block;
     aspect-ratio:16 / 9;
   }
@@ -1903,6 +2090,42 @@
   .rank-1{background:#f0f0f2;color:#0b0b0d;font-weight:bold}
   .rank-2{background:rgba(255,255,255,.2);color:#fff}
   .rank-3{background:rgba(255,255,255,.1);color:#fff}
+
+  /* Нижний фейд контента */
+  .view-bottom-fade{
+    position:absolute;
+    bottom:0;
+    left:12px;
+    right:14px;
+    height:84px;
+    background:linear-gradient(to top,
+      #0e0e0e 0%,
+      rgba(14, 14, 14, 0.95) 25%,
+      rgba(14, 14, 14, 0.60) 60%,
+      rgba(14, 14, 14, 0.15) 85%,
+      transparent 100%
+    );
+    -webkit-mask-image:linear-gradient(to right,
+      transparent 0px,
+      black 22px,
+      black calc(100% - 22px),
+      transparent 100%
+    );
+    mask-image:linear-gradient(to right,
+      transparent 0px,
+      black 22px,
+      black calc(100% - 22px),
+      transparent 100%
+    );
+    pointer-events:none;
+    z-index:90;
+    opacity:0;
+    transition:opacity 0.25s ease;
+  }
+  body.has-bottom-fade .view-bottom-fade{
+    opacity:1;
+  }
+
 </style>
 </head>
 <body>
@@ -1974,10 +2197,10 @@
 
           <h1 class="banner-title">CIVILIZATION</h1>
 
-          <div class="banner-sub">Minecraft 1.21.8 · Fabric · 18 модов</div>
+          <div class="banner-sub">Minecraft 1.21.8 · Fabric · 19 модов</div>
 
           <div class="banner-actions">
-            <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">Установить</button>
+            <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">ИГРАТЬ</button>
             <div class="more-wrap" id="moreWrap">
               <button class="btn line more-btn" id="btnMore" onclick="toggleMoreMenu(event)" aria-label="Настройки" title="Настройки">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1996,80 +2219,89 @@
                 </button>
               </div>
             </div>
-          </div>
 
-          <!-- ПРОГРЕСС-БАР: виден ТОЛЬКО во время установки или обновления -->
-          <div class="banner-progress" id="bannerProgress">
-            <div class="banner-progress-row">
-              <span class="meta" id="statusMeta">Подготовка к установке...</span>
-              <span class="pct" id="barPct">0%</span>
-            </div>
-            <div class="bar">
-              <i id="barFill" style="width:0%"></i>
+            <!-- ПРОГРЕСС-БАР: справа от шестеренки по красной линии пользователя -->
+            <div class="banner-progress" id="bannerProgress">
+              <div class="banner-progress-row">
+                <span class="meta" id="statusMeta">Подготовка к установке...</span>
+                <span class="pct" id="barPct">0%</span>
+              </div>
+              <div class="bar">
+                <i id="barFill" style="width:0%"></i>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- БЛОК «ЧТО НОВОГО» (НА ВСЮ ШИРИНУ) -->
-        <div class="card changelog-card">
-          <div class="changelog-head">
-            <h3>ЧТО НОВОГО</h3>
-          </div>
-          <div class="changelog-list-wrap">
-            <div class="changelog-list" id="changelogList">
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div class="cl-text"><strong>1. Главное меню (M)</strong>: быстрый доступ ко всем разделам без команд (Банк, Рынок, Хранилище, Трейды)</div>
+        <div class="home-bottom-section">
+          <!-- НИЖНЯЯ СЕКЦИЯ: ЧТО НОВОГО + SHOWCASE КАРТОЧКА -->
+          <div class="home-grid">
+            <div class="card changelog-card">
+              <div class="changelog-head">
+                <h3>ЧТО НОВОГО</h3>
               </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div class="cl-text"><strong>2. Безопасные Трейды</strong>: двусторонний обмен предметами с защитой от скама и сбросом подтверждения</div>
+              <div class="changelog-list-wrap">
+                <div class="changelog-list" id="changelogList">
+                  <div class="changelog-item">
+                    <span class="bullet">—</span>
+                    <div class="cl-text"><strong>1. Главное меню (M)</strong>: быстрый доступ ко всем разделам без команд</div>
+                  </div>
+                  <div class="changelog-item">
+                    <span class="bullet">—</span>
+                    <div class="cl-text"><strong>2. Безопасные Трейды</strong>: двусторонний обмен предметами с защитой от скама</div>
+                  </div>
+                  <div class="changelog-item">
+                    <span class="bullet">—</span>
+                    <div class="cl-text"><strong>3. Обновленная экономика</strong>: конвертация в Банке, ротация Рынка каждые 12ч</div>
+                  </div>
+                  <div class="changelog-item">
+                    <span class="bullet">—</span>
+                    <div class="cl-text"><strong>4. Продажа предметов</strong>: выставление товаров на общий рынок игрокам</div>
+                  </div>
+                  <div class="changelog-item">
+                    <span class="bullet">—</span>
+                    <div class="cl-text"><strong>5. NPC и «Восьмёрка»</strong>: 8 секретных NPC по миру, уникальные события</div>
+                  </div>
+                  <div class="changelog-item">
+                    <span class="bullet">—</span>
+                    <div class="cl-text"><strong>6. Таверна в Аду</strong>: Бармен с напитками, сеть защищённых рельсов</div>
+                  </div>
+                  <div class="changelog-item">
+                    <span class="bullet">—</span>
+                    <div class="cl-text"><strong>7. Стол Моряка</strong>: улучшение и отделка лодок, водная физика и паруса</div>
+                  </div>
+                  <div class="changelog-item">
+                    <span class="bullet">—</span>
+                    <div class="cl-text"><strong>8. Союзы</strong>: альянсы игроков с полным отключением урона (без тимкилла)</div>
+                  </div>
+                </div>
               </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div class="cl-text"><strong>3. Обновленная экономика</strong>: конвертация в Банке, ротация Рынка каждые 12ч и Хранилище до 162 слотов</div>
+              <div class="changelog-latest" id="changelogLatest" style="display:none">
+                Вы на последней версии v1.21.8 · проверено сегодня
               </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div class="cl-text"><strong>4. Продажа предметов</strong>: выставление товаров на общий рынок игрокам и раздел «Мои лоты»</div>
-              </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div class="cl-text"><strong>5. NPC и «Восьмёрка»</strong>: 8 секретных NPC по миру, уникальные события и коллекция артефактов</div>
-              </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div class="cl-text"><strong>6. Таверна в Аду</strong>: Бармен с напитками и эффектами, сеть защищённых рельсов и вагонетки за $10</div>
-              </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div class="cl-text"><strong>7. Союзы</strong>: система альянсов между игроками с полным отключением урона (без тимкилла)</div>
-              </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div class="cl-text"><strong>8. Стол Моряка</strong>: улучшение и отделка лодок, новая водная физика и паруса</div>
-              </div>
-              <div class="changelog-item">
-                <span class="bullet">—</span>
-                <div class="cl-text"><strong>9. Оптимизация</strong>: умный подбор RAM, флаги ZGC, сбалансированные моды и режим производительности</div>
+              <button class="changelog-more-link" onclick="showNews(true)">Узнать больше</button>
+            </div>
+
+            <!-- БЛОК «ГАЛЕРЕЯ» (СЛАЙДШОУ ИЗ ГАЛЕРЕИ) -->
+            <div class="card showcase-card" id="showcaseCard" onclick="showGallery()">
+              <div class="showcase-bg-layer" id="showcaseBgA" style="opacity:1;background-image:url('assets/bg.png');"></div>
+              <div class="showcase-bg-layer" id="showcaseBgB" style="opacity:0;"></div>
+
+              <div class="showcase-bottom">
+                <div class="showcase-title" id="showcaseTitle">Вечер понедельника</div>
+                <div class="showcase-desc"></div>
+                <div class="showcase-dots" id="showcaseDots">
+                  <span class="showcase-dot active"></span>
+                  <span class="showcase-dot"></span>
+                  <span class="showcase-dot"></span>
+                  <span class="showcase-dot"></span>
+                  <span class="showcase-dot"></span>
+                  <span class="showcase-dot"></span>
+                  <span class="showcase-dot"></span>
+                  <span class="showcase-dot"></span>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="changelog-latest" id="changelogLatest" style="display:none">
-            Вы на последней версии v1.21.8 · проверено сегодня
-          </div>
-          <button class="changelog-more-link" onclick="showNews(true)">Узнать больше</button>
-        </div>
-
-        <!-- СТАТУС СЕРВЕРА -->
-        <div class="server-status-bar" id="serverStatusBar">
-          <div style="display:flex;align-items:center;gap:10px;">
-            <div class="server-status-dot offline" id="serverStatusDot"></div>
-            <div class="server-status-label" id="serverStatusLabel">СЕРВЕР</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;">
-            <div class="server-status-label">ОНЛАЙН</div>
-            <div class="server-status-players" id="serverStatusPlayers">0</div>
           </div>
         </div>
 
@@ -2222,7 +2454,9 @@
           </table>
         </div>
       </div>
-    </div>
+        <!-- Нижний градиент FADE поверх скролла карточек (внутри .main) -->
+    <div class="view-bottom-fade" id="viewBottomFade"></div>
+  </div>
   </div>
 </div>
 
@@ -2392,7 +2626,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // Логирование ошибок интерфейса на бэкенд
+// Логирование ошибок интерфейса на бэкенд
   window.addEventListener('error', function(e) {
     try {
       fetch('/api/log', {
@@ -2524,18 +2758,29 @@
     }
   }
 
+  function updateMoreMenuState(){
+    const m = document.getElementById('moreMenu');
+    const btn = document.getElementById('btnMore');
+    const isOpen = m && m.classList.contains('show');
+    if(btn) btn.classList.toggle('open', !!isOpen);
+  }
+
   function toggleMoreMenu(e){
     if(e) e.stopPropagation();
     const fm = document.getElementById('folderMenu');
     if(fm) fm.classList.remove('show');
     const m = document.getElementById('moreMenu');
     if(m) m.classList.toggle('show');
+    updateMoreMenuState();
   }
 
   function toggleFolderMenu(e){
     if(e) e.stopPropagation();
     const mm = document.getElementById('moreMenu');
-    if(mm) mm.classList.remove('show');
+    if(mm) {
+      mm.classList.remove('show');
+      updateMoreMenuState();
+    }
     const m = document.getElementById('folderMenu');
     if(m) m.classList.toggle('show');
   }
@@ -2552,7 +2797,10 @@
     const wrap = document.getElementById('moreWrap');
     if(wrap && !wrap.contains(e.target)){
       const m = document.getElementById('moreMenu');
-      if(m) m.classList.remove('show');
+      if(m && m.classList.contains('show')){
+        m.classList.remove('show');
+        updateMoreMenuState();
+      }
     }
     const folderWrap = document.getElementById('folderChangeWrap');
     if(folderWrap && !folderWrap.contains(e.target)){
@@ -2561,10 +2809,55 @@
     }
   });
 
+  async function openModsFolder(e){
+    if(e) e.stopPropagation();
+    if(isBackend){
+      try {
+        const mcEl = document.getElementById('mcPath');
+        const customPath = mcEl ? mcEl.value : '';
+        await fetch('/api/open-folder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ path: customPath, subfolder: 'mods' })
+        });
+      } catch(err) {
+        console.error(err);
+      }
+    }
+  }
+
+  async function fetchAndRenderModsList(){
+    if(!isBackend) return;
+    try {
+      const res = await fetch('/api/mods');
+      if(res.ok){
+        const data = await res.json();
+        if(data && data.ok && Array.isArray(data.mods) && data.mods.length > 0){
+          const countEl = document.getElementById('modsCountBadge');
+          if(countEl) countEl.textContent = data.count + ' МОДОВ';
+          const subEl = document.querySelector('.banner-sub');
+          if(subEl) subEl.textContent = 'Minecraft 1.21.8 · Fabric · ' + data.count + ' модов';
+          const listEl = document.getElementById('modsQuickList');
+          if(listEl){
+            listEl.innerHTML = data.mods.map(function(m){
+              const raw = m.name || m.filename || '';
+              const clean = raw.split(/[-_](fabric|mc|v\d|\d\.)/i)[0] || raw;
+              const isMain = clean.toLowerCase().indexOf('playertrading') !== -1;
+              const safeClean = clean.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+              const safeTitle = (m.filename || clean).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+              return '<span class="mod-pill ' + (isMain ? 'featured' : '') + '" title="' + safeTitle + '">' + safeClean + '</span>';
+            }).join('');
+          }
+        }
+      }
+    } catch(err) {}
+  }
+
   async function openGameFolder(e){
     if(e) e.stopPropagation();
     const m = document.getElementById('moreMenu');
     if(m) m.classList.remove('show');
+    updateMoreMenuState();
     if(isBackend){
       try {
         const mcEl = document.getElementById('mcPath');
@@ -2583,6 +2876,7 @@
     if(e) e.stopPropagation();
     const m = document.getElementById('moreMenu');
     if(m) m.classList.remove('show');
+    updateMoreMenuState();
     if(!installed){
       toast('Сборка ещё не установлена');
       return;
@@ -2688,12 +2982,12 @@
       }
     }
 
-    // Кнопка настроек (шестерёнка) доступна всегда, кроме активного процесса установки/обновления
+    // Кнопка настроек (шестерёнка) всегда на месте, во время установки/обновления только блокируется
     if(moreWrap){
-      moreWrap.style.display = installing ? 'none' : 'inline-block';
+      moreWrap.style.display = 'inline-block';
     }
     if(moreBtn){
-      moreBtn.disabled = false;
+      moreBtn.disabled = installing;
     }
 
     if(installing){
@@ -2738,21 +3032,15 @@
 
   const isBackend = window.location.protocol.startsWith('http');
 
-  function setGameRunningState(running, stateText){
+  function setGameRunningState(running){
     gameRunning = running;
     const mainBtn = document.getElementById('btnMainAction');
     const playBtn = document.getElementById('playBtn');
     if(running){
       if(mainBtn){
-        if(stateText === 'ЗАПУСК' || stateText === 'ЗАПУСК...'){
-          mainBtn.textContent = 'ЗАПУСК...';
-          mainBtn.className = 'btn ghost banner-main-btn';
-          mainBtn.disabled = true;
-        } else {
-          mainBtn.textContent = 'ЗАКРЫТЬ';
-          mainBtn.className = 'btn danger banner-main-btn';
-          mainBtn.disabled = false;
-        }
+        mainBtn.textContent = 'ЗАКРЫТЬ';
+        mainBtn.className = 'btn danger banner-main-btn';
+        mainBtn.disabled = false;
       }
       if(playBtn) playBtn.disabled = true;
     } else {
@@ -2776,7 +3064,7 @@
         }
         if(data.running){
           if(!gameRunning){
-            setGameRunningState(true, 'ЗАКРЫТЬ');
+            setGameRunningState(true);
           }
         } else {
           if(gameRunning){
@@ -2789,20 +3077,17 @@
 
   let isCheckingNetwork = false;
   let hasCheckedNetworkOnce = false;
+  let lastNetworkDiagLogs = '';
+
   async function runNetworkDiagnosticsUI() {
     if(isCheckingNetwork) return;
     isCheckingNetwork = true;
     const btn = document.getElementById('btnRunNetworkDiag');
     const st = document.getElementById('networkDiagStatusText');
-    const box = document.getElementById('networkDiagLogBox');
-    const badgeDot = document.getElementById('networkStatusDot');
-    const badgeText = document.getElementById('networkStatusText');
     if (btn) { btn.disabled = true; btn.textContent = 'Проверка...'; }
-    if (st) st.textContent = 'Подключение к Radmin VPN и серверу...';
-    if (badgeText) badgeText.textContent = 'Проверка сети...';
-    if (box) {
-      box.style.display = 'block';
-      box.textContent = 'Тестирование подключения к 26.194.58.43:25565... Пожалуйста, подождите.';
+    if (st) {
+      st.innerHTML = '<span style="color:var(--dim)">Проверка связи...</span>';
+      st.title = 'Проверка связи...';
     }
 
     try {
@@ -2810,27 +3095,89 @@
       if (res.ok) {
         const d = await res.json();
         if (d.ok) {
+          if (d.logs && d.logs.length) {
+            lastNetworkDiagLogs = d.logs.join('\n');
+          }
           if (d.tcp25565Ok) {
-            if (st) st.innerHTML = '<span style="color:#4ade80">● Онлайн (ответ ' + d.tcp25565TimeMs + ' ms)</span>';
+            const txt = '● Онлайн (ответ ' + d.tcp25565TimeMs + ' ms)';
+            if (st) {
+              st.innerHTML = '<span style="color:#4ade80">' + txt + '</span>';
+              st.title = txt;
+            }
             updateServerStatus(true, d.playersOnline >= 0 ? d.playersOnline : 0);
           } else {
-            if (st) st.innerHTML = '<span style="color:#ef4444">● Недоступен (таймаут)</span>';
+            const txt = '● Недоступен (таймаут)';
+            if (st) {
+              st.innerHTML = '<span style="color:#ef4444">' + txt + '</span>';
+              st.title = txt;
+            }
             updateServerStatus(false);
           }
-          if (box && d.logs) {
-            box.textContent = d.logs.join('\n');
-          }
         } else {
-          if (st) st.textContent = 'Ошибка: ' + (d.error || 'неизвестно');
+          const err = 'Ошибка: ' + (d.error || 'неизвестно');
+          if (st) {
+            st.textContent = err;
+            st.title = err;
+          }
           updateServerStatus(false);
         }
       }
     } catch(e) {
-      if (st) st.textContent = 'Ошибка проверки: ' + e.message;
+      const err = 'Ошибка проверки: ' + e.message;
+      if (st) {
+        st.textContent = err;
+        st.title = err;
+      }
       updateServerStatus(false);
     } finally {
       isCheckingNetwork = false;
-      if (btn) { btn.disabled = false; btn.textContent = 'Проверить сеть'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Проверить'; }
+    }
+  }
+
+  async function copyNetworkDiag() {
+    let textToCopy = lastNetworkDiagLogs;
+    if (!textToCopy) {
+      const btn = document.getElementById('btnCopyNetworkDiag');
+      if (btn) btn.disabled = true;
+      try {
+        const res = await fetch('/api/network-diag');
+        if (res.ok) {
+          const d = await res.json();
+          if (d.ok && d.logs && d.logs.length) {
+            lastNetworkDiagLogs = d.logs.join('\n');
+            textToCopy = lastNetworkDiagLogs;
+            const st = document.getElementById('networkDiagStatusText');
+            if (d.tcp25565Ok) {
+              if (st) st.innerHTML = '<span style="color:#4ade80">● Онлайн (ответ ' + d.tcp25565TimeMs + ' ms)</span>';
+              updateServerStatus(true, d.playersOnline >= 0 ? d.playersOnline : 0);
+            } else {
+              if (st) st.innerHTML = '<span style="color:#ef4444">● Недоступен (таймаут)</span>';
+              updateServerStatus(false);
+            }
+          }
+        }
+      } catch(e) {}
+      if (btn) btn.disabled = false;
+    }
+    if (!textToCopy) {
+      const st = document.getElementById('networkDiagStatusText');
+      textToCopy = 'Сервер: 26.194.58.43:25565\nСтатус: ' + (st ? st.textContent.trim() : 'не проверялось');
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(textToCopy);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = textToCopy;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      toast('Диагностика скопирована в буфер!');
+    } catch(e) {
+      toast('Не удалось скопировать: ' + e.message);
     }
   }
 
@@ -2851,24 +3198,28 @@
             const pRes = await fetch('/api/progress');
             if(pRes.ok){
               const pData = await pRes.json();
-              if(!pData.active){
+              if(pData && pData.active){
+                setBar(pData.percent, pData.step || 'Фоновое обновление...');
+              } else {
                 clearInterval(timer);
+                hideBar();
                 isSilentUpdating = false;
-                if(pData.done){
+                if(pData && pData.done){
                   updateAvailable = false;
                   setStatus(true);
-                } else if(pData.error){
+                } else if(pData && pData.error){
                   // Ошибку тихого обновления нельзя проглатывать: иначе игрок
                   // видит кнопку «Обновить» и жмёт её по десять раз.
                   toast('Обновление не удалось: ' + pData.error);
                   setStatus(installed);
-                } else if(pData.cancelled){
+                } else if(pData && pData.cancelled){
                   setStatus(installed);
                 }
               }
             }
           } catch(e) {
             clearInterval(timer);
+            hideBar();
             isSilentUpdating = false;
           }
         }, 1200);
@@ -2887,6 +3238,7 @@
       if(res.ok){
         const data = await res.json();
         if(data.mcDir) updatePathDisplay(data.mcDir);
+        fetchAndRenderModsList();
         const prevUpdate = updateAvailable;
         updateAvailable = !data.installed ? false : (data.updateAvailable || false);
         setStatus(data.installed);
@@ -3126,9 +3478,9 @@
     installing = true;
     stopRequested = false;
 
-    // Состояние 2: Установка (скрываем троеточие, бейдж не меняется)
-    if(moreWrap) moreWrap.style.display = 'none';
-    if(moreBtn) moreBtn.disabled = false;
+    // Шестерёнка всегда на месте рядом с прогресс-баром
+    if(moreWrap) moreWrap.style.display = 'inline-block';
+    if(moreBtn) moreBtn.disabled = true;
     if(playBtn) playBtn.disabled = true;
 
     if(isInstall){
@@ -3243,7 +3595,7 @@
     if(!installed){ toast('Сначала установи сборку'); return; }
     if(gameRunning){ stopGame(); return; }
 
-    setGameRunningState(true, 'ЗАПУСК...');
+    setGameRunningState(true);
 
     if(isBackend){
       try {
@@ -3254,7 +3606,7 @@
         const data = await res.json();
         if(data.ok){
           toast(data.msg || 'Запуск игры...');
-          setGameRunningState(true, 'ЗАКРЫТЬ');
+          setGameRunningState(true);
           if(!gamePollTimer){
             gamePollTimer = setInterval(checkGameStatus, 2500);
           }
@@ -3270,15 +3622,11 @@
       }
     }
     toast('Запуск Civilization...');
-    setTimeout(()=>{ setGameRunningState(true, 'ЗАКРЫТЬ'); }, 1500);
+    setTimeout(()=>{ setGameRunningState(true); }, 500);
   }
 
   async function stopGame(){
-    const mainBtn = document.getElementById('btnMainAction');
-    if(mainBtn){
-      mainBtn.textContent = 'ЗАКРЫТИЕ...';
-      mainBtn.disabled = true;
-    }
+    setGameRunningState(false);
     if(isBackend){
       try {
         const res = await fetch('/api/stop-game', { method: 'POST' });
@@ -3366,12 +3714,12 @@
     function esc(s){ if(!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
     grid.innerHTML = playerScreenshots.map((item, idx) => `
       <div class="screenshot-card" onclick="openLightbox(${idx})">
-        <div class="screenshot-thumb">
-          <img src="${item.src}" alt="${esc(item.name)}">
-        </div>
         <div class="screenshot-meta">
           <span class="screenshot-name" title="${esc(item.name)}">${esc(item.name)}</span>
           <small class="screenshot-date">${esc(item.date)}</small>
+        </div>
+        <div class="screenshot-thumb">
+          <img src="${item.src}" alt="${esc(item.name)}">
         </div>
       </div>
     `).join('');
@@ -3407,6 +3755,7 @@
           lastScreenshotsSig = newSig;
           playerScreenshots = list || [];
           renderGallery();
+          if(typeof updateShowcaseFromGallery === "function") updateShowcaseFromGallery();
         }
       }
     } catch(e) {
@@ -3683,7 +4032,7 @@
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
-    out = out.replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text);">$1</strong>');
+    out = out.replace(/\*\*(.*?)\*\*/g, '<strong style="color:#ffffff;font-weight:normal;">$1</strong>');
     out = out.replace(/\*(.*?)\*/g, '<em style="color:var(--muted);">$1</em>');
     out = out.replace(/`([^`]+)`/g, '<code style="font-family:inherit;font-size:11px;background:var(--card);border:1px solid var(--line);color:var(--text);padding:1px 5px;border-radius:4px;">$1</code>');
     return out;
@@ -3810,7 +4159,7 @@
   function renderNewsCard(item, index) {
     const bannerHtml = renderNewsBanner(item.banner, item.title);
     const badgeHtml = item.badge ? `
-      <span class="news-badge" style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;color:var(--accent);background:rgba(var(--accent-rgb, 240, 240, 242), 0.08);font-weight:700;">
+      <span class="news-badge" style="display:inline-block;font-size:10px;letter-spacing:1.5px;padding:2px 8px;border-radius:4px;color:var(--accent);background:rgba(var(--accent-rgb, 240, 240, 242), 0.08);font-weight:normal;">
         ${formatNewsText(item.badge)}
       </span>` : '';
 
@@ -3821,14 +4170,14 @@
       sectionsHtml = item.sections.map(sec => {
         let secHtml = `<div style="margin-top:24px;">`;
         if (sec.title) {
-          secHtml += `<div style="font-size:15px;font-weight:700;color:var(--text);letter-spacing:1.5px;margin-bottom:8px;">${formatNewsText(sec.title)}</div>`;
+          secHtml += `<div style="font-size:15px;font-weight:normal;color:#fff;letter-spacing:1.5px;margin-bottom:8px;">${formatNewsText(sec.title)}</div>`;
         }
         if (sec.desc || sec.text) {
           secHtml += `<div style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:10px;">${formatNewsText(sec.desc || sec.text)}</div>`;
         }
         if (Array.isArray(sec.items) && sec.items.length > 0) {
           secHtml += `<div>` + sec.items.map(it => `
-            <div style="font-size:13px;color:var(--dim);padding:3px 0 3px 16px;position:relative;line-height:1.6;">
+            <div style="font-size:13px;color:var(--muted);padding:3px 0 3px 16px;position:relative;line-height:1.6;">
               <span style="position:absolute;left:0;color:var(--line);">—</span>${formatNewsText(it)}
             </div>
           `).join('') + `</div>`;
@@ -3846,14 +4195,14 @@
           secHtml += sec.subsections.map(sub => {
             let subHtml = `<div style="margin-left:8px;padding-left:14px;border-left:2px solid var(--line);margin-top:16px;margin-bottom:16px;">`;
             if (sub.title) {
-              subHtml += `<div style="font-size:14px;font-weight:700;color:var(--text);margin-bottom:6px;">${formatNewsText(sub.title)}</div>`;
+              subHtml += `<div style="font-size:14px;font-weight:normal;color:#fff;margin-bottom:6px;">${formatNewsText(sub.title)}</div>`;
             }
             if (sub.desc || sub.text) {
-              subHtml += `<div style="font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:6px;">${formatNewsText(sub.desc || sub.text)}</div>`;
+              subHtml += `<div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:6px;">${formatNewsText(sub.desc || sub.text)}</div>`;
             }
             if (Array.isArray(sub.items) && sub.items.length > 0) {
               subHtml += `<div>` + sub.items.map(it => `
-                <div style="font-size:13px;color:var(--dim);padding:2px 0 2px 14px;position:relative;line-height:1.6;">
+                <div style="font-size:13px;color:var(--muted);padding:2px 0 2px 14px;position:relative;line-height:1.6;">
                   <span style="position:absolute;left:0;color:var(--line);font-size:10px;">•</span>${formatNewsText(it)}
                 </div>
               `).join('') + `</div>`;
@@ -3877,13 +4226,13 @@
     return `
       <div class="news-card" id="newsCard_${index}">
         ${bannerHtml}
-        <div class="news-content-collapse ${isExpanded ? 'expanded' : ''}" id="${collapseId}">
+        <div class="news-content-collapse ${isExpanded ? 'expanded' : ''}" id="${collapseId}" style="${isExpanded ? 'max-height:none;' : 'max-height:220px;'}">
           <div style="padding:22px 24px 24px;">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;font-size:12px;color:var(--dim);letter-spacing:.5px;">
               ${badgeHtml}
               ${dateHtml}
             </div>
-            <div class="news-card-title" style="font-size:18px;letter-spacing:1.5px;color:var(--text);margin-bottom:12px;font-weight:700;">
+            <div class="news-card-title" style="font-size:18px;letter-spacing:1.5px;color:#fff;margin-bottom:12px;font-weight:normal;">
               ${formatNewsText(item.title || '')}
             </div>
             ${item.subtitle ? `
@@ -3984,11 +4333,50 @@
     const wrap = document.getElementById(`newsCollapseWrap_${index}`);
     const btn = document.getElementById(`btnToggleNews_${index}`);
     if (!wrap || !btn) return;
-    const isExpanded = wrap.classList.toggle('expanded');
-    btn.textContent = isExpanded ? 'Свернуть' : 'Развернуть';
-    if (!isExpanded) {
+
+    const isCurrentlyExpanded = wrap.classList.contains('expanded');
+
+    if (!isCurrentlyExpanded) {
+      // ПЛАВНОЕ РАЗВОРАЧИВАНИЕ (БЕЗ ФЕЙД-АУТА, ТОЛЬКО МЯГКИЙ ФЕЙД-ИН):
+      const fullHeight = wrap.scrollHeight;
+      const delta = Math.max(0, fullHeight - 220);
+
+      // Короткие новости (~200-400px): ~0.38s (быстро и мягко, как было).
+      // Длинные полотна (>2000px): плавно до ~0.68s - 0.72s.
+      const duration = Math.min(0.72, Math.max(0.38, 0.36 + (delta / 3200) * 0.36)).toFixed(2);
+
+      wrap.style.transition = 'none';
+      wrap.style.maxHeight = '220px';
+      void wrap.offsetHeight;
+
+      wrap.classList.add('expanded');
+      btn.textContent = 'Свернуть';
+
+      // Сбалансированная плавная кривая без резкого рывка на старте
+      requestAnimationFrame(() => {
+        wrap.style.transition = `max-height ${duration}s cubic-bezier(0.3, 0.15, 0.25, 1)`;
+        wrap.style.maxHeight = fullHeight + 'px';
+      });
+
+      const onEnd = (e) => {
+        if (e && (e.target !== wrap || e.propertyName !== 'max-height')) return;
+        wrap.removeEventListener('transitionend', onEnd);
+        if (wrap.classList.contains('expanded')) {
+          wrap.style.maxHeight = 'none';
+        }
+      };
+      wrap.addEventListener('transitionend', onEnd);
+    } else {
+      // ЗАКРЫТИЕ БЕЗ АНИМАЦИИ (мгновенное сворачивание):
+      wrap.style.transition = 'none';
+      wrap.style.maxHeight = '220px';
+      wrap.classList.remove('expanded');
+      btn.textContent = 'Развернуть';
+
       const card = document.getElementById(`newsCard_${index}`);
-      if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (card) {
+        card.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      }
     }
   }
 
@@ -4184,8 +4572,9 @@
     smoothAnim: true,
     gpuAccel: true,
     autoUpdate: true,
-    performanceMode: false
-  };
+    performanceMode: false,
+    };
+
 
   let launcherSettings = Object.assign({}, defaultLauncherSettings);
 
@@ -4347,11 +4736,13 @@
   function applyLauncherSettings(settings, syncUI) {
     if (!settings) settings = launcherSettings;
 
-    // 1. Акцентный цвет
+        // 1. Акцентный цвет
     const accent = settings.accentColor || '#f0f0f2';
     document.documentElement.style.setProperty('--accent', accent);
     document.documentElement.style.setProperty('--accent-rgb', hexToRgb(accent));
     document.documentElement.style.setProperty('--accent-text', getContrastColor(accent));
+
+    
 
     // 2. Фон баннера (#bannerCard / пул картинок)
     const preset = settings.bgPreset || 'default';
@@ -4447,6 +4838,8 @@
     }
     applyLauncherSettings(launcherSettings, true);
   }
+
+  
 
   function saveLauncherSettingsToStorage() {
     try {
@@ -4690,7 +5083,9 @@
     }
   }
 
-  function openSettingsModal() {
+  function openSettingsModal(e) {
+    const sideBtn = document.getElementById('btnSideSettings');
+    if (sideBtn) sideBtn.classList.add('open');
     syncSettingsUI(launcherSettings);
     loadLogInfo();
     const modalBtn = document.getElementById('btnModalUpdateLauncher');
@@ -4708,6 +5103,8 @@
   }
 
   function closeSettingsModal() {
+    const sideBtn = document.getElementById('btnSideSettings');
+    if (sideBtn) sideBtn.classList.remove('open');
     const m = document.getElementById('settingsModal');
     if (m) m.classList.remove('show');
   }
@@ -4722,6 +5119,7 @@
     if (e) e.stopPropagation();
     const m = document.getElementById('moreMenu');
     if (m) m.classList.remove('show');
+    updateMoreMenuState();
     openSettingsModal();
   }
 
@@ -5616,7 +6014,11 @@
   function showSkin() {
     currentView = 'skin';
     hideAllViews();
-    document.getElementById('viewSkin').style.display = 'flex';
+    const el = document.getElementById('viewSkin');
+    if (el) {
+      el.classList.remove('hidden-view');
+      el.style.setProperty('display', 'flex', 'important');
+    }
     document.getElementById('btnSkin').classList.add('active');
     document.getElementById('pageTitle').textContent = 'СКИН';
     resetSkinRotation();
@@ -6004,9 +6406,13 @@
 
   let currentView = 'main';
   function hideAllViews(){
+    document.body.classList.remove('has-bottom-fade');
     ['viewMain', 'viewNews', 'viewSkin', 'viewGallery', 'viewRating'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
+      if (el) {
+        el.style.setProperty('display', 'none', 'important');
+        el.classList.add('hidden-view');
+      }
     });
     ['btnMain', 'btnNews', 'btnSkin', 'btnGallery', 'btnRating'].forEach(id => {
       const el = document.getElementById(id);
@@ -6018,7 +6424,11 @@
   function showMain(){
     currentView = 'main';
     hideAllViews();
-    document.getElementById('viewMain').style.display = 'flex';
+    const el = document.getElementById('viewMain');
+    if (el) {
+      el.classList.remove('hidden-view');
+      el.style.setProperty('display', 'flex', 'important');
+    }
     document.getElementById('btnMain').classList.add('active');
     document.getElementById('pageTitle').textContent = 'ГЛАВНАЯ';
     if (typeof updateBannerSlideshowState === 'function') updateBannerSlideshowState();
@@ -6027,7 +6437,12 @@
   function showNews(autoExpand){
     currentView = 'news';
     hideAllViews();
-    document.getElementById('viewNews').style.display = 'flex';
+    document.body.classList.add('has-bottom-fade');
+    const el = document.getElementById('viewNews');
+    if (el) {
+      el.classList.remove('hidden-view');
+      el.style.setProperty('display', 'flex', 'important');
+    }
     document.getElementById('btnNews').classList.add('active');
     document.getElementById('pageTitle').textContent = 'ОБНОВЛЕНИЯ';
     if (!currentNewsData || currentNewsData.length === 0) {
@@ -6036,10 +6451,8 @@
     if (autoExpand === true) {
       setTimeout(() => {
         const wrap = document.getElementById('newsCollapseWrap_0');
-        const btn = document.getElementById('btnToggleNews_0');
         if (wrap && !wrap.classList.contains('expanded')) {
-          wrap.classList.add('expanded');
-          if (btn) btn.textContent = 'Свернуть';
+          toggleNewsCardIndex(0);
         }
       }, 50);
     }
@@ -6048,7 +6461,12 @@
   function showGallery(){
     currentView = 'gallery';
     hideAllViews();
-    document.getElementById('viewGallery').style.display = 'flex';
+    document.body.classList.add('has-bottom-fade');
+    const el = document.getElementById('viewGallery');
+    if (el) {
+      el.classList.remove('hidden-view');
+      el.style.setProperty('display', 'flex', 'important');
+    }
     document.getElementById('btnGallery').classList.add('active');
     document.getElementById('pageTitle').textContent = 'ГАЛЕРЕЯ';
     renderGallery();
@@ -6058,7 +6476,11 @@
   function showRating(){
     currentView = 'rating';
     hideAllViews();
-    document.getElementById('viewRating').style.display = 'flex';
+    const el = document.getElementById('viewRating');
+    if (el) {
+      el.classList.remove('hidden-view');
+      el.style.setProperty('display', 'flex', 'important');
+    }
     document.getElementById('btnRating').classList.add('active');
     document.getElementById('pageTitle').textContent = 'РЕЙТИНГ';
   }
@@ -6081,13 +6503,16 @@
   function updateServerStatus(online, players) {
     const dot = document.getElementById('serverStatusDot');
     const pls = document.getElementById('serverStatusPlayers');
+    const bar = document.getElementById('serverStatusBar');
     if (!dot) return;
     if (online) {
       dot.className = 'server-status-dot online';
       if (pls) pls.textContent = players !== undefined ? players : '0';
+      if (bar) bar.title = 'Сервер онлайн' + (players !== undefined ? ' (' + players + ' игроков)' : '');
     } else {
       dot.className = 'server-status-dot offline';
       if (pls) pls.textContent = '0';
+      if (bar) bar.title = 'Сервер недоступен';
     }
   }
 
@@ -6116,6 +6541,139 @@
   // Real-time news updates: periodic check every 60s and on window focus
   setInterval(loadAndRenderNews, 60000);
   window.addEventListener('focus', loadAndRenderNews);
+
+  // ==========================================
+  // СЛАЙДШОУ: ПОДБОРКА НА СЕГОДНЯ (Скриншоты из галереи)
+  // ==========================================
+  const FALLBACK_SHOWCASE_POOL = [
+    'assets/pool/pool_1.png',
+    'assets/pool/pool_2.png',
+    'assets/pool/pool_4.png',
+    'assets/pool/pool_5.png',
+    'assets/pool/pool_6.png',
+    'assets/pool/pool_7.png',
+    'assets/pool/pool_8.png',
+    'assets/pool/pool_9.png'
+  ];
+
+  let showcaseIdx = 0;
+  let showcaseActiveLayer = 'A';
+  let showcaseTimer = null;
+
+  function getShowcaseList(){
+    let list = [];
+    if (typeof playerScreenshots !== 'undefined' && Array.isArray(playerScreenshots) && playerScreenshots.length > 0) {
+      list = playerScreenshots.map(s => (typeof s === 'string' ? s : (s.src || ''))).filter(Boolean);
+    }
+    if (!list || list.length === 0) {
+      if (typeof BANNER_POOL !== 'undefined' && Array.isArray(BANNER_POOL) && BANNER_POOL.length > 0) {
+        list = BANNER_POOL;
+      } else {
+        list = FALLBACK_SHOWCASE_POOL;
+      }
+    }
+    // Ограничиваем показ до 8 самых свежих кадров, чтобы плашки аккуратно растягивались по ширине
+    return list.slice(0, 8);
+  }
+
+  function renderShowcaseDots(list){
+    const dotsWrap = document.getElementById('showcaseDots');
+    if(!dotsWrap || !list || list.length === 0) return;
+    dotsWrap.innerHTML = list.map((_, i) =>
+      `<span class="showcase-dot ${i === (showcaseIdx % list.length) ? 'active' : ''}"></span>`
+    ).join('');
+  }
+
+  function advanceShowcaseSlide(){
+    const list = getShowcaseList();
+    if(!list || list.length === 0) return;
+
+    showcaseIdx = (showcaseIdx + 1) % list.length;
+    const url = list[showcaseIdx];
+    const layerA = document.getElementById('showcaseBgA');
+    const layerB = document.getElementById('showcaseBgB');
+
+    if(!layerA || !layerB) return;
+
+    const nextLayer = showcaseActiveLayer === 'A' ? layerB : layerA;
+    const currLayer = showcaseActiveLayer === 'A' ? layerA : layerB;
+
+    nextLayer.style.backgroundImage = `url('${url}')`;
+    nextLayer.style.opacity = '1';
+    currLayer.style.opacity = '0';
+    showcaseActiveLayer = showcaseActiveLayer === 'A' ? 'B' : 'A';
+
+    const dots = document.querySelectorAll('.showcase-dot');
+    if(dots.length !== list.length){
+      renderShowcaseDots(list);
+    } else {
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === showcaseIdx);
+      });
+    }
+  }
+
+  function updateShowcaseFromGallery(){
+    updateShowcaseTitle();
+    const list = getShowcaseList();
+    renderShowcaseDots(list);
+    if(list.length > 0){
+      if(showcaseIdx >= list.length) showcaseIdx = 0;
+      const layerA = document.getElementById('showcaseBgA');
+      if(layerA){
+        layerA.style.backgroundImage = `url('${list[showcaseIdx]}')`;
+        layerA.style.opacity = '1';
+      }
+    }
+  }
+
+  function startShowcaseSlideshow(){
+    if(showcaseTimer) clearInterval(showcaseTimer);
+    updateShowcaseTitle();
+    updateShowcaseFromGallery();
+    showcaseTimer = setInterval(advanceShowcaseSlide, 4500);
+  }
+
+  // Динамический заголовок: реальное время суток и день недели без кринжа
+  function updateShowcaseTitle(){
+    const daysGenitive = [
+      'воскресенья',
+      'понедельника',
+      'вторника',
+      'среды',
+      'четверга',
+      'пятницы',
+      'субботы'
+    ];
+
+    const now = new Date();
+    const hour = now.getHours();
+    let timeOfDay = 'День';
+    if (hour >= 5 && hour < 12) {
+      timeOfDay = 'Утро';
+    } else if (hour >= 12 && hour < 17) {
+      timeOfDay = 'День';
+    } else if (hour >= 17 && hour < 23) {
+      timeOfDay = 'Вечер';
+    } else {
+      timeOfDay = 'Ночь';
+    }
+
+    const dayName = daysGenitive[now.getDay()] || 'дня';
+    const el = document.getElementById('showcaseTitle');
+    if (el) {
+      el.textContent = `${timeOfDay} ${dayName}`;
+    }
+  }
+
+  if(document.readyState !== 'loading'){
+    startShowcaseSlideshow();
+  } else {
+    window.addEventListener('DOMContentLoaded', startShowcaseSlideshow);
+  }
+  updateShowcaseTitle();
+
+  // Нативный аппаратный скроллинг Chromium без перехвата колесика JS-циклами (без фризов и мерцаний)
 </script>
 </body>
 </html>
