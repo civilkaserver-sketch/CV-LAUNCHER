@@ -1133,11 +1133,27 @@
     height: 100%;
     object-fit: fill !important;
     display: block;
-    transition: transform .2s ease;
   }
   .screenshot-card:hover .screenshot-thumb img{
     opacity: 1 !important;
-    transform: scale(1.02);
+  }
+  .screenshot-context-menu{
+    position: fixed;
+    background: var(--card);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r);
+    padding: 4px;
+    display: none;
+    flex-direction: column;
+    gap: 2px;
+    z-index: 10000;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    min-width: 175px;
+    user-select: none;
+  }
+  .screenshot-context-menu.show{
+    display: flex;
+    animation: menuFadeSlideIn 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
 
   /* empty state */
@@ -2658,6 +2674,18 @@
   </div>
 </div>
 
+<!-- Контекстное меню скриншота -->
+<div class="screenshot-context-menu" id="screenshotContextMenu" onclick="event.stopPropagation()">
+  <button class="more-item" onclick="contextActionReveal(event)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+    Показать в папке
+  </button>
+  <button class="more-item danger" onclick="contextActionDelete(event)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+    Удалить
+  </button>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -3748,7 +3776,7 @@
 
     function esc(s){ if(!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
     grid.innerHTML = playerScreenshots.map((item, idx) => `
-      <div class="screenshot-card" onclick="openLightbox(${idx})">
+      <div class="screenshot-card" onclick="openLightbox(${idx})" oncontextmenu="openScreenshotContextMenu(event, ${idx})">
         <div class="screenshot-thumb">
           <img src="${item.src}" alt="${esc(item.name)}">
         </div>
@@ -3758,6 +3786,77 @@
         </div>
       </div>
     `).join('');
+  }
+
+  let contextScreenshotIdx = -1;
+
+  function openScreenshotContextMenu(e, idx){
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    contextScreenshotIdx = idx;
+    const menu = document.getElementById('screenshotContextMenu');
+    if (!menu) return;
+
+    menu.classList.add('show');
+    const menuWidth = 185;
+    const menuHeight = 84;
+    let posX = e.clientX;
+    let posY = e.clientY;
+    if (posX + menuWidth > window.innerWidth - 10) {
+      posX = window.innerWidth - menuWidth - 10;
+    }
+    if (posY + menuHeight > window.innerHeight - 10) {
+      posY = window.innerHeight - menuHeight - 10;
+    }
+    menu.style.left = Math.max(10, posX) + 'px';
+    menu.style.top = Math.max(10, posY) + 'px';
+  }
+
+  function closeScreenshotContextMenu(){
+    const menu = document.getElementById('screenshotContextMenu');
+    if (menu) menu.classList.remove('show');
+    contextScreenshotIdx = -1;
+  }
+
+  async function contextActionReveal(e){
+    if (e) e.stopPropagation();
+    const idx = contextScreenshotIdx;
+    closeScreenshotContextMenu();
+    if (idx < 0 || idx >= playerScreenshots.length) return;
+    const item = playerScreenshots[idx];
+    if (isBackend && item && item.name) {
+      try {
+        await fetch('/api/open-screenshots', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({ name: item.name })
+        });
+      } catch(e) {}
+    } else {
+      openScreenshotsFolder();
+    }
+  }
+
+  async function contextActionDelete(e){
+    if (e) e.stopPropagation();
+    const idx = contextScreenshotIdx;
+    closeScreenshotContextMenu();
+    if (idx < 0 || idx >= playerScreenshots.length) return;
+    const item = playerScreenshots[idx];
+    playerScreenshots.splice(idx, 1);
+    toast('Скриншот удален');
+    renderGallery();
+    if (isBackend && item && item.name) {
+      try {
+        await fetch('/api/delete-screenshot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json; charset=utf-8' },
+          body: JSON.stringify({ name: item.name })
+        });
+      } catch(e) {}
+    }
   }
 
   function toggleEmptyStateDemo(){
@@ -4582,6 +4681,7 @@
   }
 
   window.addEventListener('keydown', (e)=>{
+    closeScreenshotContextMenu();
     const sm = document.getElementById('settingsModal');
     if (sm && sm.classList.contains('show') && e.key === 'Escape') {
       closeSettingsModal();
@@ -4593,6 +4693,18 @@
     if (lightboxMode === 'gallery') {
       if (e.key === 'ArrowLeft') prevScreenshot();
       if (e.key === 'ArrowRight') nextScreenshot();
+    }
+  });
+
+  window.addEventListener('click', (e)=>{
+    if (!e.target.closest('#screenshotContextMenu')) {
+      closeScreenshotContextMenu();
+    }
+  });
+
+  window.addEventListener('contextmenu', (e)=>{
+    if (!e.target.closest('.screenshot-card')) {
+      closeScreenshotContextMenu();
     }
   });
 

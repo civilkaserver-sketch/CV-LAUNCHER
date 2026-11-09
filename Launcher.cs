@@ -4717,6 +4717,60 @@ namespace CivilizationLauncher
 
             {
 
+                string body = ReadBody(ctx);
+
+                string name = null;
+
+                if (!string.IsNullOrEmpty(body))
+
+                {
+
+                    try
+
+                    {
+
+                        var data = jss.Deserialize<Dictionary<string, object>>(body);
+
+                        if (data != null && data.ContainsKey("name")) name = data["name"].ToString();
+
+                    }
+
+                    catch { }
+
+                }
+
+                if (string.IsNullOrEmpty(name))
+
+                {
+
+                    name = ctx.Request.QueryString["name"];
+
+                }
+
+
+
+                if (!string.IsNullOrEmpty(name))
+
+                {
+
+                    string target = FindScreenshotByName(name);
+
+                    if (target != null && File.Exists(target))
+
+                    {
+
+                        OpenPathInExplorer(target, true);
+
+                        SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "path", target } });
+
+                        return;
+
+                    }
+
+                }
+
+
+
                 string mcDir = GetActiveMcDir();
 
                 string sDir = null;
@@ -7355,7 +7409,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "e6a5755c0ba596101585f810f50e50a513495762";
+        private static string CurrentLauncherSha = "8679802147d07e7672288b36bbed088681d072ee";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
