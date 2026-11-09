@@ -315,14 +315,14 @@
     position:relative;
     overflow:hidden;
     margin-bottom:0;
-    height:270px;
-    min-height:270px;
-    flex:0 0 270px;
+    height:362px;
+    min-height:362px;
+    flex:0 0 362px;
     display:flex;
     flex-direction:column;
     justify-content:flex-end;
     padding:24px 34px 28px;
-    background:#0c0c0c;
+    background:#0e0e0e;
     border:none;
     border-radius:0;
     width:100%;
@@ -357,16 +357,16 @@
     inset:0;
     background:
       linear-gradient(180deg,
-        rgba(12, 12, 12, 0) 0%,
-        rgba(12, 12, 12, 0) 42%,
-        rgba(12, 12, 12, 0.12) 60%,
-        rgba(12, 12, 12, 0.36) 74%,
-        rgba(12, 12, 12, 0.72) 88%,
-        #0c0c0c 100%
+        rgba(14, 14, 14, 0) 0%,
+        rgba(14, 14, 14, 0) 42%,
+        rgba(14, 14, 14, 0.12) 60%,
+        rgba(14, 14, 14, 0.36) 74%,
+        rgba(14, 14, 14, 0.72) 88%,
+        #0e0e0e 100%
       ),
       linear-gradient(90deg,
-        rgba(12, 12, 12, 0.70) 0%,
-        rgba(12, 12, 12, 0.32) 26%,
+        rgba(14, 14, 14, 0.70) 0%,
+        rgba(14, 14, 14, 0.32) 26%,
         transparent 55%
       );
     pointer-events:none;
@@ -627,8 +627,13 @@
   }
   .changelog-list-wrap{
     position:relative;
-    height:160px;
-    overflow:hidden;
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    scrollbar-width:none;
+  }
+  .changelog-list-wrap::-webkit-scrollbar{
+    display:none;
   }
   .changelog-list-wrap::after{
     content:'';
@@ -637,7 +642,7 @@
     right:0;
     bottom:0;
     height:36px;
-    background:linear-gradient(to bottom, rgba(12,12,12,0) 0%, var(--card) 100%);
+    background:linear-gradient(to bottom, rgba(14,14,14,0) 0%, var(--card) 100%);
     pointer-events:none;
     z-index:2;
   }
@@ -649,25 +654,24 @@
   .changelog-item{
     font-size:13px;
     color:var(--muted);
-    line-height:1.5;
+    line-height:1.45;
     display:flex;
-    align-items:center;
+    align-items:flex-start;
     gap:8px;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
     min-width:0;
   }
   .changelog-item .bullet{
     color:var(--dim);
     user-select:none;
     flex-shrink:0;
+    margin-top:1px;
   }
   .changelog-item .cl-text{
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
+    white-space:normal;
+    overflow:visible;
+    text-overflow:clip;
     min-width:0;
+    word-break:normal;
   }
   .changelog-item strong{
     color:var(--text);
@@ -797,9 +801,9 @@
     width: 100%;
     box-sizing: border-box;
   }
-  .showcase-title{
+  .showcase-title {
     font-family: 'Minecraft Rus', monospace;
-    font-size: 12.5px;
+    font-size: 14.5px;
     letter-spacing: 0.6px;
     color: #fff;
     line-height: 1.25;
@@ -1076,8 +1080,8 @@
     justify-content: space-between;
     gap: 8px;
     font-size: 11px;
-    border-bottom: 1px solid var(--line);
-    border-top: none;
+    border-top: 1px solid var(--line);
+    border-bottom: none;
     background: inherit;
     transition: background .15s;
   }
@@ -3714,12 +3718,12 @@
     function esc(s){ if(!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
     grid.innerHTML = playerScreenshots.map((item, idx) => `
       <div class="screenshot-card" onclick="openLightbox(${idx})">
+        <div class="screenshot-thumb">
+          <img src="${item.src}" alt="${esc(item.name)}">
+        </div>
         <div class="screenshot-meta">
           <span class="screenshot-name" title="${esc(item.name)}">${esc(item.name)}</span>
           <small class="screenshot-date">${esc(item.date)}</small>
-        </div>
-        <div class="screenshot-thumb">
-          <img src="${item.src}" alt="${esc(item.name)}">
         </div>
       </div>
     `).join('');
