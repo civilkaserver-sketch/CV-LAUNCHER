@@ -1084,13 +1084,19 @@
     border-radius: var(--r);
     overflow: hidden;
     cursor: pointer;
-    transition: border-color .15s, transform .15s, background .15s;
+    transition: border-color .15s, background .15s;
     display: flex;
     flex-direction: column;
   }
-  .screenshot-card:hover{
+  .screenshot-card:hover,
+  .screenshot-card.is-active{
     background: var(--card-hover);
     border-color: var(--line-strong);
+  }
+  .screenshot-card.is-active{
+    border-color: rgba(255, 255, 255, 0.45) !important;
+    background: var(--card-hover) !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
   }
   .screenshot-meta{
     padding: 8px 12px;
@@ -1113,7 +1119,8 @@
     font-size: 11px;
     transition: color .15s;
   }
-  .screenshot-card:hover .screenshot-name{
+  .screenshot-card:hover .screenshot-name,
+  .screenshot-card.is-active .screenshot-name{
     color: var(--text-hover);
   }
   .screenshot-date{
@@ -1138,22 +1145,16 @@
     opacity: 1 !important;
   }
   .screenshot-context-menu{
-    position: fixed;
-    background: var(--card);
-    border: 1px solid var(--line-strong);
-    border-radius: var(--r);
-    padding: 4px;
-    display: none;
-    flex-direction: column;
-    gap: 2px;
-    z-index: 10000;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
-    min-width: 175px;
+    position: fixed !important;
+    bottom: auto !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    z-index: 10000 !important;
+    min-width: 175px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6) !important;
     user-select: none;
-  }
-  .screenshot-context-menu.show{
-    display: flex;
-    animation: menuFadeSlideIn 0.14s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    box-sizing: border-box;
   }
 
   /* empty state */
@@ -2675,7 +2676,7 @@
 </div>
 
 <!-- Контекстное меню скриншота -->
-<div class="screenshot-context-menu" id="screenshotContextMenu" onclick="event.stopPropagation()">
+<div class="more-menu screenshot-context-menu" id="screenshotContextMenu" onclick="event.stopPropagation()">
   <button class="more-item" onclick="contextActionReveal(event)">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
     Показать в папке
@@ -3776,7 +3777,7 @@
 
     function esc(s){ if(!s) return ''; return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
     grid.innerHTML = playerScreenshots.map((item, idx) => `
-      <div class="screenshot-card" onclick="openLightbox(${idx})" oncontextmenu="openScreenshotContextMenu(event, ${idx})">
+      <div class="screenshot-card${idx === contextScreenshotIdx ? ' is-active' : ''}" data-idx="${idx}" onclick="openLightbox(${idx})" oncontextmenu="openScreenshotContextMenu(event, ${idx})">
         <div class="screenshot-thumb">
           <img src="${item.src}" alt="${esc(item.name)}">
         </div>
@@ -3796,12 +3797,22 @@
       e.stopPropagation();
     }
     contextScreenshotIdx = idx;
+
+    const cards = document.querySelectorAll('.screenshot-card');
+    cards.forEach((card, i) => {
+      if (i === idx) {
+        card.classList.add('is-active');
+      } else {
+        card.classList.remove('is-active');
+      }
+    });
+
     const menu = document.getElementById('screenshotContextMenu');
     if (!menu) return;
 
     menu.classList.add('show');
-    const menuWidth = 185;
-    const menuHeight = 84;
+    const menuWidth = 175;
+    const menuHeight = 82;
     let posX = e.clientX;
     let posY = e.clientY;
     if (posX + menuWidth > window.innerWidth - 10) {
@@ -3818,6 +3829,7 @@
     const menu = document.getElementById('screenshotContextMenu');
     if (menu) menu.classList.remove('show');
     contextScreenshotIdx = -1;
+    document.querySelectorAll('.screenshot-card.is-active').forEach(card => card.classList.remove('is-active'));
   }
 
   async function contextActionReveal(e){
@@ -4628,6 +4640,7 @@
 
   // --- Лайтбокс просмотрщика скриншотов ---
   function openLightbox(idx){
+    closeScreenshotContextMenu();
     if (idx < 0 || idx >= playerScreenshots.length) return;
     lightboxMode = 'gallery';
     const lb = document.getElementById('lightbox');
