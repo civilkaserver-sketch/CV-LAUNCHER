@@ -643,7 +643,15 @@
       }
 
       return `<svg width="1636" height="464" viewBox="0 0 1636 464" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>${patternDef}
+  <defs>
+    <style>
+      @font-face {
+        font-family: \'Minecraft Rus\';
+        src: url(\'minecraft-rus.ttf\') format(\'truetype\');
+        font-weight: normal;
+        font-style: normal;
+      }
+    </style>${patternDef}
     <linearGradient id="paint0_linear" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="${color1}"/>
       <stop offset="100%" stop-color="${color2}"/>
