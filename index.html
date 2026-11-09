@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0c0c0c">
+<link rel="icon" type="image/png" href="assets/icon.png">
+<title>Civilization Launcher — Скачать</title>
+<style>
+  @font-face{
+    font-family:'Minecraft Rus';
+    src:url('assets/minecraft-rus.ttf') format('truetype');
+    font-display:swap;
+  }
+  :root{
+    --bg:#0e0e0e;
+    --card:#0c0c0c;
+    --line:#242424;
+    --text:#E2E2E2;
+    --muted:#8E8E8E;
+    --accent:#f0f0f2;
+    --accent-text:#0b0b0d;
+    --r:8px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Minecraft Rus','Courier New',monospace;
+    background:var(--bg);
+    color:var(--text);
+    font-size:16px;
+    letter-spacing:.3px;
+    line-height:1.6;
+    -webkit-font-smoothing:none;
+  }
+  a{color:var(--accent);text-decoration:none}
+  .wrap{
+    max-width:900px;
+    margin:0 auto;
+    padding:40px 20px 60px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  .logo{width:56px;height:56px;border-radius:6px;margin-bottom:10px}
+  .brand .t{font-size:24px;letter-spacing:5px;color:var(--accent);font-weight:bold}
+  .brand .sub{font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-top:4px}
+  #bannerCard{
+    position:relative;
+    overflow:hidden;
+    min-height:380px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    padding:48px 48px 40px;
+    background:#111114;
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    margin-bottom:28px;
+  }
+  #bannerCard::before{
+    content:'';
+    position:absolute;
+    inset:0;
+    background-image:var(--banner-bg, url('assets/pool/pool_1.png'));
+    background-position:center right;
+    background-size:cover;
+    background-repeat:no-repeat;
+    pointer-events:none;
+    z-index:0;
+  }
+  #bannerCard .banner-bg-layer{
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    height:100% !important;
+    background-position:center right !important;
+    background-size:cover !important;
+    background-repeat:no-repeat !important;
+    transition:opacity 1.5s ease-in-out !important;
+    pointer-events:none !important;
+    z-index:0 !important;
+  }
+  #bannerCard::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    background:linear-gradient(to right, rgba(12,12,12,0.96) 0%, rgba(12,12,12,0.85) 42%, rgba(12,12,12,0.32) 75%, rgba(12,12,12,0.02) 100%),
+               linear-gradient(to top, rgba(12,12,12,0.65) 0%, transparent 45%);
+    pointer-events:none;
+    z-index:1;
+  }
+  #bannerCard > *:not(.banner-bg-layer){
+    position:relative;
+    z-index:2;
+  }
+  .banner-title{
+    font-family:'Minecraft Rus', monospace;
+    font-size:48px;
+    letter-spacing:3px;
+    color:#fff;
+    margin:0 0 10px;
+    line-height:1.15;
+  }
+  .banner-sub{
+    font-size:15px;
+    color:var(--muted);
+    letter-spacing:1px;
+    margin-bottom:28px;
+  }
+  .btn{
+    display:inline-block;
+    background:var(--accent);
+    color:var(--accent-text);
+    border:none;
+    border-radius:var(--r);
+    padding:20px 48px;
+    font-family:inherit;
+    font-size:18px;
+    letter-spacing:5px;
+    font-weight:bold;
+    cursor:pointer;
+    text-decoration:none;
+    transition:background .15s,transform .05s;
+    min-width:260px;
+    text-align:center;
+  }
+  .btn:hover{background:#fff}
+  .btn:active{transform:scale(0.98)}
+  .features{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+    margin-top:16px;
+  }
+  .feature{
+    border:1px solid var(--line);
+    border-radius:var(--r);
+    padding:18px;
+    background:var(--card);
+    text-align:center;
+  }
+  .feature .k{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:6px}
+  .feature .v{font-size:14px;color:var(--text)}
+  footer{
+    margin-top:36px;
+    font-size:11px;color:var(--muted);text-align:center;letter-spacing:2px;text-transform:uppercase
+  }
+  @media(max-width:640px){
+    .wrap{padding:24px 14px 40px}
+    #bannerCard{min-height:280px;padding:32px 24px 28px}
+    .banner-title{font-size:36px}
+    .btn{width:100%}
+    .features{grid-template-columns:1fr}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="assets/icon.png" alt="logo" class="logo">
+    <div class="brand">
+      <div class="t">Civilization Launcher</div>
+      <div class="sub">CV Launcher &middot; сервер Civilization</div>
+    </div>
+  </header>
+
+  <section id="bannerCard">
+    <div class="banner-bg-layer" id="bannerBgA" style="opacity:1;background-image:url('assets/pool/pool_1.png');"></div>
+    <div class="banner-bg-layer" id="bannerBgB" style="opacity:0;"></div>
+    <h1 class="banner-title">CIVILIZATION</h1>
+    <div class="banner-sub">Minecraft 1.21.8 · Fabric</div>
+    <a id="download" href="#" class="btn" download>Скачать CV Launcher.exe</a>
+  </section>
+
+  <section class="features">
+    <div class="feature">
+      <div class="k">Один exe</div>
+      <div class="v">Никаких установщиков</div>
+    </div>
+    <div class="feature">
+      <div class="k">Автообновление</div>
+      <div class="v">Моды и конфиги сами</div>
+    </div>
+    <div class="feature">
+      <div class="k">Fabric 1.21.8</div>
+      <div class="v">Под сервер Civilization</div>
+    </div>
+  </section>
+
+  <footer>
+    Civilization Launcher &middot; сервер Civilization &middot; 2026
+  </footer>
+</div>
+<script>
+  (function(){
+    var btn = document.getElementById('download');
+    btn.href = 'https://github.com/civilkaserver-sketch/CV-LAUNCHER/raw/main/CV%20Launcher.exe';
+
+    const BANNER_POOL = [
+      'assets/pool/pool_1.png',
+      'assets/pool/pool_2.png',
+      'assets/pool/pool_4.png',
+      'assets/pool/pool_5.png',
+      'assets/pool/pool_6.png',
+      'assets/pool/pool_7.png',
+      'assets/pool/pool_8.png',
+      'assets/pool/pool_9.png'
+    ];
+
+    BANNER_POOL.forEach(function(url){
+      var img = new Image(); img.src = url;
+      if(img.decode) img.decode().catch(function(){});
+    });
+
+    let bannerSlideTimer = null;
+    let bannerPoolIdx = 0;
+    let activeBannerLayer = 'A';
+    let isBannerTransitioning = false;
+
+    function shouldRun(){ return !document.hidden && document.hasFocus(); }
+
+    function start(){ stop(); if(!shouldRun()) return; bannerSlideTimer = setInterval(nextSlide, 8000); }
+    function stop(){ if(bannerSlideTimer){ clearInterval(bannerSlideTimer); bannerSlideTimer = null; } }
+
+    function nextSlide(){
+      if(!shouldRun() || isBannerTransitioning) return;
+      var layerA = document.getElementById('bannerBgA');
+      var layerB = document.getElementById('bannerBgB');
+      if(!layerA || !layerB) return;
+      var nextIdx = (bannerPoolIdx + 1) % BANNER_POOL.length;
+      var nextUrl = BANNER_POOL[nextIdx];
+      isBannerTransitioning = true;
+      var img = new Image();
+      var doTransition = function(){
+        if(!shouldRun()){ isBannerTransitioning = false; return; }
+        bannerPoolIdx = nextIdx;
+        if(activeBannerLayer === 'A'){
+          layerB.style.backgroundImage = 'url("' + nextUrl + '")';
+          layerB.style.opacity = '1';
+          layerA.style.opacity = '0';
+          activeBannerLayer = 'B';
+        } else {
+          layerA.style.backgroundImage = 'url("' + nextUrl + '")';
+          layerA.style.opacity = '1';
+          layerB.style.opacity = '0';
+          activeBannerLayer = 'A';
+        }
+        document.documentElement.style.setProperty('--banner-bg', 'url("' + nextUrl + '")');
+        setTimeout(function(){ isBannerTransitioning = false; }, 1600);
+      };
+      img.onload = function(){
+        if(img.decode){ img.decode().then(doTransition).catch(doTransition); } else { doTransition(); }
+      };
+      img.onerror = function(){
+        bannerPoolIdx = nextIdx;
+        isBannerTransitioning = false;
+      };
+      img.src = nextUrl;
+    }
+
+    window.addEventListener('focus', start);
+    window.addEventListener('blur', stop);
+    document.addEventListener('visibilitychange', function(){
+      if(document.hidden) stop(); else start();
+    });
+    start();
+  })();
+</script>
+</body>
+</html>

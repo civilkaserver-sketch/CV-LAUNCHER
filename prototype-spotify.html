@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Civilization Launcher — Spotify Floating Concept</title>
+<style>
+  :root {
+    --bg-base: #000000;
+    --island-bg: #121212;
+    --island-bg-hover: #181818;
+    --card-bg: #181818;
+    --card-hover: #242424;
+    --border: rgba(255, 255, 255, 0.07);
+    --border-hover: rgba(255, 255, 255, 0.15);
+    --text-main: #FFFFFF;
+    --text-sub: #b3b3b3;
+    --text-muted: #6a6a6a;
+    --accent: #ffffff;
+    --accent-green: #1db954;
+    --accent-gold: #e5b95a;
+    --radius-island: 10px;
+    --radius-card: 8px;
+    --font-ui: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-main);
+    font-family: var(--font-ui);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 8px;
+    gap: 8px;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ================== ВЕРХНЯЯ ШАПКА / ТИТУЛ ================== */
+  .top-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 38px;
+    padding: 0 10px;
+    background: transparent;
+  }
+  .top-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .app-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 2px;
+    color: #fff;
+  }
+  .app-logo-badge {
+    width: 22px;
+    height: 22px;
+    background: #fff;
+    color: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 11px;
+    border-radius: 4px;
+  }
+  .nav-pills {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--island-bg);
+    border: 1px solid var(--border);
+    padding: 3px 6px;
+    border-radius: 9999px;
+  }
+  .pill-item {
+    background: transparent;
+    border: none;
+    color: var(--text-sub);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .pill-item:hover { color: #fff; background: rgba(255,255,255,0.06); }
+  .pill-item.active { color: #000; background: #fff; }
+
+  .top-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .server-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--island-bg);
+    border: 1px solid var(--border);
+    padding: 5px 14px;
+    border-radius: 9999px;
+    font-size: 12px;
+    color: var(--text-sub);
+  }
+  .dot-online {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+  }
+  .user-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--island-bg);
+    border: 1px solid var(--border);
+    padding: 4px 10px 4px 6px;
+    border-radius: 9999px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .user-badge:hover { background: var(--island-bg-hover); border-color: var(--border-hover); }
+  .user-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #2a2a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .user-name { font-size: 13px; font-weight: 600; color: #fff; }
+
+  /* ================== ОСНОВНАЯ РАБОЧАЯ ЗОНА (ОСТРОВА) ================== */
+  .workspace {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 240px 1fr 310px;
+    gap: 8px;
+    min-height: 0;
+  }
+
+  .island {
+    background: var(--island-bg);
+    border-radius: var(--radius-island);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* ---- ЛЕВЫЙ ОСТРОВ: НАВИГАЦИЯ & БИБЛИОТЕКА ---- */
+  .nav-header {
+    padding: 18px 18px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .nav-header-title {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    font-weight: 700;
+  }
+  .nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 10px;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: var(--text-sub);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .nav-item svg { stroke: currentColor; transition: transform 0.2s; }
+  .nav-item:hover { color: #fff; background: rgba(255, 255, 255, 0.05); }
+  .nav-item:hover svg { transform: scale(1.08); }
+  .nav-item.active { color: #fff; background: rgba(255, 255, 255, 0.1); }
+  .nav-item.active svg { stroke: #fff; }
+
+  .nav-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 18px;
+  }
+
+  .quick-card {
+    margin: 0 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .quick-card-title { font-size: 12px; font-weight: 700; color: #fff; }
+  .quick-card-desc { font-size: 11px; color: var(--text-sub); line-height: 1.4; }
+  .quick-card-btn {
+    align-self: flex-start;
+    background: #fff;
+    color: #000;
+    border: none;
+    padding: 5px 12px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .quick-card-btn:hover { transform: scale(1.04); }
+
+  .nav-footer {
+    margin-top: auto;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+  }
+  .btn-icon-soft {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s, background 0.2s;
+  }
+  .btn-icon-soft:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
+  /* ---- ЦЕНТРАЛЬНЫЙ ОСТРОВ: БАННЕР СЛАЙДШОУ & КОНТЕНТ ---- */
+  .center-island {
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
+  .center-island::-webkit-scrollbar { width: 8px; }
+  .center-island::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+
+  /* БАННЕР СЛАЙДШОУ (СОХРАНЯЕТ ВСЕ КАРТИНКИ ИЗ POOL) */
+  .banner-stage {
+    position: relative;
+    height: 290px;
+    width: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 28px 32px;
+    background: #080808;
+  }
+  .banner-layer {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center right;
+    transition: opacity 1.2s ease-in-out, transform 8s ease-out;
+    pointer-events: none;
+  }
+  .banner-layer.zoom { transform: scale(1.05); }
+
+  /* Атмосферные градиенты на баннере (в стиле Spotify Album Header) */
+  .banner-overlay-vignette {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(18,18,18,0.7) 70%, #121212 100%),
+                linear-gradient(90deg, rgba(18,18,18,0.85) 0%, rgba(18,18,18,0.3) 50%, rgba(18,18,18,0) 100%);
+    pointer-events: none;
+  }
+
+  .banner-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 600px;
+  }
+  .banner-tag {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .banner-title {
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    line-height: 1.05;
+    color: #fff;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.7);
+  }
+  .banner-desc {
+    font-size: 13.5px;
+    color: #e0e0e0;
+    max-width: 480px;
+    line-height: 1.45;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  }
+  .banner-slide-dots {
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    display: flex;
+    gap: 6px;
+    z-index: 3;
+    background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(6px);
+    padding: 5px 8px;
+    border-radius: 9999px;
+  }
+  .slide-dot {
+    width: 6px;
+    height: 6px;
+    background: rgba(255,255,255,0.3);
+    border-radius: 50%;
+    transition: all 0.3s;
+    cursor: pointer;
+  }
+  .slide-dot.active {
+    background: #fff;
+    width: 18px;
+    border-radius: 4px;
+  }
+
+  /* СЕКЦИЯ КОНТЕНТА ПОД БАННЕРОМ */
+  .center-body {
+    padding: 24px 32px 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-title {
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    color: #fff;
+  }
+  .section-link {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-sub);
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .section-link:hover { color: #fff; text-decoration: underline; }
+
+  /* КАРТОЧКИ В СТИЛЕ SPOTIFY & MODRINTH */
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+  .feature-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    padding: 16px;
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    transition: all 0.22s ease;
+    cursor: pointer;
+  }
+  .feature-card:hover {
+    background: var(--card-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-2px);
+  }
+  .feature-icon-box {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    background: #202020;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: #fff;
+  }
+  .feature-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+  .feature-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+  }
+  .feature-title {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .feature-tag {
+    font-size: 10px;
+    font-weight: 700;
+    background: rgba(255,255,255,0.08);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--text-sub);
+    flex-shrink: 0;
+  }
+  .feature-desc {
+    font-size: 12px;
+    color: var(--text-sub);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* ---- ПРАВЫЙ ОСТРОВ: NOW PLAYING / ИГРОК & СЕРВЕР ---- */
+  .side-panel-header {
+    padding: 18px 20px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+  }
+  .side-panel-title {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+  }
+
+  .character-card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+  .skin-stage-box {
+    width: 100%;
+    height: 230px;
+    background: radial-gradient(circle at 50% 40%, #1e1e1e 0%, #121212 75%);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .skin-model-preview {
+    font-size: 64px;
+    filter: drop-shadow(0 15px 20px rgba(0,0,0,0.6));
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-6px) rotate(1.5deg); }
+  }
+  .skin-hint {
+    position: absolute;
+    bottom: 8px;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+    background: rgba(0,0,0,0.5);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  .character-meta {
+    margin-top: 14px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .character-name-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .character-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+  }
+  .character-rank {
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .btn-change-skin {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 9999px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-change-skin:hover { background: #fff; color: #000; }
+
+  .server-stat-card {
+    margin: 0 16px 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+  }
+  .stat-label { color: var(--text-sub); }
+  .stat-value { font-weight: 700; color: #fff; }
+
+  /* ================== НИЖНИЙ ПЛАВАЮЩИЙ БАР (ЗАПУСК / ПЛЕЕР) ================== */
+  .launch-bar {
+    height: 82px;
+    background: var(--island-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-island);
+    padding: 0 24px;
+    display: grid;
+    grid-template-columns: 280px 1fr 280px;
+    align-items: center;
+    gap: 16px;
+  }
+
+  /* ЛЕВАЯ ЧАСТЬ БАРА: ТЕКУЩАЯ СБОРКА */
+  .launch-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+  }
+  .instance-thumb {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    background: #222;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .instance-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 0;
+  }
+  .instance-name {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .instance-status {
+    font-size: 11px;
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .status-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+  }
+
+  /* ЦЕНТРАЛЬНАЯ ЧАСТЬ БАРА: КНОПКА ЗАПУСКА И ТАЙМЛАЙН ПРОГРЕССА */
+  .launch-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .launch-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  
+  /* БОЛЬШАЯ КНОПКА ИГРАТЬ В СТИЛЕ SPOTIFY PLAY */
+  .btn-play-hero {
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 9999px;
+    height: 44px;
+    padding: 0 32px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(255, 255, 255, 0.2);
+    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s;
+  }
+  .btn-play-hero:hover {
+    transform: scale(1.05);
+    background: #f0f0f0;
+  }
+  .btn-play-hero:active {
+    transform: scale(0.97);
+  }
+  .btn-play-hero svg {
+    fill: currentColor;
+  }
+
+  /* SPOTIFY-ПОДОБНЫЙ ТАЙМЛАЙН / ПРОГРЕСС-БАР */
+  .progress-timeline {
+    width: 100%;
+    max-width: 440px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .time-stamp {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+  .scrubber-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 9999px;
+    position: relative;
+    cursor: pointer;
+    overflow: hidden;
+  }
+  .scrubber-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 100%;
+    background: #fff;
+    border-radius: 9999px;
+    transition: width 0.3s ease;
+  }
+  .scrubber-track:hover .scrubber-fill {
+    background: #10b981;
+  }
+
+  /* ПРАВАЯ ЧАСТЬ БАРА: ВЕРСИЯ & БЫСТРЫЕ ДЕЙСТВИЯ */
+  .launch-right {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+  
+  /* УДОБНЫЙ СЕЛЕКТОР ВЕРСИИ */
+  .version-selector {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--border);
+    border-radius: 9999px;
+    padding: 6px 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .version-selector:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: var(--border-hover);
+  }
+  .version-selector svg { stroke: var(--text-sub); }
+
+  .action-icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: var(--text-sub);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.18s ease;
+  }
+  .action-icon-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+</style>
+</head>
+<body>
+
+  <!-- ВЕРХНЯЯ ШАПКА -->
+  <header class="top-strip">
+    <div class="top-left">
+      <div class="app-logo">
+        <span class="app-logo-badge">CV</span>
+        <span>CIVILIZATION</span>
+      </div>
+      <div class="nav-pills">
+        <button class="pill-item active" onclick="switchTab(this)">Главная</button>
+        <button class="pill-item" onclick="switchTab(this)">Обновления</button>
+        <button class="pill-item" onclick="switchTab(this)">Скин</button>
+        <button class="pill-item" onclick="switchTab(this)">Галерея</button>
+        <button class="pill-item" onclick="switchTab(this)">Рейтинг</button>
+      </div>
+    </div>
+
+    <div class="top-right">
+      <div class="server-pill">
+        <span class="dot-online"></span>
+        <span>Онлайн: <strong>48</strong> / 100</span>
+      </div>
+      <div class="user-badge" title="Профиль игрока">
+        <div class="user-avatar">S</div>
+        <span class="user-name">Steve</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ОСНОВНАЯ ЗОНА: 3 ПЛАВАЮЩИХ ОСТРОВА В СТИЛЕ SPOTIFY -->
+  <main class="workspace">
+
+    <!-- ЛЕВЫЙ ОСТРОВ: НАВИГАЦИЯ & ИНФО -->
+    <aside class="island">
+      <div class="nav-header">
+        <span class="nav-header-title">Библиотека</span>
+      </div>
+      <nav class="nav-list">
+        <div class="nav-item active">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span>Главный экран</span>
+        </div>
+        <div class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <span>Патчноут</span>
+        </div>
+        <div class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z"/>
+          </svg>
+          <span>Гардероб скинов</span>
+        </div>
+        <div class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2" ry="2"/>
+            <circle cx="9" cy="9" r="2"/>
+            <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>
+          </svg>
+          <span>Скриншоты</span>
+        </div>
+        <div class="nav-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+            <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+            <path d="M4 22h16"/>
+            <path d="M10 14.66V17c0 .55-.45 1-1 1H7c-.55 0-1-.45-1-1v-2.34"/>
+            <path d="M18 14.66V17c0 .55-.45 1-1 1h-2c-.55 0-1-.45-1-1v-2.34"/>
+            <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+          </svg>
+          <span>Рейтинг лидеров</span>
+        </div>
+      </nav>
+
+      <div class="nav-divider"></div>
+
+      <!-- Быстрая карточка фичи -->
+      <div class="quick-card">
+        <div class="quick-card-title">Оптимизация ZGC + RAM</div>
+        <div class="quick-card-desc">Включен автоматический подбор оперативной памяти под твой ПК.</div>
+        <button class="quick-card-btn">Настроить</button>
+      </div>
+
+      <div class="nav-footer">
+        <button class="btn-icon-soft" title="Настройки лаунчера">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
+        <span style="font-size:11px;color:var(--text-muted);font-weight:600;">v1.21.8 Release</span>
+        <button class="btn-icon-soft" title="Диагностика сети">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+            <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+            <line x1="12" y1="20" x2="12.01" y2="20"/>
+          </svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- ЦЕНТРАЛЬНЫЙ ОСТРОВ: БАННЕР СЛАЙДШОУ & СПИСОК НОВОСТЕЙ -->
+    <section class="island center-island">
+
+      <!-- БАННЕР СЛАЙДШОУ (С ПОЛНЫМ СОХРАНЕНИЕМ КАРТИНОК ИЗ POOL) -->
+      <div class="banner-stage" id="bannerStage">
+        <div class="banner-layer" id="bannerLayerA" style="background-image:url('assets/pool/pool_1.png'); opacity:1;"></div>
+        <div class="banner-layer" id="bannerLayerB" style="opacity:0;"></div>
+        <div class="banner-overlay-vignette"></div>
+
+        <div class="banner-slide-dots">
+          <div class="slide-dot active"></div>
+          <div class="slide-dot"></div>
+          <div class="slide-dot"></div>
+          <div class="slide-dot"></div>
+          <div class="slide-dot"></div>
+        </div>
+
+        <div class="banner-content">
+          <div class="banner-tag">★ СЕЗОН ЦИВИЛИЗАЦИЙ</div>
+          <h1 class="banner-title">CIVILIZATION</h1>
+          <p class="banner-desc">Погрузись в масштабный мир государств, морских баталий и живой экономики. Minecraft 1.21.8 на Fabric.</p>
+        </div>
+      </div>
+
+      <!-- ТЕЛО КОНТЕНТА -->
+      <div class="center-body">
+
+        <div class="section-head">
+          <h2 class="section-title">Что нового в обновлении</h2>
+          <span class="section-link">Посмотреть все изменения →</span>
+        </div>
+
+        <!-- МОДУЛЬНЫЕ КАРТОЧКИ В СТИЛЕ SPOTIFY & MODRINTH -->
+        <div class="news-grid">
+          
+          <div class="feature-card">
+            <div class="feature-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/>
+              </svg>
+            </div>
+            <div class="feature-info">
+              <div class="feature-title-row">
+                <span class="feature-title">Главное меню (M)</span>
+                <span class="feature-tag">Интерфейс</span>
+              </div>
+              <p class="feature-desc">Быстрый доступ ко всем разделам без ввода команд: Банк, Рынок, Хранилище, Трейды.</p>
+            </div>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <div class="feature-info">
+              <div class="feature-title-row">
+                <span class="feature-title">Безопасные Трейды</span>
+                <span class="feature-tag">Экономика</span>
+              </div>
+              <p class="feature-desc">Двусторонний обмен ценностями с защитой от скама и сбросом подтверждения при смене слота.</p>
+            </div>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/>
+              </svg>
+            </div>
+            <div class="feature-info">
+              <div class="feature-title-row">
+                <span class="feature-title">Стол Моряка & Лодки</span>
+                <span class="feature-tag">Геймплей</span>
+              </div>
+              <p class="feature-desc">Улучшение и отделка лодок, реалистичная водная физика, паруса и корабельные орудия.</p>
+            </div>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon-box">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
+            <div class="feature-info">
+              <div class="feature-title-row">
+                <span class="feature-title">8 Секретных NPC</span>
+                <span class="feature-tag">Мир</span>
+              </div>
+              <p class="feature-desc">Странствующие торговцы и сюжетные персонажи в скрытых локациях по всей карте.</p>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ПРАВЫЙ ОСТРОВ: "NOW PLAYING" (ПЕРСОНАЖ & СЕРВЕР) -->
+    <aside class="island">
+      <div class="side-panel-header">
+        <span class="side-panel-title">Твой профиль</span>
+        <button class="btn-icon-soft">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle>
+          </svg>
+        </button>
+      </div>
+
+      <div class="character-card">
+        <div class="skin-stage-box">
+          <div class="skin-model-preview">🗡️</div>
+          <span class="skin-hint">Вращайте модель мышью</span>
+        </div>
+
+        <div class="character-meta">
+          <div class="character-name-group">
+            <span class="character-name">Steve</span>
+            <span class="character-rank">Гражданин Рима</span>
+          </div>
+          <button class="btn-change-skin">Скин</button>
+        </div>
+      </div>
+
+      <div class="server-stat-card">
+        <div class="stat-row">
+          <span class="stat-label">Сервер:</span>
+          <span class="stat-value" style="color:#10b981;">Online (48/100)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Пинг:</span>
+          <span class="stat-value">24 ms</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Версия:</span>
+          <span class="stat-value">1.21.8 Fabric</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Выделено RAM:</span>
+          <span class="stat-value">6.0 GB</span>
+        </div>
+      </div>
+
+    </aside>
+
+  </main>
+
+  <!-- НИЖНИЙ ПЛАВАЮЩИЙ БАР (ЗАПУСК / ПЛЕЕР В ТОЧНОСТИ КАК SPOTIFY) -->
+  <footer class="launch-bar">
+
+    <!-- ЛЕВО: ТЕКУЩАЯ СБОРКА И СТАТУС -->
+    <div class="launch-left">
+      <div class="instance-thumb" style="background-image:url('assets/icon.png');"></div>
+      <div class="instance-info">
+        <span class="instance-name">Civilization Season 1</span>
+        <span class="instance-status">
+          <span class="status-indicator"></span>
+          <span>Готово к запуску</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- ЦЕНТР: БОЛЬШАЯ КНОПКА "ИГРАТЬ" + SPOTIFY ПРОГРЕСС ТАЙМЛАЙН -->
+    <div class="launch-center">
+      <div class="launch-controls">
+        <button class="btn-play-hero" id="btnPlay" onclick="simulateLaunch()">
+          <svg width="16" height="16" viewBox="0 0 24 24">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+          <span id="playText">ИГРАТЬ</span>
+        </button>
+      </div>
+
+      <!-- ПРОГРЕСС БАР СО СТАДИЯМИ ЗАГРУЗКИ -->
+      <div class="progress-timeline">
+        <span class="time-stamp" id="progressStatus">1.21.8</span>
+        <div class="scrubber-track">
+          <div class="scrubber-fill" id="progressBar" style="width: 100%;"></div>
+        </div>
+        <span class="time-stamp" id="progressPct">100%</span>
+      </div>
+    </div>
+
+    <!-- ПРАВО: СЕЛЕКТОР ВЕРСИИ + ПАПКА ИГРЫ + НАСТРОЙКИ -->
+    <div class="launch-right">
+      <!-- УДОБНЫЙ СЕЛЕКТОР ВЕРСИИ -->
+      <div class="version-selector" title="Выбрать версию сборки">
+        <span>Fabric 1.21.8</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="m6 9 6 6 6-6"/>
+        </svg>
+      </div>
+
+      <button class="action-icon-btn" title="Открыть папку с игрой">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </button>
+
+      <button class="action-icon-btn" title="Настройки сборки">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="4" y1="21" x2="4" y2="14"></line>
+          <line x1="4" y1="10" x2="4" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12" y2="3"></line>
+          <line x1="20" y1="21" x2="20" y2="16"></line>
+          <line x1="20" y1="12" x2="20" y2="3"></line>
+          <line x1="1" y1="14" x2="7" y2="14"></line>
+          <line x1="9" y1="8" x2="15" y2="8"></line>
+          <line x1="17" y1="16" x2="23" y2="16"></line>
+        </svg>
+      </button>
+    </div>
+
+  </footer>
+
+  <script>
+    // ======== СЛАЙДШОУ БАННЕРА (ИЗ ПУЛА КАРТИНОК) ========
+    const POOL = [
+      'assets/pool/pool_1.png',
+      'assets/pool/pool_2.png',
+      'assets/pool/pool_4.png',
+      'assets/pool/pool_5.png',
+      'assets/pool/pool_6.png',
+      'assets/pool/pool_7.png',
+      'assets/pool/pool_8.png',
+      'assets/pool/pool_9.png'
+    ];
+    let poolIdx = 0;
+    let activeLayer = 'A';
+    const layerA = document.getElementById('bannerLayerA');
+    const layerB = document.getElementById('bannerLayerB');
+    const dots = document.querySelectorAll('.slide-dot');
+
+    function nextSlide() {
+      poolIdx = (poolIdx + 1) % POOL.length;
+      const nextUrl = POOL[poolIdx];
+
+      if (activeLayer === 'A') {
+        layerB.style.backgroundImage = `url('${nextUrl}')`;
+        layerB.style.opacity = '1';
+        layerA.style.opacity = '0';
+        activeLayer = 'B';
+      } else {
+        layerA.style.backgroundImage = `url('${nextUrl}')`;
+        layerA.style.opacity = '1';
+        layerB.style.opacity = '0';
+        activeLayer = 'A';
+      }
+
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle('active', idx === (poolIdx % dots.length));
+      });
+    }
+
+    setInterval(nextSlide, 7000);
+
+    // ======== ПЕРЕКЛЮЧЕНИЕ ТАБОВ ========
+    function switchTab(btn) {
+      document.querySelectorAll('.pill-item').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // ======== СИМУЛЯЦИЯ ЗАПУСКА / ПРОГРЕСС-БАРА ========
+    let isLaunching = false;
+    function simulateLaunch() {
+      if (isLaunching) return;
+      isLaunching = true;
+
+      const btn = document.getElementById('btnPlay');
+      const text = document.getElementById('playText');
+      const bar = document.getElementById('progressBar');
+      const status = document.getElementById('progressStatus');
+      const pct = document.getElementById('progressPct');
+
+      text.innerText = 'ПРОВЕРКА...';
+      bar.style.width = '0%';
+      pct.innerText = '0%';
+      status.innerText = 'Хэширование модов...';
+
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 4;
+        bar.style.width = progress + '%';
+        pct.innerText = progress + '%';
+
+        if (progress > 30 && progress < 70) {
+          status.innerText = 'Загрузка ассетов...';
+          text.innerText = 'ЗАГРУЗКА...';
+        } else if (progress >= 70 && progress < 100) {
+          status.innerText = 'Запуск Minecraft 1.21.8...';
+          text.innerText = 'СТАРТ...';
+        } else if (progress >= 100) {
+          clearInterval(interval);
+          status.innerText = 'Игра запущена!';
+          text.innerText = 'В ИГРЕ';
+          btn.style.background = '#10b981';
+          btn.style.color = '#fff';
+          setTimeout(() => {
+            text.innerText = 'ИГРАТЬ';
+            btn.style.background = '#fff';
+            btn.style.color = '#000';
+            status.innerText = '1.21.8';
+            isLaunching = false;
+          }, 4000);
+        }
+      }, 80);
+    }
+  </script>
+</body>
+</html>

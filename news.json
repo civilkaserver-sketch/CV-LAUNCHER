@@ -1,15 +1,15 @@
 [
   {
     "id": "patch-update-oct-31-2026",
-    "badge": "ОПТИМИЗАЦИЯ",
+    "badge": "ПАТЧ",
     "badgeType": "green",
     "date": "31 октября 2026",
     "title": "Королевство Абсурда & Штабной Жезл",
     "subtitle": "Основание Королевства Абсурда, штабной жезл разметки фронта кликами по секторам, подсветка рубежей на 2 блока вверх и чистый босс-бар мобилизации.",
     "banner": {
       "type": "image",
-      "url": "assets/news_banner_patch_opt.svg",
-      "fallback": "assets/news_banner_patch_opt.svg",
+      "url": "assets/news_banner_patch_green.svg",
+      "fallback": "assets/news_banner_patch.png",
       "alt": "Патч 31 октября"
     },
     "defaultExpanded": true,
@@ -39,15 +39,15 @@
   },
   {
     "id": "patch-update-oct-25-2026",
-    "badge": "ХОТФИКС",
+    "badge": "ПАТЧ",
     "badgeType": "green",
     "date": "25 октября 2026",
     "title": "Фиксы, стабильность и баланс",
     "subtitle": "Моды и настройки не сбрасываются, в трейдах защита от скама, у Корабля-призрака новая текстура и больше добычи.",
     "banner": {
       "type": "image",
-      "url": "assets/news_banner_patch_fix.svg",
-      "fallback": "assets/news_banner_patch_fix.svg",
+      "url": "assets/news_banner_patch_green.svg",
+      "fallback": "assets/news_banner_patch.png",
       "alt": "Патч 25 октября"
     },
     "defaultExpanded": false,

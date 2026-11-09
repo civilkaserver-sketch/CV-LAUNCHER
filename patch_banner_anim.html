@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Civilization · PATCH — анимированный баннер (превью)</title>
+<!--
+  Превью-артефакт: анимированный вариант SVG-баннера CIVILIZATION / PATCH.
+  Всё самодостаточно: один HTML + inline SVG + ~70 строк JS.
+  Анимация плавная (каждый кадр браузера, ~60 fps).
+
+  Слои анимации:
+    1) непрерывный «хром» — по тексту постоянно едет волна света и тени,
+       плюс встречная светлая волна с другим шагом и наклоном;
+    2) двойной блик — светлая полоса + тёмная следом, проезжает каждые ~2.4 с
+       (светлая видна на тёмных буквах, тёмная — на белых);
+    3) лёгкое «дыхание» базового градиента.
+
+  Быстро покрутить:
+    FLOW_SPEED  — скорость основной волны, px/сек (220)
+    FLOW_TILE   — шаг основной волны, px (460); меньше = волны чаще
+    FLOW2_SPEED — скорость встречной волны, px/сек (130)
+    FLOW2_TILE  — шаг встречной волны, px (700)
+    SWEEP_MS    — период блика, мс (2400)
+    FLOW_MS     — цикл «дыхания» градиента, мс (6000)
+    FLOW_AMP    — амплитуда «дыхания», px (40)
+    яркость     — стопы #flowGrad (1 / 0.82), #flowGrad2 (0.55),
+                  #shine (1), #shineDark (0.85)
+  Управление: SPACE — пауза, S — блик вкл/выкл.
+-->
+<style>
+  :root{ --bg:#0F0F0F; }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;background:var(--bg);
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;
+  }
+  .stage{
+    width:min(100vw, 1636px);
+    max-height:100vh;
+    aspect-ratio:1636 / 464;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .stage svg{display:block;width:100%;height:auto}
+  .hint{
+    position:fixed;left:16px;bottom:14px;
+    font:12px/1.4 'Courier New',monospace;
+    letter-spacing:1px;color:#5E5E5E;
+    user-select:none;pointer-events:none;
+    transition:opacity .8s ease;
+  }
+  .hint.hide{opacity:0}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <svg id="banner" viewBox="0 0 1636 464" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Civilization — PATCH">
+    <rect width="1636" height="464" fill="#0F0F0F"/>
+
+    <defs>
+      <!-- базовые градиенты — как в исходном SVG -->
+      <linearGradient id="paint0" gradientUnits="userSpaceOnUse"
+                      x1="315" y1="119" x2="609.172" y2="332.375">
+        <stop stop-color="#0F0F0F"/>
+        <stop offset="1" stop-color="#FFFFFF"/>
+      </linearGradient>
+
+      <linearGradient id="paint1" gradientUnits="userSpaceOnUse"
+                      x1="700" y1="252" x2="1267" y2="385">
+        <stop stop-color="#FFFFFF"/>
+        <stop offset="1" stop-color="#0F0F0F"/>
+      </linearGradient>
+
+      <!-- непрерывная волна: свет + тень (обычное наложение, alpha) -->
+      <linearGradient id="flowGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="0.10" stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="0.26" stop-color="#FFFFFF" stop-opacity="1"/>
+        <stop offset="0.38" stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="0.50" stop-color="#000000" stop-opacity="0"/>
+        <stop offset="0.64" stop-color="#000000" stop-opacity="0.82"/>
+        <stop offset="0.76" stop-color="#000000" stop-opacity="0"/>
+        <stop offset="1"    stop-color="#FFFFFF" stop-opacity="0"/>
+      </linearGradient>
+
+      <pattern id="flowPat" patternUnits="userSpaceOnUse" width="460" height="620"
+               patternTransform="translate(0,0) skewX(-18)">
+        <rect width="460" height="620" fill="url(#flowGrad)"/>
+      </pattern>
+
+      <!-- встречная волна (только свет, движется в другую сторону) -->
+      <linearGradient id="flowGrad2" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="0.30" stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="0.50" stop-color="#FFFFFF" stop-opacity="0.55"/>
+        <stop offset="0.70" stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="1"    stop-color="#FFFFFF" stop-opacity="0"/>
+      </linearGradient>
+
+      <pattern id="flowPat2" patternUnits="userSpaceOnUse" width="700" height="700"
+               patternTransform="translate(0,0) skewX(14)">
+        <rect width="700" height="700" fill="url(#flowGrad2)"/>
+      </pattern>
+
+      <!-- резкий яркий блик: светлая полоса -->
+      <linearGradient id="shine" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="0.38" stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="0.50" stop-color="#FFFFFF" stop-opacity="1"/>
+        <stop offset="0.62" stop-color="#FFFFFF" stop-opacity="0"/>
+        <stop offset="1"    stop-color="#FFFFFF" stop-opacity="0"/>
+      </linearGradient>
+
+      <!-- резкий блик: тёмная полоса (для белых букв) -->
+      <linearGradient id="shineDark" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0"    stop-color="#000000" stop-opacity="0"/>
+        <stop offset="0.38" stop-color="#000000" stop-opacity="0"/>
+        <stop offset="0.50" stop-color="#000000" stop-opacity="0.85"/>
+        <stop offset="0.62" stop-color="#000000" stop-opacity="0"/>
+        <stop offset="1"    stop-color="#000000" stop-opacity="0"/>
+      </linearGradient>
+
+      <!-- маска из самих букв -->
+      <clipPath id="textClip">
+        <path d="M446 231V219H482V231H446ZM482 219V207H494V219H482ZM434 219V159H446V219H434ZM482 171V159H494V171H482ZM446 159V147H482V159H446ZM506 231V219H518V159H506V147H542V159H530V219H542V231H506ZM578 231V219H590V231H578ZM566 219V195H578V219H566ZM590 219V195H602V219H590ZM554 195V147H566V195H554ZM602 195V147H614V195H602ZM626 231V219H638V159H626V147H662V159H650V219H662V231H626ZM674 231V147H686V219H734V231H674ZM746 231V219H758V159H746V147H782V159H770V219H782V231H746ZM794 231V207H806V219H854V231H794ZM806 207V195H818V207H806ZM818 195V183H830V195H818ZM830 183V171H842V183H830ZM842 171V159H794V147H854V171H842ZM866 231V159H878V171H914V159H926V231H914V183H878V231H866ZM878 159V147H914V159H878ZM962 231V159H938V147H998V159H974V231H962ZM1010 231V219H1022V159H1010V147H1046V159H1034V219H1046V231H1010ZM1070 231V219H1106V231H1070ZM1058 219V159H1070V219H1058ZM1106 219V159H1118V219H1106ZM1070 159V147H1106V159H1070ZM1154 183V171H1166V183H1154ZM1130 231V147H1142V159H1154V171H1142V231H1130ZM1178 231V195H1166V183H1178V147H1190V231H1178Z"/>
+        <path d="M698 264H730V272H698V264ZM698 272H706V280H698V272ZM730 272H738V280H730V272ZM698 280H706V288H698V280ZM730 280H738V288H730V280ZM698 288H730V296H698V288ZM698 296H706V304H698V296ZM698 304H706V312H698V304ZM698 312H706V320H698V312ZM754 264H778V272H754V264ZM746 272H754V280H746V272ZM778 272H786V280H778V272ZM746 280H754V288H746V280ZM778 280H786V288H778V280ZM746 288H786V296H746V288ZM746 296H754V304H746V296ZM778 296H786V304H778V296ZM746 304H754V312H746V304ZM778 304H786V312H778V304ZM746 312H754V320H746V312ZM778 312H786V320H778V312ZM794 264H834V272H794V264ZM810 272H818V280H810V272ZM810 280H818V288H810V280ZM810 288H818V296H810V288ZM810 296H818V304H810V296ZM810 304H818V312H810V304ZM810 312H818V320H810V312ZM850 264H874V272H850V264ZM842 272H850V280H842V272ZM874 272H882V280H874V272ZM842 280H850V288H842V280ZM842 288H850V296H842V288ZM842 296H850V304H842V296ZM842 304H850V312H842V304ZM850 312H882V320H850V312ZM890 264H898V272H890V264ZM922 264H930V272H922V264ZM890 272H898V280H890V272ZM922 272H930V280H922V272ZM890 280H898V288H890V280ZM922 280H930V288H922V280ZM890 288H930V296H890V288ZM890 296H898V304H890V296ZM922 296H930V304H922V296ZM890 304H898V312H890V304ZM922 304H930V312H922V304ZM890 312H898V320H890V312ZM922 312H930V320H922V312Z"/>
+      </clipPath>
+    </defs>
+
+    <!-- сам текст -->
+    <g shape-rendering="crispEdges">
+      <path d="M446 231V219H482V231H446ZM482 219V207H494V219H482ZM434 219V159H446V219H434ZM482 171V159H494V171H482ZM446 159V147H482V159H446ZM506 231V219H518V159H506V147H542V159H530V219H542V231H506ZM578 231V219H590V231H578ZM566 219V195H578V219H566ZM590 219V195H602V219H590ZM554 195V147H566V195H554ZM602 195V147H614V195H602ZM626 231V219H638V159H626V147H662V159H650V219H662V231H626ZM674 231V147H686V219H734V231H674ZM746 231V219H758V159H746V147H782V159H770V219H782V231H746ZM794 231V207H806V219H854V231H794ZM806 207V195H818V207H806ZM818 195V183H830V195H818ZM830 183V171H842V183H830ZM842 171V159H794V147H854V171H842ZM866 231V159H878V171H914V159H926V231H914V183H878V231H866ZM878 159V147H914V159H878ZM962 231V159H938V147H998V159H974V231H962ZM1010 231V219H1022V159H1010V147H1046V159H1034V219H1046V231H1010ZM1070 231V219H1106V231H1070ZM1058 219V159H1070V219H1058ZM1106 219V159H1118V219H1106ZM1070 159V147H1106V159H1070ZM1154 183V171H1166V183H1154ZM1130 231V147H1142V159H1154V171H1142V231H1130ZM1178 231V195H1166V183H1178V147H1190V231H1178Z" fill="url(#paint0)"/>
+      <path d="M698 264H730V272H698V264ZM698 272H706V280H698V272ZM730 272H738V280H730V272ZM698 280H706V288H698V280ZM730 280H738V288H730V280ZM698 288H730V296H698V288ZM698 296H706V304H698V296ZM698 304H706V312H698V304ZM698 312H706V320H698V312ZM754 264H778V272H754V264ZM746 272H754V280H746V272ZM778 272H786V280H778V272ZM746 280H754V288H746V280ZM778 280H786V288H778V280ZM746 288H786V296H746V288ZM746 296H754V304H746V296ZM778 296H786V304H778V296ZM746 304H754V312H746V304ZM778 304H786V312H778V304ZM746 312H754V320H746V312ZM778 312H786V320H778V312ZM794 264H834V272H794V264ZM810 272H818V280H810V272ZM810 280H818V288H810V280ZM810 288H818V296H810V288ZM810 296H818V304H810V296ZM810 304H818V312H810V304ZM810 312H818V320H810V312ZM850 264H874V272H850V264ZM842 272H850V280H842V272ZM874 272H882V280H874V272ZM842 280H850V288H842V280ZM842 288H850V296H842V288ZM842 296H850V304H842V296ZM842 304H850V312H842V304ZM850 312H882V320H850V312ZM890 264H898V272H890V264ZM922 264H930V272H922V264ZM890 272H898V280H890V272ZM922 272H930V280H922V272ZM890 280H898V288H890V280ZM922 280H930V288H922V280ZM890 288H930V296H890V288ZM890 296H898V304H890V296ZM922 296H930V304H922V296ZM890 304H898V312H890V304ZM922 304H930V312H922V304ZM890 312H898V320H890V312ZM922 312H930V320H922V312Z" fill="url(#paint1)"/>
+    </g>
+
+    <!-- 1. непрерывная волна света/тени, обрезанная по буквам -->
+    <g clip-path="url(#textClip)">
+      <rect x="0" y="0" width="1636" height="464" fill="url(#flowPat)"/>
+    </g>
+
+    <!-- 1b. встречная светлая волна -->
+    <g id="flow2Layer" clip-path="url(#textClip)" style="mix-blend-mode:screen">
+      <rect x="0" y="0" width="1636" height="464" fill="url(#flowPat2)"/>
+    </g>
+
+    <!-- 2. резкий яркий блик: светлая полоса -->
+    <g id="shineLayer" clip-path="url(#textClip)" style="mix-blend-mode:screen">
+      <g transform="skewX(-18)">
+        <rect id="shineRect" x="-950" y="-220" width="520" height="920" fill="url(#shine)"/>
+      </g>
+    </g>
+
+    <!-- 2b. тот же блик, тёмная полоса — виден на белых буквах -->
+    <g id="shineDarkLayer" clip-path="url(#textClip)" style="mix-blend-mode:multiply">
+      <g transform="skewX(-18)">
+        <rect id="shineDarkRect" x="-810" y="-220" width="520" height="920" fill="url(#shineDark)"/>
+      </g>
+    </g>
+  </svg>
+</div>
+
+<div class="hint" id="hint">SPACE — пауза · S — блик вкл/выкл</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var p0 = document.getElementById('paint0');
+  var p1 = document.getElementById('paint1');
+  var flowPat = document.getElementById('flowPat');
+  var flowPat2 = document.getElementById('flowPat2');
+  var flow2Layer = document.getElementById('flow2Layer');
+  var shineRect = document.getElementById('shineRect');
+  var shineLayer = document.getElementById('shineLayer');
+  var shineDarkRect = document.getElementById('shineDarkRect');
+  var shineDarkLayer = document.getElementById('shineDarkLayer');
+
+  // исходные векторы градиентов (как в SVG)
+  var B0 = { x1: 315, y1: 119, x2: 609.172, y2: 332.375 };
+  var B1 = { x1: 700, y1: 252, x2: 1267,   y2: 385 };
+
+  function axisOf(b) {
+    var dx = b.x2 - b.x1, dy = b.y2 - b.y1;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    return { ux: dx / len, uy: dy / len };
+  }
+  var A0 = axisOf(B0), A1 = axisOf(B1);
+
+  // ---- настройки ----
+  var FLOW_SPEED = 220;     // скорость непрерывной волны, px/сек
+  var FLOW_TILE  = 460;     // длина волны (шаг паттерна), px
+  var FLOW2_SPEED = 130;    // встречная волна, px/сек
+  var FLOW2_TILE  = 700;    // шаг встречной волны, px
+  var SWEEP_MS   = 2400;    // период яркого блика, мс
+  var FLOW_MS    = 6000;    // цикл «дыхания» базового градиента, мс
+  var FLOW_AMP   = 40;      // амплитуда «дыхания», px
+  var SHINE_FROM = -950;
+  var SHINE_TO   = 1636 + 950;
+  var SHINE_DARK_OFFSET = 160;   // тёмная полоса идёт следом за светлой
+
+  // отладка превью: ?freeze=1200 — замереть, ?shine=0 — без блика
+  var qs = new URLSearchParams(location.search);
+  var freeze = qs.has('freeze') ? parseFloat(qs.get('freeze')) : null;
+
+  var paused = false, shineOn = qs.get('shine') !== '0';
+  var flow2On = qs.get('flow2') !== '0';
+  var last = 0, t = 0;
+
+  // треугольная волна 0..1 -> -1..1 (плавно «туда-обратно»)
+  function tri(p) {
+    p = ((p % 1) + 1) % 1;
+    return p < 0.5 ? p * 4 - 1 : 3 - p * 4;
+  }
+
+  function setGrad(el, b, a, off) {
+    el.setAttribute('x1', (b.x1 + a.ux * off).toFixed(2));
+    el.setAttribute('y1', (b.y1 + a.uy * off).toFixed(2));
+    el.setAttribute('x2', (b.x2 + a.ux * off).toFixed(2));
+    el.setAttribute('y2', (b.y2 + a.uy * off).toFixed(2));
+  }
+
+  function render() {
+    // 1) непрерывная волна: двигаем паттерн
+    var flowX = (t * FLOW_SPEED / 1000) % FLOW_TILE;
+    flowPat.setAttribute('patternTransform',
+      'translate(' + flowX.toFixed(2) + ',0) skewX(-18)');
+
+    // 1b) встречная волна
+    var flow2X = -((t * FLOW2_SPEED / 1000) % FLOW2_TILE);
+    flowPat2.setAttribute('patternTransform',
+      'translate(' + flow2X.toFixed(2) + ',0) skewX(14)');
+    flow2Layer.setAttribute('opacity', flow2On ? '1' : '0');
+
+    // 2) яркий блик: светлая полоса + тёмная следом
+    if (shineOn) {
+      var k = (t % SWEEP_MS) / SWEEP_MS;
+      var x = SHINE_FROM + (SHINE_TO - SHINE_FROM) * k;
+      shineRect.setAttribute('x', x.toFixed(1));
+      shineDarkRect.setAttribute('x', (x + SHINE_DARK_OFFSET).toFixed(1));
+      shineLayer.setAttribute('opacity', '1');
+      shineDarkLayer.setAttribute('opacity', '1');
+    } else {
+      shineLayer.setAttribute('opacity', '0');
+      shineDarkLayer.setAttribute('opacity', '0');
+    }
+
+    // 3) лёгкое «дыхание» базового градиента
+    setGrad(p0, B0, A0, tri(t / FLOW_MS) * FLOW_AMP);
+    setGrad(p1, B1, A1, tri(t / FLOW_MS + 0.4) * FLOW_AMP);
+  }
+
+  function loop(ts) {
+    if (!last) last = ts;
+    var dt = ts - last;
+    last = ts;
+    if (dt > 100) dt = 100;   // защита от прыжка после сворачивания окна
+    if (!paused) {
+      t += dt;
+      render();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  if (freeze !== null && !isNaN(freeze)) {
+    t = freeze;
+    render();
+  } else {
+    render();
+    requestAnimationFrame(loop);
+  }
+
+  // управление для превью
+  window.addEventListener('keydown', function (e) {
+    if (e.code === 'Space') { e.preventDefault(); paused = !paused; }
+    if (e.key === 's' || e.key === 'S' || e.key === 'ы' || e.key === 'Ы') {
+      shineOn = !shineOn;
+    }
+  });
+
+  var hint = document.getElementById('hint');
+  setTimeout(function () { if (hint) hint.classList.add('hide'); }, 6000);
+})();
+</script>
+
+</body>
+</html>
