@@ -62,7 +62,7 @@
 
     .main-layout {
       display: grid;
-      grid-template-columns: 1fr 380px;
+      grid-template-columns: 1fr 430px;
       gap: 24px;
       align-items: start;
     }
@@ -72,6 +72,8 @@
       display: flex;
       flex-direction: column;
       gap: 16px;
+      position: sticky;
+      top: 24px;
     }
     .preview-card {
       background: var(--card);
@@ -135,7 +137,7 @@
       display: flex;
       flex-direction: column;
       gap: 20px;
-      max-height: calc(100vh - 100px);
+      max-height: calc(100vh - 80px);
       overflow-y: auto;
     }
 
@@ -163,6 +165,7 @@
       color: var(--muted);
       display: flex;
       justify-content: space-between;
+      align-items: center;
     }
     .control-label span { color: #fff; font-weight: 600; }
 
@@ -216,6 +219,20 @@
       color: #fff;
       cursor: pointer;
       outline: none;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+    }
+    .toggle-row input[type="checkbox"] {
+      accent-color: var(--accent);
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
     }
 
     /* PRESETS */
@@ -354,38 +371,70 @@
 
       <!-- PRESETS -->
       <div>
-        <div class="group-title">⚡ Готовые пресеты</div>
+        <div class="group-title">⚡ Готовые пресеты (14 тем)</div>
         <div class="preset-grid">
-          <button class="preset-btn" onclick="applyPreset('opt_green')">
+          <button class="preset-btn" onclick="applyPreset('civ_patch')">
             <span class="preset-dot" style="background:#4ade80"></span>
-            Оптимизация (Зеленый)
+            ⚡ Civilization Patch
           </button>
           <button class="preset-btn" onclick="applyPreset('hotfix_mint')">
             <span class="preset-dot" style="background:#2dd4bf"></span>
-            Хотфикс (Мята)
+            🛠 Хотфикс (Мята)
           </button>
           <button class="preset-btn" onclick="applyPreset('ocean_blue')">
             <span class="preset-dot" style="background:#38bdf8"></span>
-            Море / Лодки (Циан)
+            ⚓ Море & Лодки
           </button>
           <button class="preset-btn" onclick="applyPreset('battle_red')">
             <span class="preset-dot" style="background:#f43f5e"></span>
-            Армия / PvP (Рубин)
+            ⚔️ Армия & Осада
           </button>
           <button class="preset-btn" onclick="applyPreset('trade_gold')">
-            <span class="preset-dot" style="background:#facc15"></span>
-            Рынок (Золото)
+            <span class="preset-dot" style="background:#eab308"></span>
+            💰 Рынок & Казна
+          </button>
+          <button class="preset-btn" onclick="applyPreset('mystic_ender')">
+            <span class="preset-dot" style="background:#a855f7"></span>
+            🔮 Энд & Магия
+          </button>
+          <button class="preset-btn" onclick="applyPreset('nether_fire')">
+            <span class="preset-dot" style="background:#f97316"></span>
+            🌋 Недра & Лава
+          </button>
+          <button class="preset-btn" onclick="applyPreset('frost_ice')">
+            <span class="preset-dot" style="background:#7dd3fc"></span>
+            ❄️ Ледник & Зима
+          </button>
+          <button class="preset-btn" onclick="applyPreset('nature_green')">
+            <span class="preset-dot" style="background:#10b981"></span>
+            🌲 Природа & Мир
+          </button>
+          <button class="preset-btn" onclick="applyPreset('shadow_lime')">
+            <span class="preset-dot" style="background:#84cc16"></span>
+            💀 Контрабанда
+          </button>
+          <button class="preset-btn" onclick="applyPreset('empire_amber')">
+            <span class="preset-dot" style="background:#d97706"></span>
+            👑 Империя & ВВП
+          </button>
+          <button class="preset-btn" onclick="applyPreset('cyber_pink')">
+            <span class="preset-dot" style="background:#d946ef"></span>
+            🌸 Ивент / Неон
+          </button>
+          <button class="preset-btn" onclick="applyPreset('tech_silver')">
+            <span class="preset-dot" style="background:#a1a1aa"></span>
+            ⚙️ Тех. Релиз
           </button>
           <button class="preset-btn" onclick="applyPreset('orig_white')">
             <span class="preset-dot" style="background:#ffffff"></span>
-            Классик (Белый)
+            🏁 Классик (Белый)
           </button>
         </div>
       </div>
 
       <!-- TEXT CONFIG -->
       <div>
-        <div class="group-title">✍️ Текст (2 строки)</div>
+        <div class="group-title">✍️ Текст и Масштаб</div>
 
         <div class="control-row">
           <div class="control-label">Стиль текста:</div>
@@ -396,24 +445,39 @@
         </div>
 
         <div class="control-row" id="rowWord1">
-          <div class="control-label">Слово 1 (Верхняя строка):</div>
-          <input type="text" id="inputWord1" value="ПАТЧ" oninput="updateSvg()">
+          <div class="control-label">Строка 1 (Верхняя):</div>
+          <input type="text" id="inputWord1" value="CIVILIZATION" oninput="updateSvg()">
         </div>
 
         <div class="control-row" id="rowWord2">
-          <div class="control-label">Слово 2 (Нижняя строка):</div>
-          <input type="text" id="inputWord2" value="31 ОКТЯБРЯ" oninput="updateSvg()">
+          <div class="control-label">Строка 2 (Нижняя):</div>
+          <input type="text" id="inputWord2" value="PATCH" oninput="updateSvg()">
         </div>
 
-        <div class="control-row" id="rowFontSize">
-          <div class="control-label">Размер шрифта верх / низ: <span id="lblFontSize">56 / 38 px</span></div>
-          <input type="range" id="inputFontSize" min="28" max="72" value="56" oninput="updateSvg()">
+        <div class="control-row" id="rowFontSize1">
+          <div class="control-label">Размер строки 1 (Верх): <span id="lblFontSize1">72 px</span></div>
+          <input type="range" id="inputFontSize1" min="24" max="150" value="72" oninput="updateSvg()">
+        </div>
+
+        <div class="control-row" id="rowFontSize2">
+          <div class="control-label">Размер строки 2 (Низ): <span id="lblFontSize2">47 px</span></div>
+          <input type="range" id="inputFontSize2" min="16" max="110" value="47" oninput="updateSvg()">
+        </div>
+
+        <div class="control-row" id="rowLineGap">
+          <div class="control-label">Отступ между строками: <span id="lblLineGap">20 px</span></div>
+          <input type="range" id="inputLineGap" min="4" max="60" value="20" oninput="updateSvg()">
+        </div>
+
+        <div class="control-row" id="rowLetterSpacing">
+          <div class="control-label">Межбуквенный интервал: <span id="lblLetterSpacing">4 px</span></div>
+          <input type="range" id="inputLetterSpacing" min="0" max="16" value="4" oninput="updateSvg()">
         </div>
       </div>
 
       <!-- GRADIENT & COLOR CONFIG -->
       <div>
-        <div class="group-title">🌈 Градиент текста</div>
+        <div class="group-title">🌈 Цвета и Градиент текста</div>
 
         <div class="control-row">
           <div class="control-label">Цвет 1 (Верхний оттенок):</div>
@@ -432,6 +496,38 @@
         </div>
       </div>
 
+      <!-- TEXT GLOW CONFIG -->
+      <div>
+        <div class="group-title">✨ Свечение текста</div>
+
+        <div class="control-row">
+          <label class="toggle-row">
+            <span style="font-size:13px;color:#fff;">Включить свечение текста</span>
+            <input type="checkbox" id="glowEnabled" onchange="updateSvg()">
+          </label>
+        </div>
+
+        <div id="glowSettingsWrap" style="display:none;">
+          <div class="control-row">
+            <div class="control-label">Радиус свечения: <span id="lblGlowRadius">14 px</span></div>
+            <input type="range" id="glowRadius" min="2" max="40" value="14" oninput="updateSvg()">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">Интенсивность / Прозрачность: <span id="lblGlowOpacity">60%</span></div>
+            <input type="range" id="glowOpacity" min="10" max="100" value="60" oninput="updateSvg()">
+          </div>
+
+          <div class="control-row">
+            <div class="control-label">Цвет свечения:</div>
+            <div class="color-picker-wrap">
+              <input type="color" id="glowColor" value="#4ade80" oninput="syncColor('glowColor', 'hexGlowColor')">
+              <input type="text" id="hexGlowColor" value="#4ade80" oninput="syncHex('hexGlowColor', 'glowColor')">
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- BACKGROUND CONFIG -->
       <div>
         <div class="group-title">🌌 Фон баннера</div>
@@ -441,6 +537,44 @@
           <div class="color-picker-wrap">
             <input type="color" id="bgColor" value="#090706" oninput="syncColor('bgColor', 'hexBgColor')">
             <input type="text" id="hexBgColor" value="#090706" oninput="syncHex('hexBgColor', 'bgColor')">
+          </div>
+        </div>
+      </div>
+
+      <!-- VIGNETTE CONFIG -->
+      <div>
+        <div class="group-title">🔘 Виньетка (Затемнение краёв)</div>
+
+        <div class="control-row">
+          <label class="toggle-row">
+            <span style="font-size:13px;color:#fff;">Включить виньетку</span>
+            <input type="checkbox" id="vignetteEnabled" checked onchange="updateSvg()">
+          </label>
+        </div>
+
+        <div id="vignetteSettingsWrap">
+          <div class="control-row">
+            <div class="control-label">Интенсивность виньетки: <span id="lblVignette">40%</span></div>
+            <input type="range" id="vignetteOpacity" min="0" max="95" value="40" oninput="updateSvg()">
+          </div>
+        </div>
+      </div>
+
+      <!-- NOISE / GRAIN CONFIG -->
+      <div>
+        <div class="group-title">📻 Шум (Film Grain)</div>
+
+        <div class="control-row">
+          <label class="toggle-row">
+            <span style="font-size:13px;color:#fff;">Включить шум</span>
+            <input type="checkbox" id="noiseEnabled" onchange="updateSvg()">
+          </label>
+        </div>
+
+        <div id="noiseSettingsWrap" style="display:none;">
+          <div class="control-row">
+            <div class="control-label">Интенсивность шума: <span id="lblNoise">6%</span></div>
+            <input type="range" id="noiseOpacity" min="1" max="25" value="6" oninput="updateSvg()">
           </div>
         </div>
       </div>
@@ -465,8 +599,8 @@
         </div>
 
         <div class="control-row">
-          <div class="control-label">Шаг сетки (px): <span id="lblGridStep">20 px</span></div>
-          <input type="range" id="gridStep" min="12" max="40" step="2" value="20" oninput="updateSvg()">
+          <div class="control-label">Шаг сетки (px): <span id="lblGridStep">22 px</span></div>
+          <input type="range" id="gridStep" min="12" max="44" step="2" value="22" oninput="updateSvg()">
         </div>
 
         <div class="control-row">
@@ -488,10 +622,6 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           Скопировать код SVG
         </button>
-        <button class="btn" onclick="saveToAssetsDirectly()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-          Сохранить как news_banner_patch_green.svg
-        </button>
       </div>
 
     </div>
@@ -500,7 +630,6 @@
   <div class="toast" id="toast">Готово!</div>
 
   <script>
-    // Original pixel art path for "ПАТЧ" and "31 ОКТЯБРЯ"
     const ORIG_PATH_1 = "M446 231V219H482V231H446ZM482 219V207H494V219H482ZM434 219V159H446V219H434ZM482 171V159H494V171H482ZM446 159V147H482V159H446ZM506 231V219H518V159H506V147H542V159H530V219H542V231H506ZM578 231V219H590V231H578ZM566 219V195H578V219H566ZM590 219V195H602V219H590ZM554 195V147H566V195H554ZM602 195V147H614V195H602ZM626 231V219H638V159H626V147H662V159H650V219H662V231H626ZM674 231V147H686V219H734V231H674ZM746 231V219H758V159H746V147H782V159H770V219H782V231H746ZM794 231V207H806V219H854V231H794ZM806 207V195H818V207H806ZM818 195V183H830V195H818ZM830 183V171H842V183H830ZM842 171V159H794V147H854V171H842ZM866 231V159H878V171H914V159H926V231H914V183H878V231H866ZM878 159V147H914V159H878ZM962 231V159H938V147H998V159H974V231H962ZM1010 231V219H1022V159H1010V147H1046V159H1034V219H1046V231H1010ZM1070 231V219H1106V231H1070ZM1058 219V159H1070V219H1058ZM1106 219V159H1118V219H1106ZM1070 159V147H1106V159H1070ZM1154 183V171H1166V183H1154ZM1130 231V147H1142V159H1154V171H1142V231H1130ZM1178 231V195H1166V183H1178V147H1190V231H1178Z";
     const ORIG_PATH_2 = "M698 264H730V272H698V264ZM698 272H706V280H698V272ZM730 272H738V280H730V272ZM698 280H706V288H698V280ZM730 280H738V288H730V280ZM698 288H730V296H698V288ZM698 296H706V304H698V296ZM698 304H706V312H698V304ZM698 312H706V320H698V312ZM754 264H778V272H754V264ZM746 272H754V280H746V272ZM778 272H786V280H778V272ZM746 280H754V288H746V280ZM778 280H786V288H778V280ZM746 288H786V296H746V288ZM746 296H754V304H746V296ZM778 296H786V304H778V296ZM746 304H754V312H746V304ZM778 304H786V312H778V304ZM746 312H754V320H746V312ZM778 312H786V320H778V312ZM794 264H834V272H794V264ZM810 272H818V280H810V272ZM810 280H818V288H810V280ZM810 288H818V296H810V288ZM810 296H818V304H810V296ZM810 304H818V312H810V304ZM810 312H818V320H810V312ZM850 264H874V272H850V264ZM842 272H850V280H842V272ZM874 272H882V280H874V272ZM842 280H850V288H842V280ZM842 288H850V296H842V288ZM842 296H850V304H842V296ZM842 304H850V312H842V304ZM850 312H882V320H850V312ZM890 264H898V272H890V264ZM922 264H930V272H922V264ZM890 272H898V280H890V272ZM922 272H930V280H922V272ZM890 280H898V288H890V280ZM922 280H930V288H922V280ZM890 288H930V296H890V288ZM890 296H898V304H890V296ZM922 296H930V304H922V296ZM890 304H898V312H890V304ZM922 304H930V312H922V304ZM890 312H898V320H890V312ZM922 312H930V320H922V312Z";
 
@@ -516,83 +645,166 @@
       updateSvg();
     }
 
-    function applyPreset(key) {
-      if (key === 'opt_green') {
-        document.getElementById('bgColor').value = '#090706';
-        document.getElementById('hexBgColor').value = '#090706';
-        document.getElementById('textColor1').value = '#86efac';
-        document.getElementById('hexColor1').value = '#86efac';
-        document.getElementById('textColor2').value = '#4ade80';
-        document.getElementById('hexColor2').value = '#4ade80';
-        document.getElementById('gridOpacity').value = '2';
-        document.getElementById('gridType').value = 'dots';
-      } else if (key === 'hotfix_mint') {
-        document.getElementById('bgColor').value = '#090807';
-        document.getElementById('hexBgColor').value = '#090807';
-        document.getElementById('textColor1').value = '#a7f3d0';
-        document.getElementById('hexColor1').value = '#a7f3d0';
-        document.getElementById('textColor2').value = '#2dd4bf';
-        document.getElementById('hexColor2').value = '#2dd4bf';
-        document.getElementById('gridOpacity').value = '2.5';
-        document.getElementById('gridType').value = 'dots';
-      } else if (key === 'ocean_blue') {
-        document.getElementById('bgColor').value = '#080a0e';
-        document.getElementById('hexBgColor').value = '#080a0e';
-        document.getElementById('textColor1').value = '#7dd3fc';
-        document.getElementById('hexColor1').value = '#7dd3fc';
-        document.getElementById('textColor2').value = '#38bdf8';
-        document.getElementById('hexColor2').value = '#38bdf8';
-        document.getElementById('gridOpacity').value = '3';
-        document.getElementById('gridType').value = 'dots';
-      } else if (key === 'battle_red') {
-        document.getElementById('bgColor').value = '#0f0809';
-        document.getElementById('hexBgColor').value = '#0f0809';
-        document.getElementById('textColor1').value = '#fda4af';
-        document.getElementById('hexColor1').value = '#fda4af';
-        document.getElementById('textColor2').value = '#f43f5e';
-        document.getElementById('hexColor2').value = '#f43f5e';
-        document.getElementById('gridOpacity').value = '2.5';
-        document.getElementById('gridType').value = 'dots';
-      } else if (key === 'trade_gold') {
-        document.getElementById('bgColor').value = '#0d0a06';
-        document.getElementById('hexBgColor').value = '#0d0a06';
-        document.getElementById('textColor1').value = '#fef08a';
-        document.getElementById('hexColor1').value = '#fef08a';
-        document.getElementById('textColor2').value = '#eab308';
-        document.getElementById('hexColor2').value = '#eab308';
-        document.getElementById('gridOpacity').value = '2';
-        document.getElementById('gridType').value = 'dots';
-      } else if (key === 'orig_white') {
-        document.getElementById('bgColor').value = '#0f0f0f';
-        document.getElementById('hexBgColor').value = '#0f0f0f';
-        document.getElementById('textColor1').value = '#ffffff';
-        document.getElementById('hexColor1').value = '#ffffff';
-        document.getElementById('textColor2').value = '#ffffff';
-        document.getElementById('hexColor2').value = '#ffffff';
-        document.getElementById('gridOpacity').value = '0';
-        document.getElementById('gridType').value = 'none';
+    const PRESETS = {
+      civ_patch: {
+        bg: '#090706', c1: '#86efac', c2: '#4ade80', w1: 'CIVILIZATION', w2: 'PATCH',
+        f1: 72, f2: 47, gap: 20, lsp: 4, grid: 'dots', op: 2, step: 22,
+        glow: true, glowR: 12, glowOp: 50, glowC: '#4ade80', vig: true, vigOp: 40, noise: false
+      },
+      hotfix_mint: {
+        bg: '#090807', c1: '#a7f3d0', c2: '#2dd4bf', w1: 'HOTFIX', w2: 'BALANCE',
+        f1: 78, f2: 44, gap: 20, lsp: 4, grid: 'dots', op: 2, step: 20,
+        glow: true, glowR: 14, glowOp: 60, glowC: '#2dd4bf', vig: true, vigOp: 45, noise: false
+      },
+      ocean_blue: {
+        bg: '#080a0e', c1: '#7dd3fc', c2: '#38bdf8', w1: 'SAILOR', w2: 'UPDATE',
+        f1: 82, f2: 46, gap: 22, lsp: 4, grid: 'dots', op: 2.5, step: 22,
+        glow: true, glowR: 16, glowOp: 60, glowC: '#38bdf8', vig: true, vigOp: 50, noise: false
+      },
+      battle_red: {
+        bg: '#0f0708', c1: '#fda4af', c2: '#f43f5e', w1: 'WARFARE', w2: 'SIEGE',
+        f1: 80, f2: 46, gap: 22, lsp: 4, grid: 'dots', op: 2, step: 22,
+        glow: true, glowR: 14, glowOp: 65, glowC: '#f43f5e', vig: true, vigOp: 55, noise: false
+      },
+      trade_gold: {
+        bg: '#0d0905', c1: '#fef08a', c2: '#eab308', w1: 'ECONOMY', w2: 'MARKET',
+        f1: 76, f2: 46, gap: 20, lsp: 4, grid: 'dots', op: 2, step: 22,
+        glow: true, glowR: 12, glowOp: 55, glowC: '#eab308', vig: true, vigOp: 40, noise: false
+      },
+      mystic_ender: {
+        bg: '#0a0610', c1: '#e9d5ff', c2: '#a855f7', w1: 'MYSTIC', w2: 'ENDER',
+        f1: 80, f2: 46, gap: 22, lsp: 4, grid: 'dots', op: 2.5, step: 24,
+        glow: true, glowR: 18, glowOp: 70, glowC: '#a855f7', vig: true, vigOp: 50, noise: true, noiseOp: 8
+      },
+      nether_fire: {
+        bg: '#0e0705', c1: '#fed7aa', c2: '#f97316', w1: 'NETHER', w2: 'EXPEDITION',
+        f1: 78, f2: 42, gap: 22, lsp: 4, grid: 'dots', op: 2, step: 22,
+        glow: true, glowR: 16, glowOp: 65, glowC: '#f97316', vig: true, vigOp: 50, noise: false
+      },
+      frost_ice: {
+        bg: '#060a0f', c1: '#e0f2fe', c2: '#38bdf8', w1: 'FROST', w2: 'WINTER',
+        f1: 82, f2: 46, gap: 22, lsp: 4, grid: 'dots', op: 2.5, step: 20,
+        glow: true, glowR: 14, glowOp: 60, glowC: '#38bdf8', vig: true, vigOp: 40, noise: false
+      },
+      nature_green: {
+        bg: '#060b07', c1: '#a7f3d0', c2: '#10b981', w1: 'NATURE', w2: 'BIOMES',
+        f1: 78, f2: 44, gap: 20, lsp: 4, grid: 'dots', op: 2, step: 22,
+        glow: true, glowR: 12, glowOp: 50, glowC: '#10b981', vig: true, vigOp: 40, noise: false
+      },
+      shadow_lime: {
+        bg: '#080a07', c1: '#bef264', c2: '#84cc16', w1: 'SHADOW', w2: 'CONTRABAND',
+        f1: 76, f2: 42, gap: 20, lsp: 4, grid: 'dots', op: 2, step: 22,
+        glow: true, glowR: 14, glowOp: 60, glowC: '#84cc16', vig: true, vigOp: 55, noise: true, noiseOp: 6
+      },
+      empire_amber: {
+        bg: '#0c0804', c1: '#fde68a', c2: '#d97706', w1: 'CIVILIZATION', w2: 'EMPIRE',
+        f1: 72, f2: 47, gap: 20, lsp: 4, grid: 'dots', op: 2, step: 22,
+        glow: true, glowR: 14, glowOp: 55, glowC: '#d97706', vig: true, vigOp: 45, noise: false
+      },
+      cyber_pink: {
+        bg: '#0e0610', c1: '#f5d0fe', c2: '#d946ef', w1: 'EVENT', w2: 'SPECIAL',
+        f1: 82, f2: 46, gap: 22, lsp: 4, grid: 'dots', op: 2.5, step: 22,
+        glow: true, glowR: 20, glowOp: 75, glowC: '#d946ef', vig: true, vigOp: 50, noise: true, noiseOp: 6
+      },
+      tech_silver: {
+        bg: '#0b0b0d', c1: '#ffffff', c2: '#a1a1aa', w1: 'RELEASE', w2: 'OFFICIAL',
+        f1: 80, f2: 44, gap: 20, lsp: 4, grid: 'dots', op: 2, step: 22,
+        glow: true, glowR: 10, glowOp: 40, glowC: '#ffffff', vig: true, vigOp: 35, noise: false
+      },
+      orig_white: {
+        bg: '#0f0f0f', c1: '#ffffff', c2: '#ffffff', w1: 'CIVILIZATION', w2: 'REBORN',
+        f1: 72, f2: 47, gap: 20, lsp: 4, grid: 'none', op: 0, step: 20,
+        glow: false, vig: false, noise: false
       }
+    };
+
+    function applyPreset(key) {
+      const p = PRESETS[key];
+      if (!p) return;
+
+      document.getElementById('bgColor').value = p.bg;
+      document.getElementById('hexBgColor').value = p.bg;
+      document.getElementById('textColor1').value = p.c1;
+      document.getElementById('hexColor1').value = p.c1;
+      document.getElementById('textColor2').value = p.c2;
+      document.getElementById('hexColor2').value = p.c2;
+
+      document.getElementById('inputWord1').value = p.w1;
+      document.getElementById('inputWord2').value = p.w2;
+      document.getElementById('inputFontSize1').value = p.f1;
+      document.getElementById('inputFontSize2').value = p.f2;
+      document.getElementById('inputLineGap').value = p.gap;
+      document.getElementById('inputLetterSpacing').value = p.lsp;
+
+      document.getElementById('gridType').value = p.grid;
+      document.getElementById('gridOpacity').value = p.op;
+      document.getElementById('gridStep').value = p.step;
+
+      // Glow
+      document.getElementById('glowEnabled').checked = !!p.glow;
+      if (p.glowR !== undefined) document.getElementById('glowRadius').value = p.glowR;
+      if (p.glowOp !== undefined) document.getElementById('glowOpacity').value = p.glowOp;
+      if (p.glowC) {
+        document.getElementById('glowColor').value = p.glowC;
+        document.getElementById('hexGlowColor').value = p.glowC;
+      }
+
+      // Vignette
+      document.getElementById('vignetteEnabled').checked = !!p.vig;
+      if (p.vigOp !== undefined) document.getElementById('vignetteOpacity').value = p.vigOp;
+
+      // Noise
+      document.getElementById('noiseEnabled').checked = !!p.noise;
+      if (p.noiseOp !== undefined) document.getElementById('noiseOpacity').value = p.noiseOp;
+
       updateSvg();
     }
 
     function generateSvgString() {
       const mode = document.getElementById('textStyleMode').value;
-      const word1 = document.getElementById('inputWord1').value.trim() || 'ПАТЧ';
-      const word2 = document.getElementById('inputWord2').value.trim() || 'ОБНОВЛЕНИЕ';
-      const fontSize = parseInt(document.getElementById('inputFontSize').value, 10);
-      const subFontSize = Math.round(fontSize * 0.65);
+      const word1 = document.getElementById('inputWord1').value.trim() || 'CIVILIZATION';
+      const word2 = document.getElementById('inputWord2').value.trim() || 'PATCH';
+      const fontSize1 = parseInt(document.getElementById('inputFontSize1').value, 10);
+      const fontSize2 = parseInt(document.getElementById('inputFontSize2').value, 10);
+      const lineGap = parseInt(document.getElementById('inputLineGap').value, 10);
+      const letterSpacing = parseInt(document.getElementById('inputLetterSpacing').value, 10);
 
       const bgColor = document.getElementById('bgColor').value;
       const color1 = document.getElementById('textColor1').value;
       const color2 = document.getElementById('textColor2').value;
 
+      // Glow config
+      const glowEnabled = document.getElementById('glowEnabled').checked;
+      document.getElementById('glowSettingsWrap').style.display = glowEnabled ? 'block' : 'none';
+      const glowRadius = parseInt(document.getElementById('glowRadius').value, 10);
+      const glowOpacity = (parseFloat(document.getElementById('glowOpacity').value) / 100).toFixed(2);
+      const glowColor = document.getElementById('glowColor').value;
+      document.getElementById('lblGlowRadius').textContent = `${glowRadius} px`;
+      document.getElementById('lblGlowOpacity').textContent = `${document.getElementById('glowOpacity').value}%`;
+
+      // Vignette config
+      const vignetteEnabled = document.getElementById('vignetteEnabled').checked;
+      document.getElementById('vignetteSettingsWrap').style.display = vignetteEnabled ? 'block' : 'none';
+      const vignetteOpacity = (parseFloat(document.getElementById('vignetteOpacity').value) / 100).toFixed(2);
+      document.getElementById('lblVignette').textContent = `${document.getElementById('vignetteOpacity').value}%`;
+
+      // Noise config
+      const noiseEnabled = document.getElementById('noiseEnabled').checked;
+      document.getElementById('noiseSettingsWrap').style.display = noiseEnabled ? 'block' : 'none';
+      const noiseOpacity = (parseFloat(document.getElementById('noiseOpacity').value) / 100).toFixed(2);
+      document.getElementById('lblNoise').textContent = `${document.getElementById('noiseOpacity').value}%`;
+
+      // Grid config
       const gridType = document.getElementById('gridType').value;
       const gridOpacity = (parseFloat(document.getElementById('gridOpacity').value) / 100).toFixed(4);
       const gridStep = parseInt(document.getElementById('gridStep').value, 10);
       const gridColor = document.getElementById('gridColor').value;
 
       // Update UI labels
-      document.getElementById('lblFontSize').textContent = `${fontSize} / ${subFontSize} px`;
+      document.getElementById('lblFontSize1').textContent = `${fontSize1} px`;
+      document.getElementById('lblFontSize2').textContent = `${fontSize2} px`;
+      document.getElementById('lblLineGap').textContent = `${lineGap} px`;
+      document.getElementById('lblLetterSpacing').textContent = `${letterSpacing} px`;
       document.getElementById('lblGridOpacity').textContent = `${document.getElementById('gridOpacity').value}%`;
       document.getElementById('lblGridStep').textContent = `${gridStep} px`;
 
@@ -628,17 +840,66 @@
         patternRect = `<rect width="1636" height="464" fill="url(#crossGrid)"/>`;
       }
 
+      // Build Vignette Def & Rect
+      let vignetteDef = '';
+      let vignetteRect = '';
+      if (vignetteEnabled && vignetteOpacity > 0) {
+        vignetteDef = `
+    <radialGradient id="vignetteGrad" cx="50%" cy="50%" r="55%" fx="50%" fy="50%">
+      <stop offset="35%" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="${vignetteOpacity}"/>
+    </radialGradient>`;
+        vignetteRect = `<rect width="1636" height="464" fill="url(#vignetteGrad)"/>`;
+      }
+
+      // Build Noise Filter & Rect
+      let noiseDef = '';
+      let noiseRect = '';
+      if (noiseEnabled && noiseOpacity > 0) {
+        noiseDef = `
+    <filter id="noiseFilter">
+      <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" stitchTiles="stitch" />
+      <feColorMatrix type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 ${noiseOpacity} 0"/>
+    </filter>`;
+        noiseRect = `<rect width="1636" height="464" filter="url(#noiseFilter)"/>`;
+      }
+
+      // Build Glow Filter
+      let glowDef = '';
+      let glowFilterAttr = 'filter="drop-shadow(0 4px 16px rgba(0,0,0,0.85))"';
+      if (glowEnabled && glowOpacity > 0 && glowRadius > 0) {
+        glowDef = `
+    <filter id="textGlowFilter" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="${glowRadius}" result="blur"/>
+      <feFlood flood-color="${glowColor}" flood-opacity="${glowOpacity}" result="flood"/>
+      <feComposite in="flood" in2="blur" operator="in" result="glow"/>
+      <feMerge>
+        <feMergeNode in="glow"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>`;
+        glowFilterAttr = 'filter="url(#textGlowFilter)"';
+      }
+
+      // Vertical position calculation for perfect vertical optical centering
+      const blockHeight = fontSize1 + lineGap + fontSize2;
+      const topY = Math.round((464 - blockHeight) / 2);
+      const y1 = Math.round(topY + fontSize1 * 0.85);
+      const y2 = Math.round(topY + fontSize1 + lineGap + fontSize2 * 0.85);
+
       // Build text element
       let textContent = '';
       if (mode === 'orig_path') {
         textContent = `
-    <path d="${ORIG_PATH_1}" fill="url(#paint0_linear)"/>
-    <path d="${ORIG_PATH_2}" fill="url(#paint1_linear)"/>`;
+    <g ${glowFilterAttr}>
+      <path d="${ORIG_PATH_1}" fill="url(#paint0_linear)"/>
+      <path d="${ORIG_PATH_2}" fill="url(#paint1_linear)"/>
+    </g>`;
       } else {
         textContent = `
-    <g text-anchor="middle" letter-spacing="4">
-      <text x="818" y="215" font-family="'Minecraft Rus', monospace, sans-serif" font-size="${fontSize}" fill="url(#paint0_linear)" filter="drop-shadow(0 4px 16px rgba(0,0,0,0.8))">${escapeXml(word1)}</text>
-      <text x="818" y="295" font-family="'Minecraft Rus', monospace, sans-serif" font-size="${subFontSize}" fill="url(#paint1_linear)" letter-spacing="3" filter="drop-shadow(0 3px 12px rgba(0,0,0,0.8))">${escapeXml(word2)}</text>
+    <g text-anchor="middle" letter-spacing="${letterSpacing}" ${glowFilterAttr}>
+      <text x="818" y="${y1}" font-family="'Minecraft Rus', monospace, sans-serif" font-size="${fontSize1}" fill="url(#paint0_linear)">${escapeXml(word1)}</text>
+      <text x="818" y="${y2}" font-family="'Minecraft Rus', monospace, sans-serif" font-size="${fontSize2}" fill="url(#paint1_linear)" letter-spacing="${Math.max(1, letterSpacing - 1)}">${escapeXml(word2)}</text>
     </g>`;
       }
 
@@ -646,12 +907,12 @@
   <defs>
     <style>
       @font-face {
-        font-family: \'Minecraft Rus\';
-        src: url(\'minecraft-rus.ttf\') format(\'truetype\');
+        font-family: 'Minecraft Rus';
+        src: url('minecraft-rus.ttf') format('truetype');
         font-weight: normal;
         font-style: normal;
       }
-    </style>${patternDef}
+    </style>${patternDef}${vignetteDef}${noiseDef}${glowDef}
     <linearGradient id="paint0_linear" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="${color1}"/>
       <stop offset="100%" stop-color="${color2}"/>
@@ -667,6 +928,8 @@
   <g clip-path="url(#clip0)">
     <path d="M1636 0H0V464H1636V0Z" fill="${bgColor}"/>
     ${patternRect}
+    ${vignetteRect}
+    ${noiseRect}
     ${textContent}
   </g>
 </svg>`;
@@ -678,9 +941,13 @@
 
     function updateSvg() {
       const mode = document.getElementById('textStyleMode').value;
-      document.getElementById('rowWord1').style.display = (mode === 'orig_path') ? 'none' : 'flex';
-      document.getElementById('rowWord2').style.display = (mode === 'orig_path') ? 'none' : 'flex';
-      document.getElementById('rowFontSize').style.display = (mode === 'orig_path') ? 'none' : 'flex';
+      const isPath = (mode === 'orig_path');
+      document.getElementById('rowWord1').style.display = isPath ? 'none' : 'flex';
+      document.getElementById('rowWord2').style.display = isPath ? 'none' : 'flex';
+      document.getElementById('rowFontSize1').style.display = isPath ? 'none' : 'flex';
+      document.getElementById('rowFontSize2').style.display = isPath ? 'none' : 'flex';
+      document.getElementById('rowLineGap').style.display = isPath ? 'none' : 'flex';
+      document.getElementById('rowLetterSpacing').style.display = isPath ? 'none' : 'flex';
 
       const svgStr = generateSvgString();
       document.getElementById('svgContainer').innerHTML = svgStr;
@@ -716,24 +983,6 @@
       } catch(e) {
         toast('Ошибка копирования');
       }
-    }
-
-    async function saveToAssetsDirectly() {
-      // If run inside local environment with backend endpoint
-      const svgStr = generateSvgString();
-      try {
-        const res = await fetch('/api/save-banner-asset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filename: 'news_banner_patch_green.svg', content: svgStr })
-        });
-        if (res.ok) {
-          toast('Сохранено напрямую в assets/news_banner_patch_green.svg!');
-          return;
-        }
-      } catch(e) {}
-      // Fallback to normal download
-      downloadSvg();
     }
 
     // Initial render
