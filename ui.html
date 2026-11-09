@@ -472,6 +472,13 @@
     stroke:currentColor !important;
     color:inherit !important;
     flex-shrink:0 !important;
+    transition:transform .25s ease !important;
+    transform-origin:center center !important;
+  }
+  .more-btn.open svg,
+  .btn.more-btn.open svg,
+  .more-wrap:has(.more-menu.show) .more-btn svg{
+    transform:rotate(45deg) !important;
   }
   .btn.more-btn:hover,
   .more-btn:hover,
@@ -836,7 +843,7 @@
   }
   .showcase-dot.active{
     background: #ffffff !important;
-    box-shadow: 0 0 6px rgba(255, 255, 255, 0.4) !important;
+    box-shadow: none !important;
   }
   .changelog-latest{
     font-size:13px;
