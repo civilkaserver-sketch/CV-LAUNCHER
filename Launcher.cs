@@ -2924,7 +2924,7 @@ namespace CivilizationLauncher
 
                     "assets/news_banner_patch.png",
 
-                    "assets/bg.png"
+                    "assets/news_banner_patch_green.svg"
 
                 };
 
@@ -3237,118 +3237,110 @@ namespace CivilizationLauncher
 
 
         private static readonly object assetDownloadLock = new object();
+        private static volatile bool githubPagesUnavailable = false;
 
-
-
-        static byte[] DownloadAssetFromGitHub(string assetRelPath)
-
+        static byte[] TryDownloadUrl(string url, out HttpStatusCode? statusCode)
         {
-
-            if (string.IsNullOrEmpty(assetRelPath)) return null;
-
-            string cleanRel = Uri.UnescapeDataString(assetRelPath).Replace('\\', '/').TrimStart('/');
-
-            if (!cleanRel.StartsWith("assets/", StringComparison.OrdinalIgnoreCase) || cleanRel.Contains(".."))
-
-            {
-
-                return null;
-
-            }
-
-
-
+            statusCode = null;
             try
-
             {
-
-                string rawUrl = "https://raw.githubusercontent.com/civilkaserver-sketch/CV-LAUNCHER/main/" + cleanRel;
-
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-                HttpWebRequest req = (HttpWebRequest)WebRequest.Create(rawUrl);
-
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create(url);
                 req.UserAgent = "CivilizationLauncher";
-
-                req.Timeout = 8000;
-
-                req.ReadWriteTimeout = 12000;
-
+                req.Timeout = 15000;
+                req.ReadWriteTimeout = 30000;
                 using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
-
                 {
-
+                    statusCode = resp.StatusCode;
                     if (resp.StatusCode == HttpStatusCode.OK)
-
                     {
-
                         using (Stream stream = resp.GetResponseStream())
-
                         using (MemoryStream ms = new MemoryStream())
-
                         {
-
                             stream.CopyTo(ms);
-
-                            byte[] downloaded = ms.ToArray();
-
-                            if (downloaded.Length > 0)
-
-                            {
-
-                                try
-
-                                {
-
-                                    string cachePath = Path.Combine(GetLauncherDataDir(), cleanRel.Replace('/', '\\'));
-
-                                    string dir = Path.GetDirectoryName(cachePath);
-
-                                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-                                    lock (assetDownloadLock)
-
-                                    {
-
-                                        if (!File.Exists(cachePath))
-
-                                        {
-
-                                            File.WriteAllBytes(cachePath, downloaded);
-
-                                        }
-
-                                    }
-
-                                }
-
-                                catch { }
-
-                                return downloaded;
-
-                            }
-
+                            byte[] data = ms.ToArray();
+                            if (data.Length > 0) return data;
                         }
-
                     }
-
                 }
-
             }
-
-            catch (Exception ex)
-
+            catch (WebException wex)
             {
-
-                Log("Asset download error (" + cleanRel + "): " + ex.Message);
-
+                HttpWebResponse errResp = wex.Response as HttpWebResponse;
+                if (errResp != null)
+                {
+                    statusCode = errResp.StatusCode;
+                    try { errResp.Close(); } catch { }
+                }
+                Log("Asset download error (" + url + "): " + wex.Message);
             }
-
+            catch (Exception ex)
+            {
+                Log("Asset download error (" + url + "): " + ex.Message);
+            }
             return null;
-
         }
 
+        static byte[] DownloadAssetFromGitHub(string assetRelPath)
+        {
+            if (string.IsNullOrEmpty(assetRelPath)) return null;
+            string cleanRel = Uri.UnescapeDataString(assetRelPath).Replace('\\', '/').TrimStart('/');
+            if (!cleanRel.StartsWith("assets/", StringComparison.OrdinalIgnoreCase) || cleanRel.Contains(".."))
+            {
+                return null;
+            }
 
+            try
+            {
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                if (ServicePointManager.DefaultConnectionLimit < 16)
+                {
+                    ServicePointManager.DefaultConnectionLimit = 16;
+                }
+
+                byte[] downloaded = null;
+                HttpStatusCode? status = null;
+
+                if (!githubPagesUnavailable)
+                {
+                    string pagesUrl = "https://civilkaserver-sketch.github.io/CV-LAUNCHER/" + cleanRel;
+                    downloaded = TryDownloadUrl(pagesUrl, out status);
+                    if (downloaded == null && status == HttpStatusCode.NotFound)
+                    {
+                        githubPagesUnavailable = true;
+                    }
+                }
+
+                if (downloaded == null)
+                {
+                    string rawUrl = "https://raw.githubusercontent.com/civilkaserver-sketch/CV-LAUNCHER/main/" + cleanRel;
+                    downloaded = TryDownloadUrl(rawUrl, out status);
+                }
+
+                if (downloaded != null && downloaded.Length > 0)
+                {
+                    try
+                    {
+                        string cachePath = Path.Combine(GetLauncherDataDir(), cleanRel.Replace('/', '\\'));
+                        string dir = Path.GetDirectoryName(cachePath);
+                        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                        lock (assetDownloadLock)
+                        {
+                            if (!File.Exists(cachePath))
+                            {
+                                File.WriteAllBytes(cachePath, downloaded);
+                            }
+                        }
+                    }
+                    catch { }
+                    return downloaded;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log("Asset download error (" + cleanRel + "): " + ex.Message);
+            }
+            return null;
+        }
 
         static void ServeFile(HttpListenerContext ctx, string filePath, string contentType, string resName = null)
 
@@ -3430,11 +3422,16 @@ namespace CivilizationLauncher
 
             {
 
-                ctx.Response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-
-                ctx.Response.AddHeader("Pragma", "no-cache");
-
-                ctx.Response.AddHeader("Expires", "0");
+                if (!string.IsNullOrEmpty(resName) && resName.StartsWith("assets/", StringComparison.OrdinalIgnoreCase))
+                {
+                    ctx.Response.AddHeader("Cache-Control", "public, max-age=86400");
+                }
+                else
+                {
+                    ctx.Response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+                    ctx.Response.AddHeader("Pragma", "no-cache");
+                    ctx.Response.AddHeader("Expires", "0");
+                }
 
                 ctx.Response.ContentType = contentType;
 
@@ -7409,7 +7406,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "757466ec8ba9acd90f56472f899c0fd057895b7b";
+        private static string CurrentLauncherSha = "fa499c8a584ac07d977ca8e13e4e574dc9f9e110";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";

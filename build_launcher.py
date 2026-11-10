@@ -29,11 +29,20 @@ base_resources = [
     "/resource:icon.ico,icon.ico"
 ]
 
-for root, dirs, files in os.walk(assets_dir):
-    for f in sorted(files):
-        full_path = os.path.join(root, f)
-        rel_path = os.path.relpath(full_path, launcher_dir)
-        ident = rel_path.replace("\\", "/")
+essential_assets = [
+    "assets/icon.png",
+    "assets/minecraft-rus.ttf",
+    "assets/news_banner_1.png",
+    "assets/news_banner_1.svg",
+    "assets/news_banner_patch.png",
+    "assets/news_banner_patch.svg",
+    "assets/news_banner_patch_green.svg",
+]
+
+for ident in essential_assets:
+    rel_path = ident.replace("/", os.sep)
+    full_path = os.path.join(launcher_dir, rel_path)
+    if os.path.isfile(full_path):
         base_resources.append(f'/resource:{rel_path},{ident}')
 
 csc_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
