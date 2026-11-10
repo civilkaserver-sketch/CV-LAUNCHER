@@ -480,17 +480,17 @@
   .version-picker-wrap{
     position:relative;
     margin-left:auto;
+    align-self:flex-end;
     flex-shrink:0;
   }
   .version-picker-btn{
-    height:34px;
-    padding:4px 6px;
-    border-radius:var(--r);
+    padding:6px 2px 0;
     background:transparent;
     border:none;
     color:rgba(255, 255, 255, 0.78);
     font-family:inherit;
     font-size:13px;
+    line-height:1;
     letter-spacing:.6px;
     display:inline-flex;
     align-items:center;
@@ -501,7 +501,7 @@
   }
   .version-picker-btn:hover,
   .version-picker-wrap.open .version-picker-btn{
-    color:#fff;
+    color:var(--text-hover);
   }
   .version-picker-chevron{
     color:currentColor;
@@ -518,60 +518,65 @@
   }
   .version-picker-menu{
     position:absolute;
-    bottom:calc(100% + 6px);
+    bottom:calc(100% + 8px);
     right:0;
-    min-width:210px;
-    background:rgba(16, 16, 18, 0.96);
-    backdrop-filter:blur(10px);
-    border:1px solid rgba(255, 255, 255, 0.12);
-    border-radius:8px;
+    min-width:190px;
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--r);
     padding:4px;
     display:none;
     flex-direction:column;
     gap:2px;
-    z-index:30;
-    box-shadow:0 10px 26px rgba(0, 0, 0, 0.6);
+    z-index:100;
   }
   .version-picker-wrap.open .version-picker-menu{
     display:flex;
+    animation: menuFadeSlideIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    border-color:rgba(255, 255, 255, 0.08);
+    border-top-color:rgba(255, 255, 255, 0.24);
   }
   .version-picker-item{
     width:100%;
-    text-align:left;
-    padding:8px 10px;
-    border-radius:6px;
     background:transparent;
     border:none;
-    color:var(--muted);
-    font-family:inherit;
+    color:var(--text);
+    padding:8px 12px;
+    font-size:12px;
+    letter-spacing:1px;
+    text-align:left;
     cursor:pointer;
+    border-radius:4px;
     display:flex;
     align-items:center;
     justify-content:space-between;
-    gap:10px;
-    font-size:12px;
-    transition:background .12s, color .12s;
+    gap:12px;
+    transition:background .15s, color .15s;
+    font-family:inherit;
+    white-space:nowrap;
   }
   .version-picker-item:hover{
-    background:rgba(255, 255, 255, 0.06);
-    color:#fff;
+    background:var(--card-hover);
+    color:var(--text-hover);
   }
   .version-picker-item.active{
-    background:rgba(255, 255, 255, 0.09);
-    color:#fff;
+    background:var(--card-hover);
+    color:var(--text-hover);
   }
   .version-item-name{
     font-size:12px;
-    font-weight:600;
+    letter-spacing:1px;
     color:inherit;
-    letter-spacing:.4px;
   }
   .version-item-state{
     font-size:10px;
+    letter-spacing:.4px;
     color:var(--dim);
   }
-  .version-item-state.is-ready{color:#86efac;}
-  .version-item-state.is-reinstall{color:#fcd34d;}
+  .version-item-state.is-ready,
+  .version-item-state.is-reinstall{
+    color:var(--muted);
+  }
   .btn.more-btn,
   .more-btn,
   .menu-btn{
