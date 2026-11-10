@@ -37,6 +37,9 @@ essential_assets = [
     "assets/news_banner_patch.png",
     "assets/news_banner_patch.svg",
     "assets/news_banner_patch_green.svg",
+    "assets/баннеры новой новости/jam1.svg",
+    "assets/баннеры новой новости/janer.svg",
+    "assets/баннеры новой новости/ses3.svg",
 ]
 
 for ident in essential_assets:

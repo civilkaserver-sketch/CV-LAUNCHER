@@ -8,12 +8,13 @@
 <link rel="icon" type="image/png" href="assets/icon.png">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="manifest" href="manifest.json">
+<link rel="preload" href="assets/minecraft-rus.ttf" as="font" type="font/ttf" crossorigin>
 <title>&#8203;</title>
 <style>
   @font-face{
     font-family:'Minecraft Rus';
     src:url('assets/minecraft-rus.ttf') format('truetype');
-    font-display:swap;
+    font-display:block;
   }
   :root{
     --bg:#0e0e0e;
@@ -665,26 +666,33 @@
     color:var(--dim);
     background:rgba(255,255,255,.02);
   }
-  .changelog-list-wrap{
+  .changelog-list-outer{
     position:relative;
     flex:1;
     min-height:0;
-    overflow-y:auto;
-    scrollbar-width:none;
+    display:flex;
+    flex-direction:column;
   }
-  .changelog-list-wrap::-webkit-scrollbar{
-    display:none;
-  }
-  .changelog-list-wrap::after{
+  .changelog-list-outer::after{
     content:'';
     position:absolute;
     left:0;
     right:0;
     bottom:0;
     height:36px;
-    background:linear-gradient(to bottom, rgba(14,14,14,0) 0%, var(--card) 100%);
+    background:linear-gradient(to bottom, rgba(12,12,12,0) 0%, var(--card) 100%);
     pointer-events:none;
     z-index:2;
+  }
+  .changelog-list-wrap{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    scrollbar-width:none;
+    padding-bottom:20px;
+  }
+  .changelog-list-wrap::-webkit-scrollbar{
+    display:none;
   }
   .changelog-list{
     display:flex;
@@ -2290,11 +2298,11 @@
         <div class="card" id="bannerCard">
           <div class="banner-bg-layer" id="bannerBgA" style="opacity:1;background-image:url('assets/pool/pool_1.png');"></div>
           <div class="banner-bg-layer" id="bannerBgB" style="opacity:0;"></div>
-          <div class="banner-badge not-installed" id="bannerBadge"><span id="badgeText">Не установлено</span></div>
+          <div class="banner-badge not-installed" id="bannerBadge" style="display:none"><span id="badgeText">Не установлено</span></div>
 
           <h1 class="banner-title">CIVILIZATION</h1>
 
-          <div class="banner-sub">Minecraft 1.21.8 · Fabric · 19 модов</div>
+          <div class="banner-sub">Minecraft 26.3 · Fabric · 19 модов</div>
 
           <div class="banner-actions">
             <button class="btn primary banner-main-btn" id="btnMainAction" onclick="onMainActionClick()">ИГРАТЬ</button>
@@ -2337,44 +2345,46 @@
               <div class="changelog-head">
                 <h3>ЧТО НОВОГО</h3>
               </div>
+              <div class="changelog-list-outer">
               <div class="changelog-list-wrap">
                 <div class="changelog-list" id="changelogList">
                   <div class="changelog-item">
                     <span class="bullet">—</span>
-                    <div class="cl-text"><strong>1. Главное меню (M)</strong>: быстрый доступ ко всем разделам без команд</div>
+                    <div class="cl-text"><strong>1. Сезон 2 на 26.3</strong>: перенос ядра мода на Minecraft 26.3 (Fabric)</div>
                   </div>
                   <div class="changelog-item">
                     <span class="bullet">—</span>
-                    <div class="cl-text"><strong>2. Безопасные Трейды</strong>: двусторонний обмен предметами с защитой от скама</div>
+                    <div class="cl-text"><strong>2. Полностью новый мир</strong>: сброс старой карты, зон и рейтинга держав — старт с нуля</div>
                   </div>
                   <div class="changelog-item">
                     <span class="bullet">—</span>
-                    <div class="cl-text"><strong>3. Обновленная экономика</strong>: конвертация в Банке, ротация Рынка каждые 12ч</div>
+                    <div class="cl-text"><strong>3. Очищенное ядро</strong>: вырезаны армия, войны, фронтлайн, старые NPC и квесты</div>
                   </div>
                   <div class="changelog-item">
                     <span class="bullet">—</span>
-                    <div class="cl-text"><strong>4. Продажа предметов</strong>: выставление товаров на общий рынок игрокам</div>
+                    <div class="cl-text"><strong>4. Экономика и дипломатия</strong>: Банк, Рынок, Трейды, Союзы и рейтинг перенесены</div>
                   </div>
                   <div class="changelog-item">
                     <span class="bullet">—</span>
-                    <div class="cl-text"><strong>5. NPC и «Восьмёрка»</strong>: 8 секретных NPC по миру, уникальные события</div>
+                    <div class="cl-text"><strong>5. Стол Моряка и лодки</strong>: отделки, прочность и физика судов работают на 26.3</div>
                   </div>
                   <div class="changelog-item">
                     <span class="bullet">—</span>
-                    <div class="cl-text"><strong>6. Таверна в Аду</strong>: Бармен с напитками, сеть защищённых рельсов</div>
+                    <div class="cl-text"><strong>6. Лаунчер 60 МБ → 516 КБ</strong>: скриншоты вынесены на GitHub, вес уменьшен в 100+ раз</div>
                   </div>
                   <div class="changelog-item">
                     <span class="bullet">—</span>
-                    <div class="cl-text"><strong>7. Стол Моряка</strong>: улучшение и отделка лодок, водная физика и паруса</div>
+                    <div class="cl-text"><strong>7. Обновлённый интерфейс</strong>: плавные окна, быстрая галерея и загрузка без скачков</div>
                   </div>
                   <div class="changelog-item">
                     <span class="bullet">—</span>
-                    <div class="cl-text"><strong>8. Союзы</strong>: альянсы игроков с полным отключением урона (без тимкилла)</div>
+                    <div class="cl-text"><strong>8. Новости сезона</strong>: подробности перехода на 26.3 и редизайна лаунчера во вкладке «Обновления»</div>
                   </div>
                 </div>
               </div>
+              </div>
               <div class="changelog-latest" id="changelogLatest" style="display:none">
-                Вы на последней версии v1.21.8 · проверено сегодня
+                Вы на последней версии v26.3 · проверено сегодня
               </div>
               <button class="changelog-more-link" onclick="showNews(true)">Узнать больше</button>
             </div>
@@ -2945,7 +2955,7 @@
           const countEl = document.getElementById('modsCountBadge');
           if(countEl) countEl.textContent = data.count + ' МОДОВ';
           const subEl = document.querySelector('.banner-sub');
-          if(subEl) subEl.textContent = 'Minecraft 1.21.8 · Fabric · ' + data.count + ' модов';
+          if(subEl) subEl.textContent = 'Minecraft 26.3 · Fabric · ' + data.count + ' модов';
           const listEl = document.getElementById('modsQuickList');
           if(listEl){
             listEl.innerHTML = data.mods.map(function(m){
@@ -2995,7 +3005,19 @@
     }
   }
 
+  const STATUS_CACHE_KEY = 'cv_last_status_v1';
+  let backendStatusLoaded = false, hasCachedStatus = false;
   let installed = false, updateAvailable = false;
+
+  function saveCachedStatus(inst, upd){
+    if(!isBackend) return;
+    try {
+      localStorage.setItem(STATUS_CACHE_KEY, JSON.stringify({
+        installed: !!inst,
+        updateAvailable: !!(inst && upd)
+      }));
+    } catch(e) {}
+  }
   let installing = false, stopRequested = false, simTimer = null;
   let gameRunning = false, gamePollTimer = null;
 
@@ -3012,6 +3034,9 @@
   }
 
   function onMainActionClick(){
+    if(isBackend && !backendStatusLoaded && !hasCachedStatus){
+      return;
+    }
     if(isSilentUpdating){
       const b = document.getElementById('btnMainAction');
       if(b){ b.textContent = 'Подготовка...'; b.disabled = true; }
@@ -3070,6 +3095,7 @@
   function setStatus(ok){
     installed = ok;
     if(!ok) updateAvailable = false;
+    if(backendStatusLoaded) saveCachedStatus(ok, updateAvailable);
 
     const badge = document.getElementById('bannerBadge');
     const badgeText = document.getElementById('badgeText');
@@ -3350,6 +3376,8 @@
         fetchAndRenderModsList();
         const prevUpdate = updateAvailable;
         updateAvailable = !data.installed ? false : (data.updateAvailable || false);
+        backendStatusLoaded = true;
+        hasCachedStatus = true;
         setStatus(data.installed);
         if(!prevUpdate && updateAvailable && !installing && !gameRunning){
           runSilentBackgroundUpdate();
@@ -3372,7 +3400,11 @@
       if(!statusPollTimer){
         statusPollTimer = setInterval(checkBackendStatus, 15000);
       }
-    } catch(e) {}
+    } catch(e) {
+      if(!backendStatusLoaded && !hasCachedStatus){
+        setStatus(false);
+      }
+    }
   }
 
   let currentLauncherSha = '07dfee4';
@@ -4344,7 +4376,7 @@
     const fallbackAttr = fallback ? `onerror="this.src='${fallback}'"` : '';
     return `
       <div style="height:200px;overflow:hidden;line-height:0;background:var(--card);">
-        <img src="${url}" ${fallbackAttr} alt="${alt}" style="width:100%;height:200px;object-fit:cover;display:block;">
+        <img src="${encodeURI(url)}" ${fallbackAttr} alt="${alt}" style="width:100%;height:200px;object-fit:cover;display:block;">
       </div>`;
   }
 
@@ -4480,7 +4512,7 @@
           return;
         }
       }
-    } catch (e) { }
+    } catch (e) { console.warn('Local /api/news failed:', e); }
 
     // 2. Fetch live news directly from GitHub repository in real time
     try {
@@ -4497,7 +4529,7 @@
           return;
         }
       }
-    } catch (e) { }
+    } catch (e) { console.warn('Local /api/news failed:', e); }
 
     // 3. Fallback to embedded news.json
     try {
@@ -4514,7 +4546,7 @@
           return;
         }
       }
-    } catch (e) { }
+    } catch (e) { console.warn('Local /api/news failed:', e); }
 
     if (!currentNewsData || currentNewsData.length === 0) {
       currentNewsData = (typeof DEFAULT_NEWS !== 'undefined' && Array.isArray(DEFAULT_NEWS)) ? DEFAULT_NEWS : [];
@@ -6772,7 +6804,24 @@
   loadSavedLauncherSettings();
   loadInitialSkin();
   showMain();
-  setStatus(false);
+  (function initInitialStatus(){
+    if(!isBackend){
+      setStatus(false);
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(STATUS_CACHE_KEY);
+      if(raw){
+        const cached = JSON.parse(raw);
+        if(cached && typeof cached.installed === 'boolean'){
+          hasCachedStatus = true;
+          updateAvailable = cached.installed ? !!cached.updateAvailable : false;
+          setStatus(cached.installed);
+          return;
+        }
+      }
+    } catch(e) {}
+  })();
   checkBackendStatus();
   loadRealScreenshots();
   setInterval(checkScreenshotsUpdate, 1500);

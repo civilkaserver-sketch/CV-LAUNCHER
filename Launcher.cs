@@ -1741,7 +1741,7 @@ namespace CivilizationLauncher
 
                     "--app=\"{0}\" --window-size=1150,740 --user-data-dir=\"{1}\" " +
 
-                    "--no-startup-boost --disable-http-cache --disable-features=WebAppIconInTitlebar,Translate --disable-background-mode " +
+                    "--no-startup-boost --disable-features=WebAppIconInTitlebar,Translate --disable-background-mode " +
 
                     "--disable-background-networking --disable-component-update --disable-sync " +
 
@@ -3080,7 +3080,7 @@ namespace CivilizationLauncher
 
             {
 
-                string path = ctx.Request.Url.AbsolutePath.TrimStart('/');
+                string path = Uri.UnescapeDataString(ctx.Request.Url.AbsolutePath).TrimStart('/');
 
                 if (string.IsNullOrEmpty(path) || path == "ui.html")
 
@@ -3633,6 +3633,8 @@ namespace CivilizationLauncher
             byte[] bytes = Encoding.UTF8.GetBytes(json);
 
             ctx.Response.ContentType = "application/json; charset=utf-8";
+            ctx.Response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            ctx.Response.AddHeader("Pragma", "no-cache");
 
             ctx.Response.ContentLength64 = bytes.Length;
 
@@ -7541,7 +7543,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "35830d3ff01ae4f450d077fdc2a0e7c416312ba5";
+        private static string CurrentLauncherSha = "976552a57984176a5551dc2eea7a21897cc6a881";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
