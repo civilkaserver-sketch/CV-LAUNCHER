@@ -2908,7 +2908,7 @@
         <div class="card" id="bannerCard">
           <div class="banner-bg-layer" id="bannerBgA" style="opacity:1;background-image:url('assets/pool/pool_1.png');"></div>
           <div class="banner-bg-layer" id="bannerBgB" style="opacity:0;"></div>
-          <div class="banner-badge not-installed" id="bannerBadge" style="display:none"><span id="badgeText">Не установлено</span></div>
+
 
           <h1 class="banner-title">CIVILIZATION</h1>
 
@@ -3874,7 +3874,7 @@
     // Бейдж: «Не установлено» или скрыт когда установлено
     if(badge){
       if(!ok){
-        badge.style.display = 'inline-block';
+        badge.style.display = 'none';
         badge.className = 'banner-badge not-installed';
         if(badgeText) badgeText.textContent = legacyInstalled ? 'Старая версия 1.21.8' : 'Не установлено';
       } else {
