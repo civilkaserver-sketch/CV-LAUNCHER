@@ -485,8 +485,15 @@
     transform:rotate(45deg) !important;
   }
   .btn.line.more-btn:hover,
+  .btn.line.more-btn.open,
+  .btn.line.more-btn.is-active,
   .btn.more-btn:hover,
+  .btn.more-btn.open,
+  .btn.more-btn.is-active,
   .more-btn:hover,
+  .more-btn.open,
+  .more-btn.is-active,
+  .more-wrap:has(.more-menu.show) .more-btn,
   .menu-btn:hover{
     background:var(--card-hover) !important;
     border-color:rgba(255, 255, 255, 0.08) !important;
@@ -494,7 +501,12 @@
     color:var(--text-hover) !important;
   }
   .btn.more-btn:hover svg,
+  .btn.more-btn.open svg,
+  .btn.more-btn.is-active svg,
   .more-btn:hover svg,
+  .more-btn.open svg,
+  .more-btn.is-active svg,
+  .more-wrap:has(.more-menu.show) .more-btn svg,
   .menu-btn:hover svg{
     stroke:var(--text-hover) !important;
     color:var(--text-hover) !important;
@@ -535,6 +547,10 @@
   .folder-menu.show{
     display:flex;
     animation: menuFadeSlideIn 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .more-menu.show{
+    border-color:rgba(255, 255, 255, 0.08);
+    border-top-color:rgba(255, 255, 255, 0.24);
   }
   .more-item{
     background:transparent;
