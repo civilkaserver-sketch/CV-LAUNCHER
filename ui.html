@@ -135,6 +135,36 @@
   .side-footer{
     margin-top:auto;
     padding-top:16px;
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  .side-nav-item.side-update-btn{
+    width:100%;
+    text-align:left;
+    display:none;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    letter-spacing:.9px;
+    background:rgba(255,255,255,0.08);
+    border-color:rgba(255,255,255,0.12);
+    border-top-color:rgba(255,255,255,0.28);
+    color:#fff;
+  }
+  .side-nav-item.side-update-btn:hover{
+    background:rgba(255,255,255,0.14);
+    border-color:rgba(255,255,255,0.22);
+    border-top-color:rgba(255,255,255,0.42);
+    color:#fff;
+  }
+  .side-update-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#4ade80;
+    margin-left:auto;
+    flex-shrink:0;
   }
   .side-toggle{
     display:flex;
@@ -1369,7 +1399,7 @@
     position: relative;
     width: 170px;
     height: 216px;
-    background: rgba(255, 255, 255, 0.035);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.052) 0%, rgba(255, 255, 255, 0.022) 100%);
     border: 1.5px solid rgba(255, 255, 255, 0.08);
     border-radius: 14px;
     padding: 0;
@@ -1385,16 +1415,16 @@
     flex-shrink: 0;
   }
 
-  .skin-card:hover {
-    border-color: rgb(255 255 255);
-
-    background: rgba(255, 255, 255, 0.055);
+  .skin-card:not(.skin-card-add):hover {
+    border-color: rgba(255, 255, 255, 0.09);
+    border-top-color: rgba(255, 255, 255, 0.28);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.078) 0%, rgba(255, 255, 255, 0.036) 100%);
   }
 
-  .skin-card.active {
+  .skin-card.active,
+  .skin-card.active:hover {
     border-color: rgb(255 255 255);
-    background: rgba(255, 255, 255, 0.07);
-    /* box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3); */
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.095) 0%, rgba(255, 255, 255, 0.048) 100%);
   }
 
   .skin-card-badge {
@@ -1462,7 +1492,6 @@
   }
   .skin-card.skin-card-add:hover {
     border-color: rgb(255 255 255);
-
     background: rgba(255, 255, 255, 0.035);
   }
 
@@ -2653,6 +2682,15 @@
     </div>
 
     <div class="side-footer">
+      <button class="side-nav-item side-update-btn" id="btnUpdateLauncherSide" onclick="updateLauncherNow()" title="Доступно обновление лаунчера">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.9">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span class="side-update-label">Обновить лаунчер</span>
+        <span class="side-update-dot"></span>
+      </button>
       <button class="side-nav-item" onclick="openSettingsModal()" style="width:100%;text-align:left;display:flex;align-items:center;gap:8px;">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.7">
           <circle cx="12" cy="12" r="3"></circle>
@@ -3861,20 +3899,23 @@
     if(curSha) currentLauncherSha = curSha;
 
     const banner = document.getElementById('launcherUpdateBanner');
+    const sideBtn = document.getElementById('btnUpdateLauncherSide');
     const badge = document.getElementById('launcherVersionBadge');
     const st = document.getElementById('launcherVersionStatus');
     const modalBtn = document.getElementById('btnModalUpdateLauncher');
     const checkBtn = document.getElementById('btnCheckLauncherUpdate');
-    const bannerSub = document.getElementById('launcherUpdateBannerSub');
 
     if(badge){
       badge.textContent = currentLauncherSha ? currentLauncherSha.substring(0, 7) : '07dfee4';
     }
 
     if(banner){
-      banner.style.display = launcherUpdateAvailable ? 'flex' : 'none';
-      if(bannerSub && remoteSha){
-        bannerSub.textContent = 'Новая версия ' + remoteSha.substring(0, 7) + ' готова к установке в один клик.';
+      banner.style.display = 'none';
+    }
+    if(sideBtn){
+      sideBtn.style.display = launcherUpdateAvailable ? 'flex' : 'none';
+      if(remoteSha){
+        sideBtn.title = 'Обновить лаунчер (' + remoteSha.substring(0, 7) + ')';
       }
     }
 
@@ -3930,9 +3971,14 @@
     if(isUpdatingLauncher) return;
     isUpdatingLauncher = true;
 
-    const topBtn = document.getElementById('btnUpdateLauncherTop');
+    const topBtn = document.getElementById('btnUpdateLauncherSide');
     const modalBtn = document.getElementById('btnModalUpdateLauncher');
-    if(topBtn){ topBtn.disabled = true; topBtn.textContent = 'Загрузка...'; }
+    const setTopText = (t) => {
+      if(!topBtn) return;
+      const lbl = topBtn.querySelector('.side-update-label');
+      if(lbl) lbl.textContent = t;
+    };
+    if(topBtn){ topBtn.disabled = true; setTopText('Загрузка...'); }
     if(modalBtn){ modalBtn.disabled = true; modalBtn.textContent = 'Загрузка...'; }
 
     toast('Загрузка обновления лаунчера...');
@@ -3944,7 +3990,7 @@
         toast('Ошибка при запросе обновления лаунчера');
         hideLauncherRestartOverlay();
         isUpdatingLauncher = false;
-        if(topBtn){ topBtn.disabled = false; topBtn.textContent = 'Обновить лаунчер'; }
+        if(topBtn){ topBtn.disabled = false; setTopText('Обновить лаунчер'); }
         if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить'; }
         return;
       }
@@ -3974,7 +4020,7 @@
               hideLauncherRestartOverlay();
               isUpdatingLauncher = false;
               toast('Ошибка обновления: ' + (sData.launcherUpdateMsg || 'сбой загрузки'));
-              if(topBtn){ topBtn.disabled = false; topBtn.textContent = 'Обновить лаунчер'; }
+              if(topBtn){ topBtn.disabled = false; setTopText('Обновить лаунчер'); }
               if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить'; }
             }
           }
@@ -3994,7 +4040,7 @@
       toast('Ошибка запуска обновления: ' + e.message);
       hideLauncherRestartOverlay();
       isUpdatingLauncher = false;
-      if(topBtn){ topBtn.disabled = false; topBtn.textContent = 'Обновить лаунчер'; }
+      if(topBtn){ topBtn.disabled = false; setTopText('Обновить лаунчер'); }
       if(modalBtn){ modalBtn.disabled = false; modalBtn.textContent = 'Обновить'; }
     }
   }
