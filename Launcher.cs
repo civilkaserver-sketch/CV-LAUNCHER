@@ -3342,6 +3342,139 @@ namespace CivilizationLauncher
             return null;
         }
 
+        private static readonly object thumbGenLock = new object();
+
+        static System.Drawing.Imaging.ImageCodecInfo GetJpegCodec()
+        {
+            foreach (var codec in System.Drawing.Imaging.ImageCodecInfo.GetImageDecoders())
+            {
+                if (codec.FormatID == System.Drawing.Imaging.ImageFormat.Jpeg.Guid) return codec;
+            }
+            return null;
+        }
+
+        static byte[] GetOrCreateScreenshotThumb(string filePath)
+        {
+            try
+            {
+                var fi = new FileInfo(filePath);
+                if (!fi.Exists) return null;
+
+                string keyStr = fi.FullName.ToLowerInvariant() + "|" + fi.Length + "|" + fi.LastWriteTimeUtc.Ticks;
+                string hashHex;
+                using (var md5 = System.Security.Cryptography.MD5.Create())
+                {
+                    byte[] h = md5.ComputeHash(Encoding.UTF8.GetBytes(keyStr));
+                    hashHex = BitConverter.ToString(h).Replace("-", "").ToLowerInvariant();
+                }
+
+                string thumbDir = Path.Combine(GetLauncherDataDir(), "thumbs");
+                string thumbPath = Path.Combine(thumbDir, hashHex + ".jpg");
+                if (File.Exists(thumbPath))
+                {
+                    return File.ReadAllBytes(thumbPath);
+                }
+
+                lock (thumbGenLock)
+                {
+                    if (File.Exists(thumbPath))
+                    {
+                        return File.ReadAllBytes(thumbPath);
+                    }
+                    if (!Directory.Exists(thumbDir)) Directory.CreateDirectory(thumbDir);
+
+                    using (var fs = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                    using (var srcImg = System.Drawing.Image.FromStream(fs, false, false))
+                    {
+                        int maxW = 480;
+                        int w = srcImg.Width > 0 ? srcImg.Width : maxW;
+                        int h = srcImg.Height > 0 ? srcImg.Height : 270;
+                        if (w > maxW)
+                        {
+                            h = Math.Max(1, (int)Math.Round(h * (maxW / (double)w)));
+                            w = maxW;
+                        }
+
+                        using (var bmp = new System.Drawing.Bitmap(w, h, System.Drawing.Imaging.PixelFormat.Format24bppRgb))
+                        using (var g = System.Drawing.Graphics.FromImage(bmp))
+                        {
+                            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Bilinear;
+                            g.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+                            g.CompositingQuality = System.Drawing.Drawing2D.CompositingQuality.HighSpeed;
+                            g.DrawImage(srcImg, 0, 0, w, h);
+
+                            using (var ms = new MemoryStream())
+                            {
+                                var jpegCodec = GetJpegCodec();
+                                if (jpegCodec != null)
+                                {
+                                    using (var encParams = new System.Drawing.Imaging.EncoderParameters(1))
+                                    {
+                                        encParams.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Quality, 82L);
+                                        bmp.Save(ms, jpegCodec, encParams);
+                                    }
+                                }
+                                else
+                                {
+                                    bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Jpeg);
+                                }
+                                byte[] jpgBytes = ms.ToArray();
+                                try
+                                {
+                                    string tmpPath = thumbPath + ".tmp";
+                                    File.WriteAllBytes(tmpPath, jpgBytes);
+                                    if (File.Exists(thumbPath)) File.Delete(thumbPath);
+                                    File.Move(tmpPath, thumbPath);
+                                }
+                                catch { }
+                                return jpgBytes;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return null;
+        }
+
+        static void ServeScreenshotFile(HttpListenerContext ctx, string filePath, bool isThumb)
+        {
+            byte[] bytes = null;
+            string contentType = "image/png";
+
+            if (isThumb)
+            {
+                bytes = GetOrCreateScreenshotThumb(filePath);
+                if (bytes != null) contentType = "image/jpeg";
+            }
+
+            if (bytes == null && File.Exists(filePath))
+            {
+                try { bytes = File.ReadAllBytes(filePath); } catch { }
+            }
+
+            if (bytes == null)
+            {
+                ctx.Response.StatusCode = 404;
+                ctx.Response.Close();
+                return;
+            }
+
+            try
+            {
+                ctx.Response.AddHeader("Cache-Control", "public, max-age=86400");
+                ctx.Response.ContentType = contentType;
+                ctx.Response.ContentLength64 = bytes.Length;
+                ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
+                ctx.Response.OutputStream.Flush();
+                ctx.Response.Close();
+            }
+            catch
+            {
+                try { ctx.Response.StatusCode = 500; ctx.Response.Close(); } catch { }
+            }
+        }
+
         static void ServeFile(HttpListenerContext ctx, string filePath, string contentType, string resName = null)
 
         {
@@ -4910,7 +5043,9 @@ namespace CivilizationLauncher
 
                             { "meta", string.Format("{0:0.#} MB", fi.Length / (1024.0 * 1024.0)) },
 
-                            { "src", "/api/screenshot-file?b64=" + Uri.EscapeDataString(b64) + "&name=" + Uri.EscapeDataString(fi.Name) }
+                            { "src", "/api/screenshot-file?b64=" + Uri.EscapeDataString(b64) + "&name=" + Uri.EscapeDataString(fi.Name) + "&v=" + fi.LastWriteTimeUtc.Ticks },
+
+                            { "thumbSrc", "/api/screenshot-file?b64=" + Uri.EscapeDataString(b64) + "&name=" + Uri.EscapeDataString(fi.Name) + "&v=" + fi.LastWriteTimeUtc.Ticks + "&thumb=1" }
 
                         });
 
@@ -5168,7 +5303,7 @@ namespace CivilizationLauncher
 
                 {
 
-                    ServeFile(ctx, targetFile, "image/png");
+                    ServeScreenshotFile(ctx, targetFile, ctx.Request.QueryString["thumb"] == "1");
 
                     return;
 
@@ -7406,7 +7541,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "2270c306c8efbf23e2ff0563866eb263a6f756f4";
+        private static string CurrentLauncherSha = "84713a214e6cc9fc5447f5cf236f068ed64480ed";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";

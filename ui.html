@@ -1087,6 +1087,9 @@
     transition: border-color .15s, background .15s;
     display: flex;
     flex-direction: column;
+    content-visibility: auto;
+    contain-intrinsic-size: 260px 210px;
+    contain: layout style paint;
   }
   .screenshot-card:hover,
   .screenshot-card.is-active{
@@ -1447,11 +1450,10 @@
   /* лайтбокс просмотрщика */
   .lightbox{
     position:fixed;inset:0;
-    background:rgba(6,6,8,.94);
-    backdrop-filter:blur(8px);
+    background:rgba(6,6,8,.96);
     z-index:999;
     display:none;flex-direction:column;
-    opacity:0;transition:opacity .2s;
+    opacity:0;transition:opacity .16s;
   }
   .lightbox.show{display:flex;opacity:1}
   .lightbox-header{
@@ -3781,7 +3783,7 @@
     grid.innerHTML = playerScreenshots.map((item, idx) => `
       <div class="screenshot-card${idx === contextScreenshotIdx ? ' is-active' : ''}" data-idx="${idx}" onclick="openLightbox(${idx})" oncontextmenu="openScreenshotContextMenu(event, ${idx})">
         <div class="screenshot-thumb">
-          <img src="${item.src}" alt="${esc(item.name)}">
+          <img src="${item.thumbSrc || item.src}" loading="lazy" decoding="async" alt="${esc(item.name)}">
         </div>
         <div class="screenshot-meta">
           <span class="screenshot-name" title="${esc(item.name)}">${esc(item.name)}</span>
@@ -4646,16 +4648,60 @@
   }
 
   // --- Лайтбокс просмотрщика скриншотов ---
+  let lightboxReqSeq = 0;
+  let lightboxFullTimer = null;
+  let lightboxPreloadTimer = null;
+  const lightboxDecodedCache = new Map();
+
+  function preloadDecodedImage(url){
+    if (!url) return Promise.resolve(false);
+    if (lightboxDecodedCache.has(url)) return Promise.resolve(true);
+    return new Promise((resolve) => {
+      const img = new Image();
+      const done = (ok) => {
+        if (ok) {
+          if (lightboxDecodedCache.size >= 24) {
+            const oldestKey = lightboxDecodedCache.keys().next().value;
+            lightboxDecodedCache.delete(oldestKey);
+          }
+          lightboxDecodedCache.set(url, img);
+        }
+        resolve(ok);
+      };
+      img.onload = () => {
+        if (img.decode) img.decode().then(() => done(true)).catch(() => done(true));
+        else done(true);
+      };
+      img.onerror = () => done(false);
+      img.src = url;
+    });
+  }
+
+  function scheduleNeighborPreload(idx){
+    if (lightboxPreloadTimer) clearTimeout(lightboxPreloadTimer);
+    lightboxPreloadTimer = setTimeout(() => {
+      const offsets = [1, -1, 2, -2];
+      offsets.forEach((off) => {
+        const i = idx + off;
+        if (i >= 0 && i < playerScreenshots.length) {
+          const neighbor = playerScreenshots[i];
+          if (neighbor && neighbor.src) preloadDecodedImage(neighbor.src);
+        }
+      });
+    }, 90);
+  }
+
   function openLightbox(idx){
     closeScreenshotContextMenu();
     if (idx < 0 || idx >= playerScreenshots.length) return;
     lightboxMode = 'gallery';
     const lb = document.getElementById('lightbox');
+    const wasOpen = lb && lb.classList.contains('show');
     if (lb) lb.classList.remove('news-mode');
     currentScreenshotIdx = idx;
     const item = playerScreenshots[idx];
+    const lbImg = document.getElementById('lightboxImg');
     document.getElementById('lightboxTitle').textContent = item.name;
-    document.getElementById('lightboxImg').src = item.src;
     document.getElementById('lightboxMeta').textContent = item.meta;
     document.getElementById('lightboxCounter').textContent = (idx + 1) + ' / ' + playerScreenshots.length;
 
@@ -4664,10 +4710,37 @@
     if (prevBtn) prevBtn.disabled = (idx <= 0);
     if (nextBtn) nextBtn.disabled = (idx >= playerScreenshots.length - 1);
 
+    const seq = ++lightboxReqSeq;
+    if (lightboxFullTimer) { clearTimeout(lightboxFullTimer); lightboxFullTimer = null; }
+
+    if (lightboxDecodedCache.has(item.src)) {
+      if (lbImg) lbImg.src = item.src;
+      scheduleNeighborPreload(idx);
+    } else {
+      if (lbImg) lbImg.src = item.thumbSrc || item.src;
+      const loadFull = () => {
+        if (seq !== lightboxReqSeq) return;
+        preloadDecodedImage(item.src).then((ok) => {
+          if (ok && seq === lightboxReqSeq && lbImg) {
+            lbImg.src = item.src;
+          }
+          if (seq === lightboxReqSeq) scheduleNeighborPreload(idx);
+        });
+      };
+      if (wasOpen) {
+        lightboxFullTimer = setTimeout(loadFull, 55);
+      } else {
+        loadFull();
+      }
+    }
+
     if (lb) lb.classList.add('show');
   }
 
   function closeLightbox(){
+    lightboxReqSeq++;
+    if (lightboxFullTimer) { clearTimeout(lightboxFullTimer); lightboxFullTimer = null; }
+    if (lightboxPreloadTimer) { clearTimeout(lightboxPreloadTimer); lightboxPreloadTimer = null; }
     const lb = document.getElementById('lightbox');
     if (lb) {
       lb.classList.remove('show');
