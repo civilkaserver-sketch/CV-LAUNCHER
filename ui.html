@@ -1325,10 +1325,13 @@
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    width: 180px;
-    height: 38px;
+    bottom: auto;
+    top: 374px;
+    transform: translate(-50%, -42%);
+    width: 140px;
+    height: 22px;
     border-radius: 50%;
-    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0.16) 45%, transparent 75%);
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.58) 0%, rgba(0, 0, 0, 0.22) 48%, transparent 74%);
     pointer-events: none;
     z-index: 1;
   }
@@ -1504,12 +1507,12 @@
     align-items: center;
     justify-content: center;
     color: var(--text);
-    transition: transform 0.15s, background 0.15s;
+
   }
 
   .skin-card-add:hover .skin-card-add-icon, .skin-card-add.drag-over .skin-card-add-icon {
     background: rgba(255, 255, 255, 0.12);
-    transform: scale(1.08);
+
   }
 
   .skin-card-add-title {
@@ -2891,7 +2894,7 @@
           <!-- Левая часть: 3D рендер без рамки в стиле Modrinth -->
           <div class="skin-stage-col">
             <div class="skin-canvas-wrap" id="skinCanvasWrap">
-              <div class="skin-floor-shadow"></div>
+              <div class="skin-floor-shadow" id="skinFloorShadow"></div>
               <canvas id="skinCanvas" width="320" height="420"></canvas>
             </div>
             <div class="skin-canvas-hint-pill">
@@ -6484,6 +6487,22 @@
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, skinBuffers.idx);
     gl.drawElements(gl.TRIANGLES, skinBuffers.count, gl.UNSIGNED_SHORT, 0);
+
+    const floorEl = document.getElementById('skinFloorShadow');
+    if (floorEl) {
+      const fy = -0.35;
+      const cw = mvp[7] * fy + mvp[15];
+      if (cw > 0.001) {
+        const cxNdc = (mvp[4] * fy + mvp[12]) / cw;
+        const cyNdc = (mvp[5] * fy + mvp[13]) / cw;
+        const px = (cxNdc * 0.5 + 0.5) * canvas.clientWidth;
+        const py = (1 - (cyNdc * 0.5 + 0.5)) * canvas.clientHeight;
+        const sc = Math.max(0.55, Math.min(1.65, 44.0 / (skinDistance || 44.0)));
+        floorEl.style.left = px.toFixed(1) + 'px';
+        floorEl.style.top = py.toFixed(1) + 'px';
+        floorEl.style.transform = 'translate(-50%, -42%) scale(' + sc.toFixed(3) + ')';
+      }
+    }
   }
 
   function startSkinRenderLoop() {
