@@ -107,7 +107,7 @@
     width:100%;
     height:36px;
     background:var(--card);
-    border: none;
+    border:1px solid transparent;
     border-radius:var(--r);
     color:var(--text);
     font-family:inherit;
@@ -120,10 +120,15 @@
     transition:background .15s,border-color .15s,color .15s;
     text-align:left;
   }
-  .side-nav-item:hover,
-  .side-nav-item.active{
+  .side-nav-item:hover{
     background:var(--card-hover);
-    border-color:var(--line-strong);
+    color:var(--text-hover);
+  }
+  .side-nav-item.active{
+    background:
+      linear-gradient(var(--card-hover), var(--card-hover)) padding-box,
+      linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.06) 100%) border-box;
+    border-color:transparent;
     color:var(--text-hover);
   }
 
@@ -480,11 +485,14 @@
   .more-wrap:has(.more-menu.show) .more-btn svg{
     transform:rotate(45deg) !important;
   }
+  .btn.line.more-btn:hover,
   .btn.more-btn:hover,
   .more-btn:hover,
   .menu-btn:hover{
-    background:var(--card-hover) !important;
-    border-color:var(--line-strong) !important;
+    background:
+      linear-gradient(var(--card-hover), var(--card-hover)) padding-box,
+      linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.06) 100%) border-box !important;
+    border-color:transparent !important;
     color:var(--text-hover) !important;
   }
   .btn.more-btn:hover svg,
@@ -1004,7 +1012,13 @@
   .btn.ghost{border-color:var(--line);background:var(--card);color:var(--text)}
   .btn.ghost:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
   .btn.line{border-color:var(--line);background:var(--card);color:var(--text)}
-  .btn.line:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
+  .btn.line:hover{
+    background:
+      linear-gradient(var(--card-hover), var(--card-hover)) padding-box,
+      linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.06) 100%) border-box;
+    border-color:transparent;
+    color:var(--text-hover);
+  }
   .btn.danger{border-color:rgba(235,87,87,.45);background:rgba(235,87,87,.12);color:#ff6b6b;font-weight:bold}
   .btn.danger:hover{background:rgba(235,87,87,.22);border-color:rgba(235,87,87,.85);color:#fff}
   .btn:disabled{opacity:.3;cursor:not-allowed}
@@ -1091,10 +1105,15 @@
     contain-intrinsic-size: 260px 210px;
     contain: layout style paint;
   }
-  .screenshot-card:hover,
   .screenshot-card.is-active{
     background: var(--card-hover);
     border-color: var(--line-strong);
+  }
+  .screenshot-card:hover{
+    background:
+      linear-gradient(var(--card-hover), var(--card-hover)) padding-box,
+      linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.06) 100%) border-box;
+    border-color: transparent;
   }
   .screenshot-meta{
     padding: 8px 12px;
@@ -1105,8 +1124,12 @@
     font-size: 11px;
     border-top: 1px solid var(--line);
     border-bottom: none;
-    background: inherit;
+    background: var(--card);
     transition: background .15s;
+  }
+  .screenshot-card:hover .screenshot-meta,
+  .screenshot-card.is-active .screenshot-meta{
+    background: var(--card-hover);
   }
   .screenshot-name{
     overflow: hidden;
@@ -1343,8 +1366,10 @@
   }
 
   .skin-card:hover {
-    border-color: rgba(255, 255, 255, 0.25);
-    background: rgba(255, 255, 255, 0.055);
+    border-color: transparent;
+    background:
+      linear-gradient(#1b1b1b, #1b1b1b) padding-box,
+      linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.08) 100%) border-box;
   }
 
   .skin-card.active {
@@ -1412,9 +1437,16 @@
     gap: 10px;
   }
 
-  .skin-card-add:hover, .skin-card-add.drag-over {
+  .skin-card-add.drag-over {
     border-color: rgba(255, 255, 255, 0.45);
     background: rgba(255, 255, 255, 0.035);
+  }
+  .skin-card.skin-card-add:hover {
+    border-style: solid;
+    border-color: transparent;
+    background:
+      linear-gradient(#161616, #161616) padding-box,
+      linear-gradient(180deg, rgba(255, 255, 255, 0.34) 0%, rgba(255, 255, 255, 0.09) 100%) border-box;
   }
 
   .skin-card-add-icon {
