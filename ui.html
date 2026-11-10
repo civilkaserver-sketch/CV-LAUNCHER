@@ -4309,10 +4309,7 @@
 
   function renderNewsCard(item, index) {
     const bannerHtml = renderNewsBanner(item.banner, item.title);
-    let badgeStyle = "display:inline-block;font-size:10px;letter-spacing:1.5px;padding:3px 9px;border-radius:4px;color:var(--accent);background:rgba(var(--accent-rgb, 240, 240, 242), 0.08);font-weight:normal;";
-    if (item.badgeType === 'green' || item.badgeType === 'performance' || item.theme === 'optimization' || item.theme === 'green') {
-      badgeStyle = "display:inline-block;font-size:10px;letter-spacing:1.5px;padding:3px 9px;border-radius:4px;color:#4ade80;background:rgba(74,222,128,0.12);border:1px solid rgba(74,222,128,0.35);font-weight:normal;";
-    }
+    const badgeStyle = "display:inline-block;font-size:10px;letter-spacing:1.5px;padding:3px 9px;border-radius:4px;color:var(--accent);background:rgba(var(--accent-rgb, 240, 240, 242), 0.08);font-weight:normal;";
     const badgeHtml = item.badge ? `
       <span class="news-badge" style="${badgeStyle}">
         ${formatNewsText(item.badge)}
