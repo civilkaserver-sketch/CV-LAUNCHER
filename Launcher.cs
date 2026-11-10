@@ -7541,7 +7541,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "84713a214e6cc9fc5447f5cf236f068ed64480ed";
+        private static string CurrentLauncherSha = "35830d3ff01ae4f450d077fdc2a0e7c416312ba5";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
