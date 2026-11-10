@@ -483,90 +483,54 @@
     flex-shrink:0;
   }
   .version-picker-btn{
-    height:48px;
-    padding:0 14px;
+    height:34px;
+    padding:4px 6px;
     border-radius:var(--r);
-    background:rgba(16, 16, 18, 0.78);
-    backdrop-filter:blur(8px);
-    border:1px solid rgba(255, 255, 255, 0.14);
-    border-top-color:rgba(255, 255, 255, 0.24);
-    color:#fff;
+    background:transparent;
+    border:none;
+    color:rgba(255, 255, 255, 0.78);
     font-family:inherit;
-    display:inline-flex;
-    align-items:center;
-    gap:12px;
-    cursor:pointer;
-    user-select:none;
-    transition:background .15s, border-color .15s;
-  }
-  .version-picker-btn:hover,
-  .version-picker-wrap.open .version-picker-btn{
-    background:rgba(26, 26, 30, 0.92);
-    border-color:rgba(255, 255, 255, 0.28);
-  }
-  .version-picker-meta{
-    display:flex;
-    flex-direction:column;
-    align-items:flex-start;
-    line-height:1.2;
-    gap:2px;
-  }
-  .version-picker-label{
-    font-size:9px;
-    letter-spacing:1.3px;
-    text-transform:uppercase;
-    color:var(--muted);
-  }
-  .version-picker-cur{
+    font-size:13px;
+    letter-spacing:.6px;
     display:inline-flex;
     align-items:center;
     gap:7px;
+    cursor:pointer;
+    user-select:none;
+    transition:color .15s;
   }
-  .version-picker-dot{
-    width:6px;
-    height:6px;
-    border-radius:50%;
-    background:#6b7280;
-    flex-shrink:0;
-  }
-  .version-picker-dot.is-installed{background:#4ade80;}
-  .version-picker-dot.is-legacy{background:#f59e0b;}
-  .version-picker-val{
-    font-size:13px;
-    font-weight:700;
-    letter-spacing:.6px;
+  .version-picker-btn:hover,
+  .version-picker-wrap.open .version-picker-btn{
     color:#fff;
   }
-  .version-picker-tag{
-    font-size:10px;
-    color:var(--muted);
-    letter-spacing:.3px;
-  }
   .version-picker-chevron{
-    color:var(--muted);
+    color:currentColor;
+    opacity:.75;
     flex-shrink:0;
-    transition:transform .18s cubic-bezier(0.22, 1, 0.36, 1), color .15s;
+    transition:transform .18s cubic-bezier(0.22, 1, 0.36, 1), opacity .15s;
+  }
+  .version-picker-btn:hover .version-picker-chevron,
+  .version-picker-wrap.open .version-picker-chevron{
+    opacity:1;
   }
   .version-picker-wrap.open .version-picker-chevron{
     transform:rotate(180deg);
-    color:#fff;
   }
   .version-picker-menu{
     position:absolute;
-    bottom:calc(100% + 8px);
+    bottom:calc(100% + 6px);
     right:0;
-    min-width:258px;
-    background:rgba(16, 16, 19, 0.97);
-    backdrop-filter:blur(12px);
-    border:1px solid rgba(255, 255, 255, 0.14);
-    border-top-color:rgba(255, 255, 255, 0.26);
-    border-radius:10px;
-    padding:6px;
+    min-width:210px;
+    background:rgba(16, 16, 18, 0.96);
+    backdrop-filter:blur(10px);
+    border:1px solid rgba(255, 255, 255, 0.12);
+    border-radius:8px;
+    padding:4px;
     display:none;
     flex-direction:column;
-    gap:4px;
+    gap:2px;
     z-index:30;
-    box-shadow:0 12px 32px rgba(0, 0, 0, 0.65);
+    box-shadow:0 10px 26px rgba(0, 0, 0, 0.6);
   }
   .version-picker-wrap.open .version-picker-menu{
     display:flex;
@@ -574,60 +538,40 @@
   .version-picker-item{
     width:100%;
     text-align:left;
-    padding:9px 11px;
-    border-radius:7px;
+    padding:8px 10px;
+    border-radius:6px;
     background:transparent;
-    border:1px solid transparent;
-    color:var(--text);
+    border:none;
+    color:var(--muted);
     font-family:inherit;
     cursor:pointer;
     display:flex;
-    flex-direction:column;
-    gap:3px;
-    transition:background .13s, border-color .13s;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size:12px;
+    transition:background .12s, color .12s;
   }
   .version-picker-item:hover{
     background:rgba(255, 255, 255, 0.06);
+    color:#fff;
   }
   .version-picker-item.active{
     background:rgba(255, 255, 255, 0.09);
-    border-color:rgba(255, 255, 255, 0.18);
-  }
-  .version-item-top{
-    display:flex;
-    align-items:center;
-    gap:7px;
-    width:100%;
+    color:#fff;
   }
   .version-item-name{
-    font-size:13px;
-    font-weight:700;
-    color:#fff;
+    font-size:12px;
+    font-weight:600;
+    color:inherit;
     letter-spacing:.4px;
   }
-  .version-item-pill{
-    font-size:10px;
-    padding:1px 6px;
-    border-radius:4px;
-    background:rgba(255, 255, 255, 0.11);
-    color:#fff;
-    letter-spacing:.3px;
-  }
-  .version-item-pill.is-old{
-    background:rgba(255, 255, 255, 0.06);
-    color:var(--muted);
-  }
   .version-item-state{
-    margin-left:auto;
     font-size:10px;
-    color:var(--muted);
+    color:var(--dim);
   }
   .version-item-state.is-ready{color:#86efac;}
   .version-item-state.is-reinstall{color:#fcd34d;}
-  .version-item-desc{
-    font-size:11px;
-    color:var(--muted);
-  }
   .btn.more-btn,
   .more-btn,
   .menu-btn{
@@ -2948,34 +2892,19 @@
 
             <div class="version-picker-wrap" id="versionPickerWrap" onclick="event.stopPropagation()">
               <button type="button" class="version-picker-btn" id="btnVersionPicker" onclick="toggleVersionPicker(event)" title="Выбрать версию сборки">
-                <span class="version-picker-meta">
-                  <span class="version-picker-label">Сборка</span>
-                  <span class="version-picker-cur">
-                    <span class="version-picker-dot" id="versionPickerDot"></span>
-                    <span class="version-picker-val" id="versionPickerVal">26.3</span>
-                    <span class="version-picker-tag" id="versionPickerTag">Новый сезон</span>
-                  </span>
-                </span>
-                <svg class="version-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <span id="versionPickerVal">Fabric 26.3</span>
+                <svg class="version-picker-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="6 9 12 15 18 9"></polyline>
                 </svg>
               </button>
               <div class="version-picker-menu" id="versionPickerMenu">
                 <button type="button" class="version-picker-item active" data-ver="26.3" onclick="selectBuildVersion('26.3', event)">
-                  <div class="version-item-top">
-                    <span class="version-item-name">26.3</span>
-                    <span class="version-item-pill">Новый сезон</span>
-                    <span class="version-item-state" id="verState_26_3"></span>
-                  </div>
-                  <div class="version-item-desc">Актуальный сезон · Fabric 26.3</div>
+                  <span class="version-item-name">Fabric 26.3</span>
+                  <span class="version-item-state" id="verState_26_3"></span>
                 </button>
                 <button type="button" class="version-picker-item" data-ver="1.21.8" onclick="selectBuildVersion('1.21.8', event)">
-                  <div class="version-item-top">
-                    <span class="version-item-name">1.21.8</span>
-                    <span class="version-item-pill is-old">Старая</span>
-                    <span class="version-item-state" id="verState_1_21_8"></span>
-                  </div>
-                  <div class="version-item-desc">Старая сборка · ставится отдельно</div>
+                  <span class="version-item-name">Fabric 1.21.8</span>
+                  <span class="version-item-state" id="verState_1_21_8"></span>
                 </button>
               </div>
             </div>
@@ -3693,17 +3622,9 @@
 
   function updateVersionPickerUI(){
     const valEl = document.getElementById('versionPickerVal');
-    const tagEl = document.getElementById('versionPickerTag');
-    const dotEl = document.getElementById('versionPickerDot');
     const subEl = document.querySelector('.banner-sub');
 
-    if(valEl) valEl.textContent = selectedBuildVersion;
-    if(tagEl) tagEl.textContent = selectedBuildVersion === '1.21.8' ? 'Старая' : 'Новый сезон';
-
-    const curInfo = versionsStatusMap[selectedBuildVersion] || { installed: installed, legacyInstalled: legacyInstalled };
-    if(dotEl){
-      dotEl.className = 'version-picker-dot' + (curInfo.installed ? ' is-installed' : (curInfo.legacyInstalled ? ' is-legacy' : ''));
-    }
+    if(valEl) valEl.textContent = 'Fabric ' + selectedBuildVersion;
 
     if(subEl){
       subEl.textContent = selectedBuildVersion === '1.21.8'
@@ -3719,15 +3640,15 @@
     const info263 = versionsStatusMap['26.3'] || {};
     if(st263){
       if(info263.installed){ st263.textContent = 'Установлена'; st263.className = 'version-item-state is-ready'; }
-      else if(info263.legacyInstalled){ st263.textContent = 'Переустановка'; st263.className = 'version-item-state is-reinstall'; }
-      else { st263.textContent = 'Не установлена'; st263.className = 'version-item-state'; }
+      else if(info263.legacyInstalled){ st263.textContent = 'Переустановить'; st263.className = 'version-item-state is-reinstall'; }
+      else { st263.textContent = ''; st263.className = 'version-item-state'; }
     }
 
     const st1218 = document.getElementById('verState_1_21_8');
     const info1218 = versionsStatusMap['1.21.8'] || {};
     if(st1218){
       if(info1218.installed){ st1218.textContent = 'Установлена'; st1218.className = 'version-item-state is-ready'; }
-      else { st1218.textContent = 'Отдельно'; st1218.className = 'version-item-state'; }
+      else { st1218.textContent = ''; st1218.className = 'version-item-state'; }
     }
   }
 
