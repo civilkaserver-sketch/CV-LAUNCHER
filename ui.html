@@ -1499,7 +1499,7 @@
   }
 
   .skin-card-add-icon {
-    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), background 0.16s ease;
+
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -1512,7 +1512,7 @@
   }
 
   .skin-card-add:hover .skin-card-add-icon, .skin-card-add.drag-over .skin-card-add-icon {
-    transform: rotate(15deg);
+
     background: rgba(255, 255, 255, 0.12);
 
   }
@@ -3306,7 +3306,7 @@
     }
     const statusEl = document.getElementById('mcFolderStatus');
     if(statusEl){
-      statusEl.textContent = installed ? 'Сборка Civilization установлена' : 'Сборка не найдена в этой папке';
+      statusEl.textContent = installed ? 'Сборка Civilization установлена' : (legacyInstalled ? 'Найдена старая сборка 1.21.8 (нужно переустановить)' : 'Сборка не найдена в этой папке');
       statusEl.style.color = installed ? 'var(--accent)' : 'var(--muted)';
     }
   }
@@ -3485,7 +3485,7 @@
     const m = document.getElementById('moreMenu');
     if(m) m.classList.remove('show');
     updateMoreMenuState();
-    if(!installed){
+    if(!installed && !legacyInstalled){
       toast('Сборка ещё не установлена');
       return;
     }
@@ -3496,13 +3496,14 @@
 
   const STATUS_CACHE_KEY = 'cv_last_status_v1';
   let backendStatusLoaded = false, hasCachedStatus = false;
-  let installed = false, updateAvailable = false;
+  let installed = false, updateAvailable = false, legacyInstalled = false;
 
   function saveCachedStatus(inst, upd){
     if(!isBackend) return;
     try {
       localStorage.setItem(STATUS_CACHE_KEY, JSON.stringify({
         installed: !!inst,
+        legacyInstalled: !inst && !!legacyInstalled,
         updateAvailable: !!(inst && upd)
       }));
     } catch(e) {}
@@ -3583,6 +3584,7 @@
 
   function setStatus(ok){
     installed = ok;
+    if(ok) legacyInstalled = false;
     if(!ok) updateAvailable = false;
     if(backendStatusLoaded) saveCachedStatus(ok, updateAvailable);
 
@@ -3598,7 +3600,7 @@
       if(!ok){
         badge.style.display = 'inline-block';
         badge.className = 'banner-badge not-installed';
-        if(badgeText) badgeText.textContent = 'Не установлено';
+        if(badgeText) badgeText.textContent = legacyInstalled ? 'Старая версия 1.21.8' : 'Не установлено';
       } else {
         badge.style.display = 'none';
         badge.className = 'banner-badge installed';
@@ -3620,9 +3622,9 @@
     }
 
     if(!ok){
-      // Состояние: Не установлено
+      // Состояние: Не установлено (или старая сборка 1.21.8 -> Переустановить)
       if(mainBtn){
-        mainBtn.textContent = 'Установить';
+        mainBtn.textContent = legacyInstalled ? 'Переустановить' : 'Установить';
         mainBtn.className = 'btn primary banner-main-btn';
         mainBtn.disabled = false;
       }
@@ -3861,13 +3863,14 @@
       const res = await fetch('/api/status');
       if(res.ok){
         const data = await res.json();
-        if(data.mcDir) updatePathDisplay(data.mcDir);
         fetchAndRenderModsList();
         const prevUpdate = updateAvailable;
+        legacyInstalled = !data.installed && !!data.legacyInstalled;
         updateAvailable = !data.installed ? false : (data.updateAvailable || false);
         backendStatusLoaded = true;
         hasCachedStatus = true;
         setStatus(data.installed);
+        if(data.mcDir) updatePathDisplay(data.mcDir);
         if(!prevUpdate && updateAvailable && !installing && !gameRunning){
           runSilentBackgroundUpdate();
         }
@@ -4176,9 +4179,9 @@
                 setStatus(installed);
                 toast('Ошибка: ' + pData.error);
               } else if(pData.done){
-                if(action === 'install'){ setStatus(true); toast('Установка успешно завершена!'); }
+                if(action === 'install'){ legacyInstalled = false; setStatus(true); toast('Установка успешно завершена!'); }
                 else if(action === 'update'){ updateAvailable = false; setStatus(true); toast('Обновление успешно завершено!'); }
-                else if(action === 'uninstall'){ setStatus(false); toast('Сборка удалена.'); }
+                else if(action === 'uninstall'){ legacyInstalled = false; setStatus(false); toast('Сборка удалена.'); }
               }
               checkBackendStatus();
             }
@@ -7336,6 +7339,7 @@
         const cached = JSON.parse(raw);
         if(cached && typeof cached.installed === 'boolean'){
           hasCachedStatus = true;
+          legacyInstalled = !cached.installed && !!cached.legacyInstalled;
           updateAvailable = cached.installed ? !!cached.updateAvailable : false;
           setStatus(cached.installed);
           return;

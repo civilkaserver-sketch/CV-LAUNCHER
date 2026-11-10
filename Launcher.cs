@@ -1295,7 +1295,7 @@ namespace CivilizationLauncher
 
                 // 2. Silent modpack update check:
                 string mcDir = GetActiveMcDir();
-                if (!string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir))
+                if (!string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir) && !IsLegacyVersionInstalled(mcDir))
                 {
                     string remoteSha = FetchRemoteShaSynchronous();
                     string localSha = "";
@@ -3788,7 +3788,8 @@ namespace CivilizationLauncher
 
                 string mcDir = GetActiveMcDir();
 
-                bool installed = !string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir);
+                bool legacyInstalled = !string.IsNullOrEmpty(mcDir) && IsLegacyVersionInstalled(mcDir);
+                bool installed = !string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir) && !legacyInstalled;
 
                 ThreadPool.QueueUserWorkItem((s) => { try { AdServerBlocker.CleanAll(mcDir); } catch { } });
 
@@ -3870,6 +3871,7 @@ namespace CivilizationLauncher
 
                 SendJson(ctx, new Dictionary<string, object> {
                     { "installed", installed },
+                    { "legacyInstalled", legacyInstalled },
                     { "updateAvailable", updateAvailable },
                     { "localSha", localSha ?? "" },
                     { "remoteSha", remoteSha ?? "" },
@@ -3901,7 +3903,8 @@ namespace CivilizationLauncher
 
                 string mcDir = GetActiveMcDir();
 
-                bool installed = !string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir);
+                bool legacyInstalled = !string.IsNullOrEmpty(mcDir) && IsLegacyVersionInstalled(mcDir);
+                bool installed = !string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir) && !legacyInstalled;
 
                 string remoteSha = FetchRemoteShaSynchronous();
 
@@ -3916,6 +3919,7 @@ namespace CivilizationLauncher
                 SendJson(ctx, new Dictionary<string, object> {
 
                     { "installed", installed },
+                    { "legacyInstalled", legacyInstalled },
 
                     { "updateAvailable", updateAvailable },
 
@@ -4100,7 +4104,8 @@ namespace CivilizationLauncher
 
                     { "path", activeDir },
 
-                    { "installed", TestIsInstalled(activeDir) }
+                    { "installed", TestIsInstalled(activeDir) && !IsLegacyVersionInstalled(activeDir) },
+                    { "legacyInstalled", IsLegacyVersionInstalled(activeDir) }
 
                 });
 
@@ -4144,7 +4149,8 @@ namespace CivilizationLauncher
 
                     { "path", activeDir },
 
-                    { "installed", TestIsInstalled(activeDir) }
+                    { "installed", TestIsInstalled(activeDir) && !IsLegacyVersionInstalled(activeDir) },
+                    { "legacyInstalled", IsLegacyVersionInstalled(activeDir) }
 
                 });
 
@@ -5363,7 +5369,7 @@ namespace CivilizationLauncher
 
                 string mcDir = GetTargetMcDir();
 
-                if (!TestIsInstalled(mcDir))
+                if (!TestIsInstalled(mcDir) || IsLegacyVersionInstalled(mcDir))
 
                 {
 
@@ -8121,6 +8127,27 @@ namespace CivilizationLauncher
 
 
 
+        static bool IsLegacyVersionInstalled(string mcDir)
+        {
+            if (string.IsNullOrEmpty(mcDir)) return false;
+            try
+            {
+                string jsonPath = Path.Combine(mcDir, @"versions\Civilization\Civilization.json");
+                if (File.Exists(jsonPath))
+                {
+                    string txt = File.ReadAllText(jsonPath, Encoding.UTF8);
+                    return txt.IndexOf("intermediary:26.3", StringComparison.OrdinalIgnoreCase) < 0;
+                }
+                string modsDir = Path.Combine(mcDir, @"versions\Civilization\mods");
+                if (Directory.Exists(modsDir) && Directory.GetFiles(modsDir, "*.jar").Length > 0)
+                {
+                    return true;
+                }
+            }
+            catch { }
+            return false;
+        }
+
         static List<string> GetAllPotentialMcDirs()
 
         {
@@ -10369,6 +10396,48 @@ namespace CivilizationLauncher
                 string sourceDir = DownloadBuild(false, installSha);
 
                 CheckCancelled();
+
+                if (IsLegacyVersionInstalled(mcDir))
+                {
+                    Log("Legacy 1.21.8 build detected before DoInstall - cleaning old mods and version json...");
+                    try
+                    {
+                        string oldModsDir = Path.Combine(mcDir, @"versions\Civilization\mods");
+                        string backupModsDir = Path.Combine(mcDir, @"versions\Civilization\mods_1.21.8_backup");
+                        if (Directory.Exists(oldModsDir))
+                        {
+                            foreach (string jar in Directory.GetFiles(oldModsDir, "*.jar"))
+                            {
+                                string fn = Path.GetFileName(jar);
+                                if (IsOfficialMod(fn))
+                                {
+                                    try { File.Delete(jar); Log("Removed legacy pack mod: " + fn); } catch { }
+                                }
+                                else
+                                {
+                                    try
+                                    {
+                                        if (!Directory.Exists(backupModsDir)) Directory.CreateDirectory(backupModsDir);
+                                        string dst = Path.Combine(backupModsDir, fn);
+                                        if (File.Exists(dst)) File.Delete(dst);
+                                        File.Move(jar, dst);
+                                        Log("Backed up legacy custom mod: " + fn);
+                                    }
+                                    catch { }
+                                }
+                            }
+                        }
+                        string oldCivJson = Path.Combine(mcDir, @"versions\Civilization\Civilization.json");
+                        if (File.Exists(oldCivJson))
+                        {
+                            try { File.Delete(oldCivJson); } catch { }
+                        }
+                    }
+                    catch (Exception lex)
+                    {
+                        Log("Legacy cleanup warning: " + lex.Message);
+                    }
+                }
 
                 Log("Copying files from: " + sourceDir);
 
