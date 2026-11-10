@@ -7619,7 +7619,7 @@
   let activeChatFriend = null;
   let lastSeenRemoteMsgIds = {};
   let friendsPollTimer = null;
-  let friendsChatFetchInFlight = false;
+  let friendsChatFetchNick = null;
   let friendsSendingMessage = false;
 
   function escFriendTxt(s) {
@@ -7836,7 +7836,7 @@
     }
 
     if (!entry || !entry.loaded) {
-      box.innerHTML = `<div class="friends-chat-empty">Загрузка сообщений...</div>`;
+      box.innerHTML = '';
       return;
     }
 
@@ -7866,12 +7866,12 @@
   }
 
   async function fetchFriendChat(nick, forceScroll) {
-    if (!nick || friendsChatFetchInFlight) return;
+    if (!nick || friendsChatFetchNick === nick) return;
     if (!friendsState.configured) {
       renderFriendChat(forceScroll);
       return;
     }
-    friendsChatFetchInFlight = true;
+    friendsChatFetchNick = nick;
     try {
       const existing = friendChatsCache[nick] || { loaded: false, lastId: 0, messages: [] };
       const after = existing.loaded && existing.lastId > 0 ? existing.lastId : 0;
@@ -7901,7 +7901,7 @@
       }
     } catch { }
     finally {
-      friendsChatFetchInFlight = false;
+      if (friendsChatFetchNick === nick) friendsChatFetchNick = null;
     }
   }
 
