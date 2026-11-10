@@ -236,7 +236,7 @@
     display:flex;
     align-items:center;
     justify-content:space-between;
-    padding:0 40px;
+    padding:0 10px 0 40px;
     z-index:10;
     -webkit-app-region: drag;
   }
@@ -1386,15 +1386,15 @@
   }
 
   .skin-card:hover {
-    border-color: rgba(255, 255, 255, 0.09);
-    border-top-color: rgba(255, 255, 255, 0.28);
+    border-color: rgb(255 255 255);
+
     background: rgba(255, 255, 255, 0.055);
   }
 
   .skin-card.active {
-    border-color: rgba(255, 255, 255, 0.6);
+    border-color: rgb(255 255 255);
     background: rgba(255, 255, 255, 0.07);
-    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+    /* box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3); */
   }
 
   .skin-card-badge {
@@ -1450,7 +1450,7 @@
 
   /* Карточка "Добавить скин" */
   .skin-card-add {
-    border: 1.5px dashed rgba(255, 255, 255, 0.18);
+    border: 2px dashed rgba(255, 255, 255, 0.18);
     background: rgba(255, 255, 255, 0.012);
     justify-content: center;
     gap: 10px;
@@ -1461,8 +1461,8 @@
     background: rgba(255, 255, 255, 0.035);
   }
   .skin-card.skin-card-add:hover {
-    border-color: rgba(255, 255, 255, 0.14);
-    border-top-color: rgba(255, 255, 255, 0.42);
+    border-color: rgb(255 255 255);
+
     background: rgba(255, 255, 255, 0.035);
   }
 
@@ -2231,6 +2231,406 @@
     opacity:1;
   }
 
+  /* ---------------- правый сайдбар друзей и мини-чат ---------------- */
+  .friends-toggle-btn{
+    height:28px;
+    padding:0 11px;
+    border-radius:var(--r);
+    background:var(--card);
+    border:1px solid #24242400;
+    color:var(--text);
+    font-family:inherit;
+    font-size:11px;
+    letter-spacing:1.2px;
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    cursor:pointer;
+    transition:background .15s, border-color .15s, color .15s;
+    -webkit-app-region:no-drag;
+    user-select:none;
+  }
+  .friends-toggle-btn:hover{
+    background:var(--card-hover);
+    border-color:rgba(255,255,255,0.08);
+    border-top-color:rgba(255,255,255,0.22);
+    color:#fff;
+  }
+  .friends-toggle-btn.active{
+    background:var(--card-hover);
+    border-color:rgba(255,255,255,0.08);
+    border-top-color:rgba(255,255,255,0.25);
+    color:#fff;
+  }
+  .friends-toggle-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#4ade80;
+    flex-shrink:0;
+  }
+  .friends-toggle-dot.is-none{background:#5e5e5e;}
+  .friends-unread-pill{display:none;min-width:16px;height:16px;padding:0 5px;border-radius:999px;background:#f2f2f2;color:#0d0d0d;font-size:10px;font-weight:700;line-height:16px;text-align:center;letter-spacing:0;}
+  .friends-unread-pill.show{display:inline-block;}
+  .friend-unread-badge{display:none;margin-left:auto;min-width:17px;height:17px;padding:0 5px;border-radius:999px;background:#ededed;color:#0c0c0c;font-size:10px;font-weight:700;line-height:17px;text-align:center;flex-shrink:0;}
+  .friend-unread-badge.show{display:inline-block;}
+  .friends-status-note{padding:7px 14px;font-size:10px;color:var(--dim);border-bottom:1px solid rgba(255,255,255,0.04);line-height:1.35;}
+  .friends-toggle-count{
+    color:var(--muted);
+    font-size:10px;
+    letter-spacing:.5px;
+  }
+
+  @keyframes friendsDrawerIn{
+    from{transform:translate3d(100%,0,0)}
+    to{transform:none}
+  }
+  @keyframes friendsDrawerOut{
+    from{transform:translate3d(0,0,0)}
+    to{transform:translate3d(100%,0,0)}
+  }
+  .friends-drawer{
+    position:fixed;
+    top:calc(42px / 1.2);
+    right:0;
+    bottom:0;
+    width:260px;
+    zoom:1.2;
+    background:var(--side);
+    border-left:1px solid var(--line);
+    z-index:65;
+    display:none;
+    flex-direction:column;
+    contain:layout style;
+    -webkit-app-region:no-drag;
+    -webkit-font-smoothing:none;
+  }
+  .friends-drawer.open{
+    display:flex;
+    animation:friendsDrawerIn .22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .friends-drawer.open.closing{
+    animation:friendsDrawerOut .18s cubic-bezier(0.4, 0, 1, 1) forwards;
+    pointer-events:none;
+  }
+  .friends-drawer-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 14px 10px;
+    border-bottom:1px solid var(--line);
+    flex-shrink:0;
+  }
+  .friends-drawer-title{
+    font-size:11px;
+    letter-spacing:2.5px;
+    color:var(--dim);
+    text-transform:uppercase;
+  }
+
+  .friends-list{
+    padding:10px 12px;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    scrollbar-width:none;
+  }
+  .friends-drawer.has-split-chat .friends-list{
+    flex:0 0 auto;
+    max-height:46%;
+    border-bottom:1px solid var(--line);
+  }
+  .friends-list::-webkit-scrollbar{display:none;}
+  .friend-row{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:7px 8px;
+    border-radius:var(--r);
+    border:1px solid transparent;
+    transition:background .15s, border-color .15s;
+    cursor:pointer;
+  }
+  .friend-row:hover,
+  .friend-row.is-chat-active{
+    background:var(--card-hover);
+    border-color:rgba(255,255,255,0.06);
+    border-top-color:rgba(255,255,255,0.16);
+  }
+  .friend-avatar-wrap{
+    position:relative;
+    width:25px;
+    height:25px;
+    flex-shrink:0;
+  }
+  .friend-avatar-canvas{
+    width:25px;
+    height:25px;
+    border-radius:4px;
+    background:#141414;
+    border:1px solid var(--line);
+    image-rendering:pixelated;
+    display:block;
+  }
+  .friend-row.is-offline .friend-avatar-canvas{
+    opacity:0.45;
+    filter:grayscale(0.6);
+  }
+  .friend-status-dot{
+    position:absolute;
+    right:-2px;
+    bottom:-2px;
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    border:2px solid var(--side);
+    background:#5e5e5e;
+  }
+  .friend-status-dot.ingame{background:#4ade80;}
+  .friend-status-dot.launcher{background:#d4d4d4;}
+  .friend-status-dot.offline{background:#5e5e5e;}
+
+  .friend-info{
+    min-width:0;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    gap:1px;
+  }
+  .friend-name{
+    font-size:12px;
+    color:#fff;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    letter-spacing:.4px;
+  }
+  .friend-row.is-offline .friend-name{
+    color:var(--muted);
+  }
+  .friend-activity{
+    font-size:10px;
+    color:var(--muted);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .friend-row.is-ingame .friend-activity{
+    color:#86efac;
+  }
+  .friend-row.is-launcher .friend-activity{
+    color:var(--text);
+  }
+  .friend-row.is-offline .friend-activity{
+    color:var(--dim);
+  }
+
+  .friends-chat-section{
+    flex:1;
+    min-height:0;
+    display:none;
+    flex-direction:column;
+  }
+  .friends-drawer.has-split-chat .friends-chat-section{
+    display:flex;
+  }
+  .friends-chat-head{
+    position:relative;
+    z-index:3;
+    background:var(--side);
+    padding:9px 12px 7px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    flex-shrink:0;
+  }
+  .friends-chat-head::after{
+    content:'';
+    position:absolute;
+    left:0;
+    right:0;
+    top:100%;
+    height:18px;
+    background:linear-gradient(to bottom, var(--side) 0%, rgba(12,12,12,0) 100%);
+    pointer-events:none;
+  }
+  .friends-chat-peer{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    min-width:0;
+  }
+  .friends-chat-peer-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#5e5e5e;
+    flex-shrink:0;
+  }
+  .friends-chat-peer-dot.ingame{background:#4ade80;}
+  .friends-chat-peer-dot.launcher{background:#d4d4d4;}
+  .friends-chat-title{
+    font-size:11px;
+    letter-spacing:1px;
+    color:#fff;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .friends-chat-collapse{
+    width:22px;
+    height:22px;
+    border-radius:var(--r);
+    border:1px solid transparent;
+    background:transparent;
+    color:var(--dim);
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    font-size:14px;
+    line-height:1;
+    flex-shrink:0;
+    transition:color .15s;
+  }
+  .friends-chat-collapse:hover{
+    color:#fff;
+  }
+  .friends-chat-empty{
+    margin:auto 0;
+    text-align:center;
+    font-size:11px;
+    color:var(--dim);
+    padding:16px 8px;
+  }
+  .friends-chat-messages{
+    flex:1;
+    min-height:0;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:14px 14px 18px;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    scrollbar-width:none;
+  }
+  .friends-chat-messages::-webkit-scrollbar{
+    display:none;
+  }
+  .friends-chat-msg{
+    align-self:flex-start;
+    max-width:84%;
+    display:flex;
+    flex-direction:column;
+    gap:2px;
+    padding:7px 10px;
+    border-radius:var(--r);
+    background:#111111;
+    border:1px solid #222222;
+  }
+  .friends-chat-msg.is-self{
+    align-self:flex-end;
+    background:#222222;
+    border-color:#363636;
+    border-top-color:#4a4a4a;
+  }
+  .friends-chat-msg-meta{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size:10px;
+  }
+  .friends-chat-msg-author{
+    color:#9e9e9e;
+    letter-spacing:.4px;
+  }
+  .friends-chat-msg.is-self .friends-chat-msg-author{
+    color:#ffffff;
+  }
+  .friends-chat-msg-time{
+    color:var(--dim);
+    font-size:9px;
+  }
+  .friends-chat-msg-text{
+    font-size:12px;
+    color:var(--text);
+    line-height:1.45;
+    word-break:break-word;
+  }
+  .friends-chat-msg.is-self .friends-chat-msg-text{
+    color:#ffffff;
+  }
+
+  .friends-chat-input-wrap{
+    position:relative;
+    z-index:3;
+    padding:6px 12px 12px;
+    flex-shrink:0;
+    background:var(--side);
+  }
+  .friends-chat-input-wrap::before{
+    content:'';
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:100%;
+    height:22px;
+    background:linear-gradient(to top, var(--side) 0%, rgba(12,12,12,0) 100%);
+    pointer-events:none;
+  }
+  .friends-chat-input-box{
+    position:relative;
+    width:100%;
+    height:36px;
+  }
+  .friends-chat-input{
+    width:100%;
+    height:36px;
+    box-sizing:border-box;
+    padding:0 34px 0 11px;
+    border-radius:var(--r);
+    border:1px solid var(--line);
+    background:#121212;
+    color:var(--text);
+    font-family:inherit;
+    font-size:12px;
+    outline:none;
+    transition:border-color .15s, background .15s;
+  }
+  .friends-chat-input:focus{
+    border-color:var(--line-strong);
+    background:#161616;
+  }
+  .friends-chat-input::placeholder{
+    color:var(--dim);
+  }
+  .friends-chat-send{
+    position:absolute;
+    top:7px;
+    right:7px;
+    width:22px;
+    height:22px;
+    border-radius:4px;
+    border:1px solid #f0f0f2;
+    background:#f0f0f2;
+    color:#0b0b0d;
+    cursor:pointer;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    transition:background .15s, border-color .15s;
+  }
+  .friends-chat-send:hover{
+    background:#ffffff;
+    border-color:#ffffff;
+    color:#000000;
+  }
+
 </style>
 </head>
 <body>
@@ -2269,6 +2669,21 @@
 
     <header class="top-bar">
       <div class="top-title" id="pageTitle">ГЛАВНАЯ</div>
+      <div class="top-actions">
+        <button type="button" class="friends-toggle-btn" id="btnFriendsToggle" onclick="toggleFriendsDrawer(event)" title="Список друзей и мини-чат">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:.85">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+          <span>Друзья</span>
+
+          <span class="friends-toggle-dot is-none" id="friendsToggleDot"></span>
+          <span class="friends-toggle-count" id="friendsTopCount">0/5</span>
+          <span class="friends-unread-pill" id="friendsUnreadPill"></span>
+        </button>
+      </div>
     </header>
 
     <div class="content" id="viewMain">
@@ -2741,6 +3156,37 @@
     Удалить
   </button>
 </div>
+
+<!-- ПРАВЫЙ САЙДБАР: ДРУЗЬЯ И СПЛИТ-ЧАТ -->
+<aside class="friends-drawer" id="friendsDrawer" aria-hidden="true" onclick="event.stopPropagation()">
+  <div class="friends-drawer-head">
+    <span class="friends-drawer-title">ДРУЗЬЯ</span>
+  </div>
+
+  <div class="friends-list" id="friendsList"></div>
+
+  <div class="friends-chat-section" id="friendsChatSection">
+    <div class="friends-chat-head">
+      <div class="friends-chat-peer">
+        <span class="friends-chat-peer-dot" id="friendsChatPeerDot"></span>
+        <span class="friends-chat-title" id="friendsChatPeerName">Чат</span>
+      </div>
+      <button type="button" class="friends-chat-collapse" onclick="closeFriendSplitChat()" title="Свернуть чат">&times;</button>
+    </div>
+    <div class="friends-chat-messages" id="friendsChatMessages"></div>
+    <form class="friends-chat-input-wrap" onsubmit="sendFriendsChat(event)">
+      <div class="friends-chat-input-box">
+        <input type="text" class="friends-chat-input" id="friendsChatInput" maxlength="500" placeholder="Напишите..." autocomplete="off">
+        <button type="submit" class="friends-chat-send" title="Отправить">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+          </svg>
+        </button>
+      </div>
+    </form>
+  </div>
+</aside>
 
 <div class="toast" id="toast"></div>
 
@@ -4850,6 +5296,11 @@
       closeSettingsModal();
       return;
     }
+    const fd = document.getElementById('friendsDrawer');
+    if (fd && fd.classList.contains('open') && e.key === 'Escape') {
+      closeFriendsDrawer();
+      return;
+    }
     const lb = document.getElementById('lightbox');
     if (!lb || !lb.classList.contains('show')) return;
     if (e.key === 'Escape') closeLightbox();
@@ -4862,6 +5313,9 @@
   window.addEventListener('click', (e)=>{
     if (!e.target.closest('#screenshotContextMenu')) {
       closeScreenshotContextMenu();
+    }
+    if (!e.target.closest('#friendsDrawer') && !e.target.closest('#btnFriendsToggle')) {
+      closeFriendsDrawer();
     }
   });
 
@@ -7135,6 +7589,447 @@
     window.addEventListener('DOMContentLoaded', startShowcaseSlideshow);
   }
   updateShowcaseTitle();
+
+  // --- Правый сайдбар «Друзья» и 1-на-1 чат (живой бэкенд через Launcher.cs) ---
+  const FRIENDS_DEFAULT_TINTS = {
+    gugomot: '',
+    wwzmx: 'hue-rotate(38deg) saturate(1.15)',
+    wlimon4ik: 'hue-rotate(140deg) saturate(1.1)',
+    batton111221: 'hue-rotate(210deg) saturate(1.15)',
+    syn_mijaghi: 'hue-rotate(285deg) saturate(1.1)',
+    IMPERATOR_MIDASS: 'hue-rotate(95deg) saturate(1.1)'
+  };
+
+  let friendsState = {
+    me: '',
+    configured: false,
+    offline: true,
+    error: '',
+    friends: [
+      { nick: 'wwzmx', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
+      { nick: 'wlimon4ik', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
+      { nick: 'batton111221', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
+      { nick: 'syn_mijaghi', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
+      { nick: 'IMPERATOR_MIDASS', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 }
+    ]
+  };
+
+  const friendChatsCache = {};
+  const renderedFriendSkinKeys = {};
+  let activeChatFriend = null;
+  let lastSeenRemoteMsgIds = {};
+  let friendsPollTimer = null;
+  let friendsChatFetchInFlight = false;
+  let friendsSendingMessage = false;
+
+  function escFriendTxt(s) {
+    return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function formatMsgTime(tsMs) {
+    if (!tsMs) return '';
+    const d = new Date(Number(tsMs));
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mm = String(d.getMinutes()).padStart(2, '0');
+    return `${hh}:${mm}`;
+  }
+
+  function isFriendsDrawerOpen() {
+    const d = document.getElementById('friendsDrawer');
+    return !!(d && d.classList.contains('open') && !d.classList.contains('closing'));
+  }
+
+  function drawSkinHeadAvatar(canvas, skinSrc, filterCss, fallbackSrc) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.filter = filterCss || 'none';
+      ctx.drawImage(img, 8, 8, 8, 8, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 40, 8, 8, 8, 0, 0, canvas.width, canvas.height);
+      ctx.filter = 'none';
+    };
+    img.onerror = () => {
+      if (fallbackSrc && img.src !== fallbackSrc) {
+        img.src = fallbackSrc;
+      }
+    };
+    img.src = skinSrc || DEFAULT_STEVE_SKIN_BASE64;
+  }
+
+  function toggleFriendSplitChat(nick) {
+    if (activeChatFriend === nick) {
+      closeFriendSplitChat();
+    } else {
+      openFriendSplitChat(nick);
+    }
+  }
+
+  function updateFriendsActiveSelection() {
+    const rows = document.querySelectorAll('#friendsList .friend-row');
+    rows.forEach(row => {
+      row.classList.toggle('is-chat-active', row.dataset.nick === activeChatFriend);
+    });
+  }
+
+  function syncChatPeerHeader() {
+    if (!activeChatFriend) return;
+    const f = (friendsState.friends || []).find(x => x.nick === activeChatFriend);
+    const dot = document.getElementById('friendsChatPeerDot');
+    const nameEl = document.getElementById('friendsChatPeerName');
+    const inp = document.getElementById('friendsChatInput');
+    if (dot) dot.className = 'friends-chat-peer-dot ' + (f ? f.status : 'offline');
+    if (nameEl) nameEl.textContent = activeChatFriend;
+    if (inp) inp.placeholder = 'Напишите...';
+  }
+
+  function openFriendSplitChat(nick) {
+    activeChatFriend = nick;
+    const f = (friendsState.friends || []).find(x => x.nick === nick);
+    if (f) f.unread = 0;
+    const drawer = document.getElementById('friendsDrawer');
+    if (drawer) drawer.classList.add('has-split-chat');
+    syncChatPeerHeader();
+    updateFriendsActiveSelection();
+    renderFriendsList();
+    renderFriendChat(true);
+    fetchFriendChat(nick, true);
+    const inp = document.getElementById('friendsChatInput');
+    if (inp) inp.focus({ preventScroll: true });
+  }
+
+  function closeFriendSplitChat() {
+    activeChatFriend = null;
+    const drawer = document.getElementById('friendsDrawer');
+    if (drawer) drawer.classList.remove('has-split-chat');
+    updateFriendsActiveSelection();
+  }
+
+  function renderFriendsList() {
+    const listEl = document.getElementById('friendsList');
+    const topCountEl = document.getElementById('friendsTopCount');
+    const topDotEl = document.getElementById('friendsToggleDot');
+    const unreadPillEl = document.getElementById('friendsUnreadPill');
+    if (!listEl) return;
+
+    const friends = Array.isArray(friendsState.friends) ? friendsState.friends : [];
+    const onlineCount = friends.filter(f => f.status && f.status !== 'offline').length;
+    const totalUnread = friends.reduce((acc, f) => acc + (Number(f.unread) || 0), 0);
+
+    if (topCountEl) topCountEl.textContent = `${onlineCount}/${friends.length}`;
+    if (topDotEl) topDotEl.classList.toggle('is-none', onlineCount === 0);
+    if (unreadPillEl) {
+      unreadPillEl.textContent = totalUnread > 9 ? '9+' : String(totalUnread);
+      unreadPillEl.classList.toggle('show', totalUnread > 0);
+    }
+
+    const desiredOrder = friends.map(f => f.nick);
+    const existingRows = Array.from(listEl.querySelectorAll('.friend-row'));
+    const existingByNick = {};
+    existingRows.forEach(r => { existingByNick[r.dataset.nick] = r; });
+
+    existingRows.forEach(r => {
+      if (!desiredOrder.includes(r.dataset.nick)) {
+        r.remove();
+        delete existingByNick[r.dataset.nick];
+      }
+    });
+
+    const oldNote = listEl.querySelector('.friends-status-note');
+    if (friendsState.configured === false) {
+      if (!oldNote) {
+        const note = document.createElement('div');
+        note.className = 'friends-status-note';
+        note.textContent = 'Онлайн и чат появятся после настройки адреса воркера';
+        listEl.prepend(note);
+      }
+    } else if (oldNote) {
+      oldNote.remove();
+    }
+
+    const noteOffset = friendsState.configured === false ? 1 : 0;
+
+    friends.forEach((f, idx) => {
+      const stateCls = f.status === 'ingame' ? 'is-ingame' : (f.status === 'launcher' ? 'is-launcher' : 'is-offline');
+      const activeCls = activeChatFriend === f.nick ? 'is-chat-active' : '';
+      const unread = activeChatFriend === f.nick ? 0 : (Number(f.unread) || 0);
+
+      let row = existingByNick[f.nick];
+      if (!row) {
+        row = document.createElement('div');
+        row.dataset.nick = f.nick;
+        row.onclick = () => toggleFriendSplitChat(f.nick);
+        row.innerHTML = `
+          <div class="friend-avatar-wrap">
+            <canvas class="friend-avatar-canvas" width="32" height="32"></canvas>
+            <span class="friend-status-dot"></span>
+          </div>
+          <div class="friend-info">
+            <div class="friend-name"></div>
+            <div class="friend-activity"></div>
+          </div>
+          <span class="friend-unread-badge"></span>`;
+        listEl.appendChild(row);
+      } else if (listEl.children[idx + noteOffset] !== row) {
+        listEl.appendChild(row);
+      }
+
+      row.className = `friend-row ${stateCls}${activeCls ? ' ' + activeCls : ''}`;
+      const dotEl = row.querySelector('.friend-status-dot');
+      if (dotEl) dotEl.className = `friend-status-dot ${f.status || 'offline'}`;
+      const nameEl = row.querySelector('.friend-name');
+      if (nameEl && nameEl.textContent !== f.nick) nameEl.textContent = f.nick;
+      const actEl = row.querySelector('.friend-activity');
+      const actText = f.activity || (f.status === 'ingame' ? 'Играет в Civilization' : (f.status === 'launcher' ? 'В лаунчере' : 'Оффлайн'));
+      if (actEl && actEl.textContent !== actText) actEl.textContent = actText;
+
+      const badgeEl = row.querySelector('.friend-unread-badge');
+      if (badgeEl) {
+        badgeEl.textContent = unread > 9 ? '9+' : String(unread);
+        badgeEl.classList.toggle('show', unread > 0);
+      }
+
+      const skinKey = f.skinHash ? ('remote:' + f.skinHash) : 'default';
+      if (renderedFriendSkinKeys[f.nick] !== skinKey) {
+        renderedFriendSkinKeys[f.nick] = skinKey;
+        const canvas = row.querySelector('.friend-avatar-canvas');
+        if (f.skinHash) {
+          const remoteUrl = `/api/friends/skin?nick=${encodeURIComponent(f.nick)}&h=${encodeURIComponent(f.skinHash)}`;
+          drawSkinHeadAvatar(canvas, remoteUrl, '', DEFAULT_STEVE_SKIN_BASE64);
+        } else {
+          drawSkinHeadAvatar(canvas, DEFAULT_STEVE_SKIN_BASE64, FRIENDS_DEFAULT_TINTS[f.nick] || '');
+        }
+      }
+    });
+
+    syncChatPeerHeader();
+  }
+
+  function renderFriendChat(forceScroll) {
+    const box = document.getElementById('friendsChatMessages');
+    if (!box) return;
+    if (!activeChatFriend) {
+      box.innerHTML = '';
+      box.dataset.renderedSig = '';
+      return;
+    }
+
+    const entry = friendChatsCache[activeChatFriend];
+    const msgs = entry ? entry.messages : [];
+    const lastId = msgs.length ? msgs[msgs.length - 1].id : 0;
+    const loadedFlag = entry && entry.loaded ? '1' : '0';
+    const sig = `${activeChatFriend}|${loadedFlag}|${msgs.length}|${lastId}|${friendsState.configured ? '1' : '0'}`;
+
+    if (box.dataset.renderedSig === sig && !forceScroll) {
+      return;
+    }
+
+    const wasNearBottom = (box.scrollHeight - box.scrollTop - box.clientHeight) < 36;
+    box.dataset.renderedSig = sig;
+
+    if (!friendsState.configured) {
+      box.innerHTML = `<div class="friends-chat-empty">Чат подключится после настройки воркера</div>`;
+      return;
+    }
+
+    if (!entry || !entry.loaded) {
+      box.innerHTML = `<div class="friends-chat-empty">Загрузка сообщений...</div>`;
+      return;
+    }
+
+    if (!msgs.length) {
+      box.innerHTML = `<div class="friends-chat-empty">Напишите ${escFriendTxt(activeChatFriend)} «привет»</div>`;
+      return;
+    }
+
+    const meNorm = (friendsState.me || '').toLowerCase();
+    box.innerHTML = msgs.map(m => {
+      const isSelf = m.self === true || (meNorm && String(m.from || '').toLowerCase() === meNorm);
+      const authorLabel = isSelf ? 'Вы' : (m.from || activeChatFriend);
+      const timeLabel = m.time || formatMsgTime(m.tsMs);
+      return `
+        <div class="friends-chat-msg ${isSelf ? 'is-self' : ''}">
+          <div class="friends-chat-msg-meta">
+            <span class="friends-chat-msg-author">${escFriendTxt(authorLabel)}</span>
+            <span class="friends-chat-msg-time">${escFriendTxt(timeLabel)}</span>
+          </div>
+          <div class="friends-chat-msg-text">${escFriendTxt(m.text)}</div>
+        </div>`;
+    }).join('');
+
+    if (forceScroll || wasNearBottom) {
+      box.scrollTop = box.scrollHeight;
+    }
+  }
+
+  async function fetchFriendChat(nick, forceScroll) {
+    if (!nick || friendsChatFetchInFlight) return;
+    if (!friendsState.configured) {
+      renderFriendChat(forceScroll);
+      return;
+    }
+    friendsChatFetchInFlight = true;
+    try {
+      const existing = friendChatsCache[nick] || { loaded: false, lastId: 0, messages: [] };
+      const after = existing.loaded && existing.lastId > 0 ? existing.lastId : 0;
+      const resp = await fetch(`/api/friends/chat?friend=${encodeURIComponent(nick)}&after=${after}`, { cache: 'no-store' });
+      const data = await resp.json();
+      if (data && data.ok && Array.isArray(data.messages)) {
+        if (after === 0 || !existing.loaded) {
+          existing.messages = data.messages;
+        } else if (data.messages.length > 0) {
+          const seen = new Set(existing.messages.map(m => Number(m.id)));
+          data.messages.forEach(m => {
+            if (!seen.has(Number(m.id))) existing.messages.push(m);
+          });
+        }
+        existing.loaded = true;
+        if (existing.messages.length > 0) {
+          existing.lastId = Number(existing.messages[existing.messages.length - 1].id) || existing.lastId;
+          lastSeenRemoteMsgIds[nick] = Math.max(lastSeenRemoteMsgIds[nick] || 0, existing.lastId);
+        }
+        friendChatsCache[nick] = existing;
+        const f = (friendsState.friends || []).find(x => x.nick === nick);
+        if (f) f.unread = 0;
+        if (activeChatFriend === nick) {
+          renderFriendsList();
+          renderFriendChat(forceScroll || (data.messages.length > 0));
+        }
+      }
+    } catch { }
+    finally {
+      friendsChatFetchInFlight = false;
+    }
+  }
+
+  async function sendFriendsChat(e) {
+    if (e) e.preventDefault();
+    if (!activeChatFriend || friendsSendingMessage) return;
+    const inp = document.getElementById('friendsChatInput');
+    if (!inp) return;
+    const msg = inp.value.trim();
+    if (!msg) return;
+
+    const targetNick = activeChatFriend;
+    friendsSendingMessage = true;
+    inp.value = '';
+    try {
+      const resp = await fetch('/api/friends/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ to: targetNick, text: msg })
+      });
+      const data = await resp.json();
+      if (data && data.ok && data.message) {
+        if (!friendChatsCache[targetNick]) {
+          friendChatsCache[targetNick] = { loaded: true, lastId: 0, messages: [] };
+        }
+        const entry = friendChatsCache[targetNick];
+        const exists = entry.messages.some(m => Number(m.id) === Number(data.message.id));
+        if (!exists) entry.messages.push(data.message);
+        entry.loaded = true;
+        entry.lastId = Math.max(entry.lastId || 0, Number(data.message.id) || 0);
+        lastSeenRemoteMsgIds[targetNick] = Math.max(lastSeenRemoteMsgIds[targetNick] || 0, entry.lastId);
+        renderFriendChat(true);
+      } else {
+        inp.value = msg;
+        if (typeof showToast === 'function') showToast((data && data.error) || 'Не удалось отправить сообщение');
+      }
+    } catch {
+      inp.value = msg;
+      if (typeof showToast === 'function') showToast('Ошибка связи с чатом');
+    } finally {
+      friendsSendingMessage = false;
+    }
+  }
+
+  async function refreshFriendsState(forceBackend) {
+    try {
+      const isOpen = isFriendsDrawerOpen();
+      const qs = isOpen ? ('?active=1' + (forceBackend ? '&force=1' : '')) : '';
+      const resp = await fetch('/api/friends/state' + qs, { cache: 'no-store' });
+      const data = await resp.json();
+      if (data && Array.isArray(data.friends)) {
+        friendsState = {
+          me: data.me || '',
+          configured: !!data.configured,
+          offline: !!data.offline,
+          error: data.error || '',
+          friends: data.friends
+        };
+        renderFriendsList();
+
+        if (isOpen && activeChatFriend && friendsState.configured) {
+          const activePeer = friendsState.friends.find(x => x.nick === activeChatFriend);
+          const remoteLast = activePeer ? (Number(activePeer.lastMsgId) || 0) : 0;
+          const localLast = lastSeenRemoteMsgIds[activeChatFriend] || 0;
+          const cacheEntry = friendChatsCache[activeChatFriend];
+          if (!cacheEntry || !cacheEntry.loaded || remoteLast > localLast) {
+            fetchFriendChat(activeChatFriend, false);
+          }
+        }
+      }
+    } catch { }
+  }
+
+  function scheduleFriendsPoll() {
+    if (friendsPollTimer) clearTimeout(friendsPollTimer);
+    const delayMs = isFriendsDrawerOpen() ? 2500 : 8000;
+    friendsPollTimer = setTimeout(async () => {
+      await refreshFriendsState(false);
+      scheduleFriendsPoll();
+    }, delayMs);
+  }
+
+  let friendsCloseTimer = null;
+
+  function openFriendsDrawer() {
+    const d = document.getElementById('friendsDrawer');
+    const btn = document.getElementById('btnFriendsToggle');
+    if (!d) return;
+    if (friendsCloseTimer) {
+      clearTimeout(friendsCloseTimer);
+      friendsCloseTimer = null;
+    }
+    renderFriendsList();
+    if (activeChatFriend) {
+      renderFriendChat(true);
+      fetchFriendChat(activeChatFriend, true);
+    }
+    d.classList.remove('closing');
+    d.classList.add('open');
+    d.setAttribute('aria-hidden', 'false');
+    if (btn) btn.classList.add('active');
+    refreshFriendsState(true).then(() => scheduleFriendsPoll());
+  }
+
+  function closeFriendsDrawer() {
+    const d = document.getElementById('friendsDrawer');
+    const btn = document.getElementById('btnFriendsToggle');
+    if (!d || !d.classList.contains('open') || d.classList.contains('closing')) return;
+    d.classList.add('closing');
+    d.setAttribute('aria-hidden', 'true');
+    if (btn) btn.classList.remove('active');
+    friendsCloseTimer = setTimeout(() => {
+      d.classList.remove('open', 'closing');
+      friendsCloseTimer = null;
+    }, 180);
+    scheduleFriendsPoll();
+  }
+
+  function toggleFriendsDrawer(e) {
+    if (e) e.stopPropagation();
+    const d = document.getElementById('friendsDrawer');
+    if (!d) return;
+    if (d.classList.contains('open') && !d.classList.contains('closing')) closeFriendsDrawer();
+    else openFriendsDrawer();
+  }
+
+  renderFriendsList();
+  refreshFriendsState(false).then(() => scheduleFriendsPoll());
 
   // Нативный аппаратный скроллинг Chromium без перехвата колесика JS-циклами (без фризов и мерцаний)
 </script>

@@ -1,0 +1,12 @@
+name = "civilization-friends"
+main = "src/index.js"
+compatibility_date = "2025-05-01"
+
+[durable_objects]
+bindings = [
+  { name = "FRIENDS_HUB", class_name = "FriendsHub" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["FriendsHub"]

@@ -32,7 +32,7 @@ namespace CivilizationLauncher
 
 {
 
-    public class Program
+    public partial class Program
 
     {
 
@@ -1494,6 +1494,14 @@ namespace CivilizationLauncher
             try { AdServerBlocker.CleanAll(); } catch { }
 
             try { AdServerBlocker.SetupWatchers(); } catch { }
+
+            try
+            {
+                Thread friendsThread = new Thread(FriendsSyncLoop);
+                friendsThread.IsBackground = true;
+                friendsThread.Start();
+            }
+            catch { }
 
 
 
@@ -5571,7 +5579,8 @@ namespace CivilizationLauncher
 
                                 Log("[SkinManager] Скин очищен пользователем");
 
-                                SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "cleared", true } });
+                                NotifyFriendsChanged();
+                            SendJson(ctx, new Dictionary<string, object> { { "ok", true }, { "cleared", true } });
 
                                 return;
 
@@ -5643,6 +5652,7 @@ namespace CivilizationLauncher
 
                             Log(string.Format("[SkinManager] Скин сохранен ({0}x{1}, модель: {2}) в {3}", width, height, model, civDir ?? mcDir));
 
+                            NotifyFriendsChanged();
                             SendJson(ctx, new Dictionary<string, object> {
 
                                 { "ok", true },
@@ -5768,6 +5778,24 @@ namespace CivilizationLauncher
             }
 
 
+
+            if (endpoint == "friends/state")
+            {
+                HandleFriendsStateApi(ctx);
+                return;
+            }
+
+            if (endpoint == "friends/skin")
+            {
+                HandleFriendsSkinApi(ctx);
+                return;
+            }
+
+            if (endpoint == "friends/chat")
+            {
+                HandleFriendsChatApi(ctx);
+                return;
+            }
 
             if (endpoint == "set-performance-mode")
 
@@ -7543,7 +7571,7 @@ namespace CivilizationLauncher
 
 
 
-        private static string CurrentLauncherSha = "976552a57984176a5551dc2eea7a21897cc6a881";
+        private static string CurrentLauncherSha = "0024fc740bdf254184328afabbb3f998f900a075";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -12562,6 +12590,580 @@ namespace CivilizationLauncher
     }
 
 
+
+    public partial class Program
+    {
+        private static readonly string FriendsBackendDefaultUrl = "https://civilization-friends.civilkaserver.workers.dev";
+        private static readonly string FriendsClientKey = "civ-friends-26-3-k9m4x8q2";
+        private static readonly string[] FriendsRoster = new string[] {
+            "gugomot",
+            "wwzmx",
+            "wlimon4ik",
+            "batton111221",
+            "syn_mijaghi",
+            "IMPERATOR_MIDASS"
+        };
+
+        private static readonly object friendsLock = new object();
+        private static string cachedFriendsStateJson = null;
+        private static string lastUploadedSkinHash = null;
+        private static string lastUploadedSkinNick = null;
+        private static long friendsLastBurstUtcTicks = 0;
+        private static readonly AutoResetEvent friendsWakeEvent = new AutoResetEvent(false);
+        private static readonly Dictionary<string, byte[]> friendsSkinBytesCache = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, string> friendsSkinHashCache = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        static void NotifyFriendsChanged()
+        {
+            try
+            {
+                Interlocked.Exchange(ref friendsLastBurstUtcTicks, DateTime.UtcNow.Ticks);
+                friendsWakeEvent.Set();
+            }
+            catch { }
+        }
+
+        static string GetFriendsBackendUrl()
+        {
+            try
+            {
+                string envUrl = Environment.GetEnvironmentVariable("CIVILIZATION_FRIENDS_URL");
+                if (!string.IsNullOrEmpty(envUrl))
+                {
+                    return envUrl.Trim().TrimEnd('/');
+                }
+            }
+            catch { }
+
+            try
+            {
+                string fileUrl = Path.Combine(GetLauncherDataDir(), "friends_url.txt");
+                if (File.Exists(fileUrl))
+                {
+                    string txt = File.ReadAllText(fileUrl, Encoding.UTF8).Trim().TrimEnd('/');
+                    if (!string.IsNullOrEmpty(txt)) return txt;
+                }
+            }
+            catch { }
+
+            if (!string.IsNullOrEmpty(FriendsBackendDefaultUrl))
+            {
+                return FriendsBackendDefaultUrl.Trim().TrimEnd('/');
+            }
+            return "";
+        }
+
+        static string NormalizeFriendNick(string raw)
+        {
+            if (string.IsNullOrEmpty(raw)) return null;
+            string t = raw.Trim();
+            if (t.Length == 0) return null;
+            string low = t.ToLowerInvariant();
+            for (int i = 0; i < FriendsRoster.Length; i++)
+            {
+                if (FriendsRoster[i].ToLowerInvariant() == low) return FriendsRoster[i];
+            }
+            if (low == "maksim72622" || low == "persic760gmail_c" || low == "batton" || low == "batun") return "batton111221";
+            if (low == "wlimonchik") return "wlimon4ik";
+            if (low == "imperator_midas") return "IMPERATOR_MIDASS";
+            return null;
+        }
+
+        static string GetActiveUsername()
+        {
+            try
+            {
+                string envNick = Environment.GetEnvironmentVariable("CIVILIZATION_FRIENDS_NICK");
+                if (!string.IsNullOrEmpty(envNick))
+                {
+                    string cleanEnv = SanitizeMinecraftUsername(envNick.Trim());
+                    string normEnv = NormalizeFriendNick(cleanEnv);
+                    return normEnv ?? cleanEnv;
+                }
+            }
+            catch { }
+
+            string username = "gugomot";
+            try
+            {
+                string mcDir = GetActiveMcDir();
+                string tpPath = !string.IsNullOrEmpty(mcDir) ? Path.Combine(mcDir, "TlauncherProfiles.json") : "";
+                if (string.IsNullOrEmpty(tpPath) || !File.Exists(tpPath))
+                {
+                    tpPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".minecraft\TlauncherProfiles.json");
+                }
+                if (File.Exists(tpPath))
+                {
+                    var tp = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(File.ReadAllText(tpPath, Encoding.UTF8));
+                    if (tp != null)
+                    {
+                        string selUuid = tp.ContainsKey("selectedAccountUUID") ? (tp["selectedAccountUUID"] as string) : null;
+                        if (string.IsNullOrEmpty(selUuid) && tp.ContainsKey("freeAccountUUID")) selUuid = tp["freeAccountUUID"] as string;
+                        if (tp.ContainsKey("accounts") && tp["accounts"] is Dictionary<string, object>)
+                        {
+                            var accs = (Dictionary<string, object>)tp["accounts"];
+                            Dictionary<string, object> chosen = null;
+                            if (!string.IsNullOrEmpty(selUuid) && accs.ContainsKey(selUuid))
+                            {
+                                chosen = accs[selUuid] as Dictionary<string, object>;
+                            }
+                            else
+                            {
+                                foreach (var v in accs.Values)
+                                {
+                                    chosen = v as Dictionary<string, object>;
+                                    if (chosen != null) break;
+                                }
+                            }
+                            if (chosen != null)
+                            {
+                                if (chosen.ContainsKey("username") && chosen["username"] != null) username = chosen["username"].ToString();
+                                else if (chosen.ContainsKey("displayName") && chosen["displayName"] != null) username = chosen["displayName"].ToString();
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+
+            string sanitized = SanitizeMinecraftUsername(username);
+            string canonical = NormalizeFriendNick(sanitized);
+            return canonical ?? sanitized;
+        }
+
+        static void ReadLocalSkinForSync(out string skinHash, out string skinModel, out byte[] skinBytes)
+        {
+            skinHash = "";
+            skinModel = "classic";
+            skinBytes = null;
+
+            try
+            {
+                string localSkinDir = GetLauncherSkinsDir();
+                string skinFile = Path.Combine(localSkinDir, "current_skin.png");
+                if (!File.Exists(skinFile)) return;
+
+                byte[] bytes = File.ReadAllBytes(skinFile);
+                if (bytes == null || bytes.Length < 24 || bytes.Length > 165000) return;
+
+                string jsonFile = Path.Combine(localSkinDir, "current_skin.json");
+                if (File.Exists(jsonFile))
+                {
+                    try
+                    {
+                        string jtext = File.ReadAllText(jsonFile);
+                        if (jtext.IndexOf("\"slim\"", StringComparison.OrdinalIgnoreCase) >= 0) skinModel = "slim";
+                    }
+                    catch { }
+                }
+                else
+                {
+                    string modelFile = Path.Combine(localSkinDir, "model.txt");
+                    if (File.Exists(modelFile))
+                    {
+                        try
+                        {
+                            if (File.ReadAllText(modelFile).Trim().Equals("slim", StringComparison.OrdinalIgnoreCase)) skinModel = "slim";
+                        }
+                        catch { }
+                    }
+                }
+
+                using (var sha = System.Security.Cryptography.SHA256.Create())
+                {
+                    byte[] hashBytes = sha.ComputeHash(bytes);
+                    var sb = new StringBuilder(hashBytes.Length * 2);
+                    for (int i = 0; i < hashBytes.Length; i++) sb.Append(hashBytes[i].ToString("x2"));
+                    skinHash = sb.ToString();
+                }
+                skinBytes = bytes;
+            }
+            catch { }
+        }
+
+        static bool HttpRequestFriends(string method, string pathAndQuery, string jsonBody, out int statusCode, out byte[] responseBytes)
+        {
+            statusCode = 0;
+            responseBytes = null;
+            string baseUrl = GetFriendsBackendUrl();
+            if (string.IsNullOrEmpty(baseUrl)) return false;
+
+            try
+            {
+                try { ServicePointManager.SecurityProtocol = (SecurityProtocolType)(3072 | 12288); }
+                catch { ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; }
+                string fullUrl = baseUrl + pathAndQuery;
+                HttpWebRequest req = (HttpWebRequest)WebRequest.Create(fullUrl);
+                req.Method = method;
+                req.Timeout = 5000;
+                req.ReadWriteTimeout = 5000;
+                req.Headers.Add("X-Client-Key", FriendsClientKey);
+                req.UserAgent = "CivilizationLauncher/26.3";
+
+                if (!string.IsNullOrEmpty(jsonBody))
+                {
+                    byte[] payload = Encoding.UTF8.GetBytes(jsonBody);
+                    req.ContentType = "application/json; charset=utf-8";
+                    req.ContentLength = payload.Length;
+                    using (var reqStream = req.GetRequestStream())
+                    {
+                        reqStream.Write(payload, 0, payload.Length);
+                    }
+                }
+
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                {
+                    statusCode = (int)resp.StatusCode;
+                    using (var ms = new MemoryStream())
+                    using (var s = resp.GetResponseStream())
+                    {
+                        if (s != null) s.CopyTo(ms);
+                        responseBytes = ms.ToArray();
+                    }
+                    return statusCode >= 200 && statusCode < 300;
+                }
+            }
+            catch (WebException wex)
+            {
+                try
+                {
+                    var errResp = wex.Response as HttpWebResponse;
+                    if (errResp != null)
+                    {
+                        statusCode = (int)errResp.StatusCode;
+                        using (var ms = new MemoryStream())
+                        using (var s = errResp.GetResponseStream())
+                        {
+                            if (s != null) s.CopyTo(ms);
+                            responseBytes = ms.ToArray();
+                        }
+                    }
+                }
+                catch { }
+                return false;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        static string BuildFallbackFriendsStateJson(string me, bool configured, string errorMsg)
+        {
+            var friendsList = new List<Dictionary<string, object>>();
+            string meNorm = NormalizeFriendNick(me) ?? me;
+            for (int i = 0; i < FriendsRoster.Length; i++)
+            {
+                string nick = FriendsRoster[i];
+                if (!string.IsNullOrEmpty(meNorm) && nick.Equals(meNorm, StringComparison.OrdinalIgnoreCase)) continue;
+                friendsList.Add(new Dictionary<string, object> {
+                    { "nick", nick },
+                    { "status", "offline" },
+                    { "activity", "Оффлайн" },
+                    { "lastSeenMs", 0 },
+                    { "skinHash", "" },
+                    { "skinModel", "classic" },
+                    { "unread", 0 },
+                    { "lastMsgId", 0 }
+                });
+            }
+            var payload = new Dictionary<string, object> {
+                { "ok", true },
+                { "configured", configured },
+                { "offline", true },
+                { "me", meNorm },
+                { "error", errorMsg ?? "" },
+                { "friends", friendsList }
+            };
+            return new JavaScriptSerializer().Serialize(payload);
+        }
+
+        static void SendRawJson(HttpListenerContext ctx, string json, int statusCode)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(json ?? "{}");
+            ctx.Response.StatusCode = statusCode;
+            ctx.Response.ContentType = "application/json; charset=utf-8";
+            ctx.Response.AddHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+            ctx.Response.AddHeader("Pragma", "no-cache");
+            ctx.Response.ContentLength64 = bytes.Length;
+            ctx.Response.Headers.Add("Access-Control-Allow-Origin", "*");
+            ctx.Response.OutputStream.Write(bytes, 0, bytes.Length);
+            ctx.Response.OutputStream.Flush();
+            ctx.Response.Close();
+        }
+
+        static void FriendsSyncLoop()
+        {
+            Thread.Sleep(600);
+            while (isRunning)
+            {
+                try
+                {
+                    string baseUrl = GetFriendsBackendUrl();
+                    string me = GetActiveUsername();
+
+                    if (!string.IsNullOrEmpty(baseUrl))
+                    {
+                        bool inGame = false;
+                        try { inGame = IsGameRunning(); } catch { }
+                        string status = inGame ? "ingame" : "launcher";
+                        string activity = inGame ? "Играет в Civilization" : "В лаунчере";
+
+                        string skinHash;
+                        string skinModel;
+                        byte[] skinBytes;
+                        ReadLocalSkinForSync(out skinHash, out skinModel, out skinBytes);
+
+                        var body = new Dictionary<string, object> {
+                            { "nick", me },
+                            { "status", status },
+                            { "activity", activity },
+                            { "skinHash", skinHash },
+                            { "skinModel", skinModel }
+                        };
+
+                        bool needsUpload = !string.IsNullOrEmpty(skinHash) &&
+                            skinBytes != null &&
+                            (!skinHash.Equals(lastUploadedSkinHash, StringComparison.OrdinalIgnoreCase) ||
+                             !me.Equals(lastUploadedSkinNick, StringComparison.OrdinalIgnoreCase));
+
+                        if (needsUpload)
+                        {
+                            body["skinBase64"] = Convert.ToBase64String(skinBytes);
+                        }
+
+                        var jss = new JavaScriptSerializer();
+                        int code;
+                        byte[] respBytes;
+                        bool ok = HttpRequestFriends("POST", "/friends/sync", jss.Serialize(body), out code, out respBytes);
+                        if (ok && respBytes != null && respBytes.Length > 0)
+                        {
+                            if (needsUpload || string.IsNullOrEmpty(skinHash))
+                            {
+                                lastUploadedSkinHash = skinHash;
+                                lastUploadedSkinNick = me;
+                            }
+                            string rawJson = Encoding.UTF8.GetString(respBytes);
+                            try
+                            {
+                                var parsed = jss.Deserialize<Dictionary<string, object>>(rawJson);
+                                if (parsed != null)
+                                {
+                                    parsed["configured"] = true;
+                                    parsed["offline"] = false;
+                                    string normalizedJson = jss.Serialize(parsed);
+                                    lock (friendsLock) { cachedFriendsStateJson = normalizedJson; }
+                                }
+                            }
+                            catch
+                            {
+                                lock (friendsLock) { cachedFriendsStateJson = rawJson; }
+                            }
+                        }
+                        else
+                        {
+                            lock (friendsLock)
+                            {
+                                if (string.IsNullOrEmpty(cachedFriendsStateJson))
+                                {
+                                    cachedFriendsStateJson = BuildFallbackFriendsStateJson(me, true, code > 0 ? ("HTTP " + code) : "Сервер недоступен");
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        lock (friendsLock)
+                        {
+                            cachedFriendsStateJson = BuildFallbackFriendsStateJson(me, false, "Бэкенд друзей не настроен");
+                        }
+                    }
+                }
+                catch { }
+
+                long lastBurst = Interlocked.Read(ref friendsLastBurstUtcTicks);
+                bool inBurst = lastBurst > 0 && (DateTime.UtcNow.Ticks - lastBurst) < TimeSpan.FromSeconds(30).Ticks;
+                int sleepMs = inBurst ? 4500 : 12000;
+                friendsWakeEvent.WaitOne(sleepMs);
+            }
+        }
+
+        static void HandleFriendsStateApi(HttpListenerContext ctx)
+        {
+            bool active = ctx.Request.QueryString["active"] == "1";
+            bool force = ctx.Request.QueryString["force"] == "1";
+            if (active)
+            {
+                long prevBurst = Interlocked.Exchange(ref friendsLastBurstUtcTicks, DateTime.UtcNow.Ticks);
+                bool wasCold = prevBurst == 0 || (DateTime.UtcNow.Ticks - prevBurst) >= TimeSpan.FromSeconds(30).Ticks;
+                if (wasCold || force) friendsWakeEvent.Set();
+            }
+
+            string json;
+            lock (friendsLock)
+            {
+                json = cachedFriendsStateJson;
+            }
+            if (string.IsNullOrEmpty(json))
+            {
+                string me = GetActiveUsername();
+                bool configured = !string.IsNullOrEmpty(GetFriendsBackendUrl());
+                json = BuildFallbackFriendsStateJson(me, configured, "");
+            }
+            SendRawJson(ctx, json, 200);
+        }
+
+        static void HandleFriendsSkinApi(HttpListenerContext ctx)
+        {
+            string rawNick = ctx.Request.QueryString["nick"] ?? "";
+            string nick = NormalizeFriendNick(rawNick);
+            string hash = ctx.Request.QueryString["h"] ?? "";
+            if (string.IsNullOrEmpty(nick))
+            {
+                ctx.Response.StatusCode = 404;
+                ctx.Response.Close();
+                return;
+            }
+
+            byte[] cachedBytes = null;
+            lock (friendsLock)
+            {
+                string cachedHash;
+                if (friendsSkinHashCache.TryGetValue(nick, out cachedHash) &&
+                    !string.IsNullOrEmpty(hash) &&
+                    hash == cachedHash &&
+                    friendsSkinBytesCache.TryGetValue(nick, out cachedBytes))
+                {
+                    // cache hit
+                }
+                else
+                {
+                    cachedBytes = null;
+                }
+            }
+
+            if (cachedBytes != null && cachedBytes.Length > 0)
+            {
+                ServeBytes(ctx, cachedBytes, "image/png");
+                return;
+            }
+
+            int code;
+            byte[] remoteBytes;
+            bool ok = HttpRequestFriends("GET", "/friends/skin?nick=" + Uri.EscapeDataString(nick), null, out code, out remoteBytes);
+            if (ok && remoteBytes != null && remoteBytes.Length >= 24)
+            {
+                lock (friendsLock)
+                {
+                    friendsSkinBytesCache[nick] = remoteBytes;
+                    if (!string.IsNullOrEmpty(hash)) friendsSkinHashCache[nick] = hash;
+                }
+                ServeBytes(ctx, remoteBytes, "image/png");
+                return;
+            }
+
+            ctx.Response.StatusCode = 404;
+            ctx.Response.Close();
+        }
+
+        static void HandleFriendsChatApi(HttpListenerContext ctx)
+        {
+            Interlocked.Exchange(ref friendsLastBurstUtcTicks, DateTime.UtcNow.Ticks);
+            string me = GetActiveUsername();
+            string baseUrl = GetFriendsBackendUrl();
+            if (string.IsNullOrEmpty(baseUrl))
+            {
+                SendJson(ctx, new Dictionary<string, object> {
+                    { "ok", false },
+                    { "configured", false },
+                    { "error", "Бэкенд друзей не настроен (friends_url.txt)" }
+                });
+                return;
+            }
+
+            if (ctx.Request.HttpMethod == "POST")
+            {
+                try
+                {
+                    string rawBody = ReadBody(ctx);
+                    var jss = new JavaScriptSerializer();
+                    var data = jss.Deserialize<Dictionary<string, object>>(rawBody);
+                    string to = data != null && data.ContainsKey("to") && data["to"] != null ? data["to"].ToString() : "";
+                    string text = data != null && data.ContainsKey("text") && data["text"] != null ? data["text"].ToString() : "";
+                    var forward = new Dictionary<string, object> {
+                        { "from", me },
+                        { "to", to },
+                        { "text", text }
+                    };
+                    int code;
+                    byte[] respBytes;
+                    bool ok = HttpRequestFriends("POST", "/friends/chat", jss.Serialize(forward), out code, out respBytes);
+                    friendsWakeEvent.Set();
+                    if (respBytes != null && respBytes.Length > 0)
+                    {
+                        SendRawJson(ctx, Encoding.UTF8.GetString(respBytes), ok ? 200 : (code > 0 ? code : 502));
+                        return;
+                    }
+                    SendJson(ctx, new Dictionary<string, object> { { "ok", false }, { "error", "Не удалось отправить сообщение" } });
+                    return;
+                }
+                catch (Exception ex)
+                {
+                    SendJson(ctx, new Dictionary<string, object> { { "ok", false }, { "error", ex.Message } });
+                    return;
+                }
+            }
+
+            string friend = NormalizeFriendNick(ctx.Request.QueryString["friend"] ?? "");
+            string after = ctx.Request.QueryString["after"] ?? "0";
+            if (string.IsNullOrEmpty(friend))
+            {
+                SendJson(ctx, new Dictionary<string, object> { { "ok", false }, { "error", "Неизвестный друг" } });
+                return;
+            }
+
+            int getCode;
+            byte[] getBytes;
+            string q = "/friends/chat?me=" + Uri.EscapeDataString(me) + "&friend=" + Uri.EscapeDataString(friend) + "&after=" + Uri.EscapeDataString(after);
+            bool getOk = HttpRequestFriends("GET", q, null, out getCode, out getBytes);
+            if (getOk && getBytes != null && getBytes.Length > 0)
+            {
+                try
+                {
+                    var jss = new JavaScriptSerializer();
+                    lock (friendsLock)
+                    {
+                        if (!string.IsNullOrEmpty(cachedFriendsStateJson))
+                        {
+                            var st = jss.Deserialize<Dictionary<string, object>>(cachedFriendsStateJson);
+                            if (st != null && st.ContainsKey("friends") && st["friends"] is ArrayList)
+                            {
+                                var arr = (ArrayList)st["friends"];
+                                foreach (object item in arr)
+                                {
+                                    var fd = item as Dictionary<string, object>;
+                                    if (fd != null && fd.ContainsKey("nick") && friend.Equals(fd["nick"] as string, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        fd["unread"] = 0;
+                                    }
+                                }
+                                cachedFriendsStateJson = jss.Serialize(st);
+                            }
+                        }
+                    }
+                }
+                catch { }
+
+                SendRawJson(ctx, Encoding.UTF8.GetString(getBytes), 200);
+                return;
+            }
+
+            SendJson(ctx, new Dictionary<string, object> {
+                { "ok", false },
+                { "error", getCode > 0 ? ("HTTP " + getCode) : "Нет связи с сервером друзей" }
+            });
+        }
+    }
 
     public static class SkinManager
 
