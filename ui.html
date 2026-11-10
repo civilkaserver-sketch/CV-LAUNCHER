@@ -476,6 +476,158 @@
     position:relative;
     display:inline-block;
   }
+
+  .version-picker-wrap{
+    position:relative;
+    margin-left:auto;
+    flex-shrink:0;
+  }
+  .version-picker-btn{
+    height:48px;
+    padding:0 14px;
+    border-radius:var(--r);
+    background:rgba(16, 16, 18, 0.78);
+    backdrop-filter:blur(8px);
+    border:1px solid rgba(255, 255, 255, 0.14);
+    border-top-color:rgba(255, 255, 255, 0.24);
+    color:#fff;
+    font-family:inherit;
+    display:inline-flex;
+    align-items:center;
+    gap:12px;
+    cursor:pointer;
+    user-select:none;
+    transition:background .15s, border-color .15s;
+  }
+  .version-picker-btn:hover,
+  .version-picker-wrap.open .version-picker-btn{
+    background:rgba(26, 26, 30, 0.92);
+    border-color:rgba(255, 255, 255, 0.28);
+  }
+  .version-picker-meta{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    line-height:1.2;
+    gap:2px;
+  }
+  .version-picker-label{
+    font-size:9px;
+    letter-spacing:1.3px;
+    text-transform:uppercase;
+    color:var(--muted);
+  }
+  .version-picker-cur{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+  }
+  .version-picker-dot{
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:#6b7280;
+    flex-shrink:0;
+  }
+  .version-picker-dot.is-installed{background:#4ade80;}
+  .version-picker-dot.is-legacy{background:#f59e0b;}
+  .version-picker-val{
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:.6px;
+    color:#fff;
+  }
+  .version-picker-tag{
+    font-size:10px;
+    color:var(--muted);
+    letter-spacing:.3px;
+  }
+  .version-picker-chevron{
+    color:var(--muted);
+    flex-shrink:0;
+    transition:transform .18s cubic-bezier(0.22, 1, 0.36, 1), color .15s;
+  }
+  .version-picker-wrap.open .version-picker-chevron{
+    transform:rotate(180deg);
+    color:#fff;
+  }
+  .version-picker-menu{
+    position:absolute;
+    bottom:calc(100% + 8px);
+    right:0;
+    min-width:258px;
+    background:rgba(16, 16, 19, 0.97);
+    backdrop-filter:blur(12px);
+    border:1px solid rgba(255, 255, 255, 0.14);
+    border-top-color:rgba(255, 255, 255, 0.26);
+    border-radius:10px;
+    padding:6px;
+    display:none;
+    flex-direction:column;
+    gap:4px;
+    z-index:30;
+    box-shadow:0 12px 32px rgba(0, 0, 0, 0.65);
+  }
+  .version-picker-wrap.open .version-picker-menu{
+    display:flex;
+  }
+  .version-picker-item{
+    width:100%;
+    text-align:left;
+    padding:9px 11px;
+    border-radius:7px;
+    background:transparent;
+    border:1px solid transparent;
+    color:var(--text);
+    font-family:inherit;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    gap:3px;
+    transition:background .13s, border-color .13s;
+  }
+  .version-picker-item:hover{
+    background:rgba(255, 255, 255, 0.06);
+  }
+  .version-picker-item.active{
+    background:rgba(255, 255, 255, 0.09);
+    border-color:rgba(255, 255, 255, 0.18);
+  }
+  .version-item-top{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    width:100%;
+  }
+  .version-item-name{
+    font-size:13px;
+    font-weight:700;
+    color:#fff;
+    letter-spacing:.4px;
+  }
+  .version-item-pill{
+    font-size:10px;
+    padding:1px 6px;
+    border-radius:4px;
+    background:rgba(255, 255, 255, 0.11);
+    color:#fff;
+    letter-spacing:.3px;
+  }
+  .version-item-pill.is-old{
+    background:rgba(255, 255, 255, 0.06);
+    color:var(--muted);
+  }
+  .version-item-state{
+    margin-left:auto;
+    font-size:10px;
+    color:var(--muted);
+  }
+  .version-item-state.is-ready{color:#86efac;}
+  .version-item-state.is-reinstall{color:#fcd34d;}
+  .version-item-desc{
+    font-size:11px;
+    color:var(--muted);
+  }
   .btn.more-btn,
   .more-btn,
   .menu-btn{
@@ -2793,6 +2945,40 @@
                 <i id="barFill" style="width:0%"></i>
               </div>
             </div>
+
+            <div class="version-picker-wrap" id="versionPickerWrap" onclick="event.stopPropagation()">
+              <button type="button" class="version-picker-btn" id="btnVersionPicker" onclick="toggleVersionPicker(event)" title="Выбрать версию сборки">
+                <span class="version-picker-meta">
+                  <span class="version-picker-label">Сборка</span>
+                  <span class="version-picker-cur">
+                    <span class="version-picker-dot" id="versionPickerDot"></span>
+                    <span class="version-picker-val" id="versionPickerVal">26.3</span>
+                    <span class="version-picker-tag" id="versionPickerTag">Новый сезон</span>
+                  </span>
+                </span>
+                <svg class="version-picker-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              <div class="version-picker-menu" id="versionPickerMenu">
+                <button type="button" class="version-picker-item active" data-ver="26.3" onclick="selectBuildVersion('26.3', event)">
+                  <div class="version-item-top">
+                    <span class="version-item-name">26.3</span>
+                    <span class="version-item-pill">Новый сезон</span>
+                    <span class="version-item-state" id="verState_26_3"></span>
+                  </div>
+                  <div class="version-item-desc">Актуальный сезон · Fabric 26.3</div>
+                </button>
+                <button type="button" class="version-picker-item" data-ver="1.21.8" onclick="selectBuildVersion('1.21.8', event)">
+                  <div class="version-item-top">
+                    <span class="version-item-name">1.21.8</span>
+                    <span class="version-item-pill is-old">Старая</span>
+                    <span class="version-item-state" id="verState_1_21_8"></span>
+                  </div>
+                  <div class="version-item-desc">Старая сборка · ставится отдельно</div>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -3414,6 +3600,8 @@
     if(folderWrap && !folderWrap.contains(e.target)){
       const fm = document.getElementById('folderMenu');
       if(fm) fm.classList.remove('show');
+      const vp = document.getElementById('versionPickerWrap');
+      if(vp) vp.classList.remove('open');
     }
   });
 
@@ -3437,14 +3625,14 @@
   async function fetchAndRenderModsList(){
     if(!isBackend) return;
     try {
-      const res = await fetch('/api/mods');
+      const res = await fetch('/api/mods?version=' + encodeURIComponent(selectedBuildVersion));
       if(res.ok){
         const data = await res.json();
         if(data && data.ok && Array.isArray(data.mods) && data.mods.length > 0){
           const countEl = document.getElementById('modsCountBadge');
           if(countEl) countEl.textContent = data.count + ' МОДОВ';
           const subEl = document.querySelector('.banner-sub');
-          if(subEl) subEl.textContent = 'Minecraft 26.3 · Fabric · ' + data.count + ' модов';
+          if(subEl) subEl.textContent = 'Minecraft ' + selectedBuildVersion + ' · Fabric · ' + data.count + ' модов';
           const listEl = document.getElementById('modsQuickList');
           if(listEl){
             listEl.innerHTML = data.mods.map(function(m){
@@ -3489,22 +3677,105 @@
       toast('Сборка ещё не установлена');
       return;
     }
-    if(confirm('Вы действительно хотите удалить сборку Civilization? Все файлы сборки будут очищены.')){
+    if(confirm('Вы действительно хотите удалить сборку Civilization (' + selectedBuildVersion + ')? Файлы выбранной версии будут очищены.')){
       run('uninstall');
     }
   }
 
-  const STATUS_CACHE_KEY = 'cv_last_status_v1';
+  const STATUS_CACHE_KEY = 'cv_last_status_v2';
   let backendStatusLoaded = false, hasCachedStatus = false;
   let installed = false, updateAvailable = false, legacyInstalled = false;
+  let selectedBuildVersion = '26.3';
+  let versionsStatusMap = {
+    '26.3': { installed: false, legacyInstalled: false },
+    '1.21.8': { installed: false, legacyInstalled: false }
+  };
+
+  function updateVersionPickerUI(){
+    const valEl = document.getElementById('versionPickerVal');
+    const tagEl = document.getElementById('versionPickerTag');
+    const dotEl = document.getElementById('versionPickerDot');
+    const subEl = document.querySelector('.banner-sub');
+
+    if(valEl) valEl.textContent = selectedBuildVersion;
+    if(tagEl) tagEl.textContent = selectedBuildVersion === '1.21.8' ? 'Старая' : 'Новый сезон';
+
+    const curInfo = versionsStatusMap[selectedBuildVersion] || { installed: installed, legacyInstalled: legacyInstalled };
+    if(dotEl){
+      dotEl.className = 'version-picker-dot' + (curInfo.installed ? ' is-installed' : (curInfo.legacyInstalled ? ' is-legacy' : ''));
+    }
+
+    if(subEl){
+      subEl.textContent = selectedBuildVersion === '1.21.8'
+        ? 'Minecraft 1.21.8 · Fabric · Старая сборка'
+        : 'Minecraft 26.3 · Fabric · 19 модов';
+    }
+
+    document.querySelectorAll('#versionPickerMenu .version-picker-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.ver === selectedBuildVersion);
+    });
+
+    const st263 = document.getElementById('verState_26_3');
+    const info263 = versionsStatusMap['26.3'] || {};
+    if(st263){
+      if(info263.installed){ st263.textContent = 'Установлена'; st263.className = 'version-item-state is-ready'; }
+      else if(info263.legacyInstalled){ st263.textContent = 'Переустановка'; st263.className = 'version-item-state is-reinstall'; }
+      else { st263.textContent = 'Не установлена'; st263.className = 'version-item-state'; }
+    }
+
+    const st1218 = document.getElementById('verState_1_21_8');
+    const info1218 = versionsStatusMap['1.21.8'] || {};
+    if(st1218){
+      if(info1218.installed){ st1218.textContent = 'Установлена'; st1218.className = 'version-item-state is-ready'; }
+      else { st1218.textContent = 'Отдельно'; st1218.className = 'version-item-state'; }
+    }
+  }
+
+  function toggleVersionPicker(e){
+    if(e) e.stopPropagation();
+    const wrap = document.getElementById('versionPickerWrap');
+    if(!wrap) return;
+    if(installing){ toast('Дождитесь завершения операции'); return; }
+    const fm = document.getElementById('moreMenu');
+    if(fm) fm.classList.remove('show');
+    wrap.classList.toggle('open');
+  }
+
+  async function selectBuildVersion(ver, e){
+    if(e) e.stopPropagation();
+    const wrap = document.getElementById('versionPickerWrap');
+    if(wrap) wrap.classList.remove('open');
+    if(installing){ toast('Дождитесь окончания текущей установки'); return; }
+    if(ver !== '26.3' && ver !== '1.21.8') return;
+
+    selectedBuildVersion = ver;
+    const info = versionsStatusMap[ver] || { installed: false, legacyInstalled: false };
+    updateAvailable = false;
+    legacyInstalled = !info.installed && !!info.legacyInstalled;
+    setStatus(!!info.installed);
+    updateVersionPickerUI();
+
+    if(isBackend){
+      try {
+        await fetch('/api/set-version', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ version: ver })
+        });
+      } catch(err) {}
+      checkBackendStatus();
+    }
+  }
 
   function saveCachedStatus(inst, upd){
     if(!isBackend) return;
     try {
       localStorage.setItem(STATUS_CACHE_KEY, JSON.stringify({
+        selectedVersion: selectedBuildVersion,
         installed: !!inst,
         legacyInstalled: !inst && !!legacyInstalled,
-        updateAvailable: !!(inst && upd)
+        updateAvailable: !!(inst && upd),
+        versions: versionsStatusMap
       }));
     } catch(e) {}
   }
@@ -3586,6 +3857,11 @@
     installed = ok;
     if(ok) legacyInstalled = false;
     if(!ok) updateAvailable = false;
+    if(versionsStatusMap[selectedBuildVersion]){
+      versionsStatusMap[selectedBuildVersion].installed = !!ok;
+      versionsStatusMap[selectedBuildVersion].legacyInstalled = !ok && !!legacyInstalled;
+    }
+    updateVersionPickerUI();
     if(backendStatusLoaded) saveCachedStatus(ok, updateAvailable);
 
     const badge = document.getElementById('bannerBadge');
@@ -3860,9 +4136,15 @@
   async function checkBackendStatus(){
     if(!isBackend) return;
     try {
-      const res = await fetch('/api/status');
+      const res = await fetch('/api/status?version=' + encodeURIComponent(selectedBuildVersion));
       if(res.ok){
         const data = await res.json();
+        if(data.selectedVersion === '26.3' || data.selectedVersion === '1.21.8'){
+          selectedBuildVersion = data.selectedVersion;
+        }
+        if(data.versions){
+          versionsStatusMap = data.versions;
+        }
         fetchAndRenderModsList();
         const prevUpdate = updateAvailable;
         legacyInstalled = !data.installed && !!data.legacyInstalled;
@@ -3870,6 +4152,7 @@
         backendStatusLoaded = true;
         hasCachedStatus = true;
         setStatus(data.installed);
+        updateVersionPickerUI();
         if(data.mcDir) updatePathDisplay(data.mcDir);
         if(!prevUpdate && updateAvailable && !installing && !gameRunning){
           runSilentBackgroundUpdate();
@@ -4149,7 +4432,7 @@
         const res = await fetch('/api/' + action, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ mcDir: mcDir })
+          body: JSON.stringify({ mcDir: mcDir, version: selectedBuildVersion })
         });
         const startData = await res.json();
         if(startData.error){
@@ -4243,7 +4526,7 @@
         if (typeof currentSkinDataUrl !== 'undefined' && currentSkinDataUrl) {
           saveSkinToBackend(currentSkinDataUrl, skinModelType, currentSkinFileName);
         }
-        const res = await fetch('/api/start-game', { method: 'POST' });
+        const res = await fetch('/api/start-game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ version: selectedBuildVersion }) });
         const data = await res.json();
         if(data.ok){
           toast(data.msg || 'Запуск игры...');
@@ -5367,6 +5650,10 @@
   window.addEventListener('click', (e)=>{
     if (!e.target.closest('#screenshotContextMenu')) {
       closeScreenshotContextMenu();
+    }
+    if (!e.target.closest('#versionPickerWrap')) {
+      const vp = document.getElementById('versionPickerWrap');
+      if (vp) vp.classList.remove('open');
     }
     if (!e.target.closest('#friendsDrawer') && !e.target.closest('#btnFriendsToggle')) {
       closeFriendsDrawer();
@@ -7339,9 +7626,14 @@
         const cached = JSON.parse(raw);
         if(cached && typeof cached.installed === 'boolean'){
           hasCachedStatus = true;
+          if(cached.selectedVersion === '26.3' || cached.selectedVersion === '1.21.8'){
+            selectedBuildVersion = cached.selectedVersion;
+          }
+          if(cached.versions) versionsStatusMap = cached.versions;
           legacyInstalled = !cached.installed && !!cached.legacyInstalled;
           updateAvailable = cached.installed ? !!cached.updateAvailable : false;
           setStatus(cached.installed);
+          updateVersionPickerUI();
           return;
         }
       }

@@ -1295,16 +1295,18 @@ namespace CivilizationLauncher
 
                 // 2. Silent modpack update check:
                 string mcDir = GetActiveMcDir();
-                if (!string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir) && !IsLegacyVersionInstalled(mcDir))
+                string activeVer = GetSelectedBuildVersion();
+                bool legNeed = false;
+                if (!string.IsNullOrEmpty(mcDir) && TestIsVersionInstalled(mcDir, activeVer, out legNeed) && !legNeed)
                 {
-                    string remoteSha = FetchRemoteShaSynchronous();
+                    string remoteSha = FetchRemoteShaSynchronous(activeVer);
                     string localSha = "";
-                    var state = LoadState();
+                    var state = LoadState(activeVer);
                     if (state != null && state.ContainsKey("commitSha")) localSha = (string)state["commitSha"];
                     if (!string.IsNullOrEmpty(remoteSha) && !string.Equals(localSha, remoteSha, StringComparison.OrdinalIgnoreCase))
                     {
-                        Log("[SilentUpdater] Newer modpack detected (remote=" + remoteSha + ", local=" + localSha + "). Starting quiet update...");
-                        DoUpdate(mcDir, false);
+                        Log("[SilentUpdater] Newer modpack detected (" + activeVer + ", remote=" + remoteSha + ", local=" + localSha + "). Starting quiet update...");
+                        DoUpdate(mcDir, false, activeVer);
                         Log("[SilentUpdater] Modpack updated cleanly to SHA: " + remoteSha);
                     }
                 }
@@ -1351,7 +1353,7 @@ namespace CivilizationLauncher
 
             LogSystemDiagnostics();
 
-            ThreadPool.QueueUserWorkItem((s) => FetchRemoteShaInBackground());
+            ThreadPool.QueueUserWorkItem((s) => FetchRemoteShaInBackground(GetSelectedBuildVersion()));
 
             ThreadPool.QueueUserWorkItem((s) => FetchLauncherRemoteShaInBackground());
 
@@ -3782,84 +3784,83 @@ namespace CivilizationLauncher
 
 
 
-            if (endpoint == "status")
-
+            if (endpoint == "set-version")
             {
+                try
+                {
+                    string body = ReadBody(ctx);
+                    var data = jss.Deserialize<Dictionary<string, object>>(body);
+                    string reqVer = data != null && data.ContainsKey("version") && data["version"] != null ? data["version"].ToString() : "26.3";
+                    string ver = NormalizeBuildVersion(reqVer);
+                    SetSelectedBuildVersion(ver);
+                    ThreadPool.QueueUserWorkItem((s) => FetchRemoteShaInBackground(ver));
+                    SendJson(ctx, new Dictionary<string, object> {
+                        { "ok", true },
+                        { "selectedVersion", ver }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    SendJson(ctx, new Dictionary<string, object> { { "ok", false }, { "error", ex.Message } });
+                }
+                return;
+            }
 
+            if (endpoint == "status")
+            {
                 string mcDir = GetActiveMcDir();
+                string reqVer = ctx.Request.QueryString["version"];
+                string selVer = !string.IsNullOrEmpty(reqVer) ? NormalizeBuildVersion(reqVer) : GetSelectedBuildVersion();
 
-                bool legacyInstalled = !string.IsNullOrEmpty(mcDir) && IsLegacyVersionInstalled(mcDir);
-                bool installed = !string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir) && !legacyInstalled;
+                bool legacyInstalled = false;
+                bool installed = !string.IsNullOrEmpty(mcDir) && TestIsVersionInstalled(mcDir, selVer, out legacyInstalled);
 
                 ThreadPool.QueueUserWorkItem((s) => { try { AdServerBlocker.CleanAll(mcDir); } catch { } });
 
-
-
                 string installedAt = "";
-
                 string localSha = "";
-
-                var state = LoadState();
-
+                var state = LoadState(selVer);
                 if (state != null)
-
                 {
-
                     if (state.ContainsKey("installedAt")) installedAt = (string)state["installedAt"];
-
                     if (state.ContainsKey("commitSha")) localSha = (string)state["commitSha"];
-
                 }
 
-
-
-                string remoteSha = installed ? GetCachedOrFetchRemoteSha() : null;
-
+                string remoteSha = installed ? GetCachedOrFetchRemoteSha(selVer) : null;
                 bool updateAvailable = false;
-
                 if (installed && !string.IsNullOrEmpty(remoteSha))
-
                 {
-
-                    if (string.IsNullOrEmpty(localSha))
-
+                    if (string.IsNullOrEmpty(localSha) || !localSha.Equals(remoteSha, StringComparison.OrdinalIgnoreCase))
                     {
-
                         updateAvailable = true;
-
                     }
-
-                    else if (!localSha.Equals(remoteSha, StringComparison.OrdinalIgnoreCase))
-
-                    {
-
-                        updateAvailable = true;
-
-                    }
-
                 }
-
-
 
                 int jMaj = 0;
-
-                int jNeed = 21;
-
+                int jNeed = selVer == "1.21.8" ? 21 : 25;
                 if (installed)
-
                 {
-
-                    var jinfo = GetRequiredJavaInfo(mcDir);
-
+                    string verCivDir = ResolveCivDirForVersion(mcDir, selVer, false);
+                    var jinfo = GetRequiredJavaInfo(mcDir, null, verCivDir);
                     jNeed = jinfo.Major;
-
                     string jExe = Path.Combine(mcDir, string.Format(@"runtime\{0}\windows\{0}\bin\java.exe", jinfo.Component));
-
                     jMaj = GetJavaMajor(jExe);
-
                 }
 
-
+                bool leg263 = false;
+                bool inst263 = !string.IsNullOrEmpty(mcDir) && TestIsVersionInstalled(mcDir, "26.3", out leg263);
+                bool leg1218 = false;
+                bool inst1218 = !string.IsNullOrEmpty(mcDir) && TestIsVersionInstalled(mcDir, "1.21.8", out leg1218);
+                var versionsStatus = new Dictionary<string, object> {
+                    { "26.3", new Dictionary<string, object> {
+                        { "installed", inst263 },
+                        { "legacyInstalled", leg263 }
+                    } },
+                    { "1.21.8", new Dictionary<string, object> {
+                        { "installed", inst1218 },
+                        { "legacyInstalled", false }
+                    } }
+                };
 
                 string curLauncherSha = GetCurrentLauncherSha();
 
@@ -3870,8 +3871,10 @@ namespace CivilizationLauncher
 
 
                 SendJson(ctx, new Dictionary<string, object> {
+                    { "selectedVersion", selVer },
                     { "installed", installed },
                     { "legacyInstalled", legacyInstalled },
+                    { "versions", versionsStatus },
                     { "updateAvailable", updateAvailable },
                     { "localSha", localSha ?? "" },
                     { "remoteSha", remoteSha ?? "" },
@@ -3898,22 +3901,17 @@ namespace CivilizationLauncher
 
 
             if (endpoint == "check-update")
-
             {
-
                 string mcDir = GetActiveMcDir();
+                string reqVer = ctx.Request.QueryString["version"];
+                string selVer = !string.IsNullOrEmpty(reqVer) ? NormalizeBuildVersion(reqVer) : GetSelectedBuildVersion();
 
-                bool legacyInstalled = !string.IsNullOrEmpty(mcDir) && IsLegacyVersionInstalled(mcDir);
-                bool installed = !string.IsNullOrEmpty(mcDir) && TestIsInstalled(mcDir) && !legacyInstalled;
-
-                string remoteSha = FetchRemoteShaSynchronous();
-
+                bool legacyInstalled = false;
+                bool installed = !string.IsNullOrEmpty(mcDir) && TestIsVersionInstalled(mcDir, selVer, out legacyInstalled);
+                string remoteSha = FetchRemoteShaSynchronous(selVer);
                 string localSha = "";
-
-                var state = LoadState();
-
+                var state = LoadState(selVer);
                 if (state != null && state.ContainsKey("commitSha")) localSha = (string)state["commitSha"];
-
                 bool updateAvailable = installed && !string.IsNullOrEmpty(remoteSha) && (string.IsNullOrEmpty(localSha) || !localSha.Equals(remoteSha, StringComparison.OrdinalIgnoreCase));
 
                 SendJson(ctx, new Dictionary<string, object> {
@@ -4104,8 +4102,8 @@ namespace CivilizationLauncher
 
                     { "path", activeDir },
 
-                    { "installed", TestIsInstalled(activeDir) && !IsLegacyVersionInstalled(activeDir) },
-                    { "legacyInstalled", IsLegacyVersionInstalled(activeDir) }
+                    { "installed", TestIsVersionInstalledForSelected(activeDir) },
+                    { "legacyInstalled", IsLegacyVersionInstalled(activeDir) && GetSelectedBuildVersion() == "26.3" }
 
                 });
 
@@ -4149,8 +4147,8 @@ namespace CivilizationLauncher
 
                     { "path", activeDir },
 
-                    { "installed", TestIsInstalled(activeDir) && !IsLegacyVersionInstalled(activeDir) },
-                    { "legacyInstalled", IsLegacyVersionInstalled(activeDir) }
+                    { "installed", TestIsVersionInstalledForSelected(activeDir) },
+                    { "legacyInstalled", IsLegacyVersionInstalled(activeDir) && GetSelectedBuildVersion() == "26.3" }
 
                 });
 
@@ -4193,112 +4191,68 @@ namespace CivilizationLauncher
 
 
             if (endpoint == "install")
-
             {
-
                 string body = ReadBody(ctx);
-
                 Dictionary<string, object> data = null;
-
                 try { data = jss.Deserialize<Dictionary<string, object>>(body); } catch { }
-
                 string targetDir = null;
-
                 if (data != null && data.ContainsKey("mcDir")) targetDir = (string)data["mcDir"];
-
                 if (string.IsNullOrEmpty(targetDir)) targetDir = GetTargetMcDir();
-
-
+                string ver = (data != null && data.ContainsKey("version") && data["version"] != null) ? NormalizeBuildVersion(data["version"].ToString()) : GetSelectedBuildVersion();
+                SetSelectedBuildVersion(ver);
 
                 cancelRequested = false;
-
                 SetProgress(5, "Подготовка к установке...", true, false, null);
-
-                ThreadPool.QueueUserWorkItem((s) => DoInstall(targetDir));
-
+                ThreadPool.QueueUserWorkItem((s) => DoInstall(targetDir, ver));
                 SendJson(ctx, new Dictionary<string, object> { { "status", "started" } });
-
                 return;
-
             }
-
-
 
             if (endpoint == "update")
-
             {
-
                 if (Volatile.Read(ref updateInProgress) != 0)
-
                 {
-
                     Log("update endpoint: update already running, request ignored.");
-
                     SendJson(ctx, new Dictionary<string, object> { { "status", "already-running" } });
-
                     return;
-
                 }
-
-
 
                 string body = ReadBody(ctx);
-
                 Dictionary<string, object> data = null;
-
                 try { data = jss.Deserialize<Dictionary<string, object>>(body); } catch { }
-
                 string targetDir = null;
-
                 if (data != null && data.ContainsKey("mcDir")) targetDir = (string)data["mcDir"];
-
                 if (string.IsNullOrEmpty(targetDir)) targetDir = GetTargetMcDir();
-
-
+                string ver = (data != null && data.ContainsKey("version") && data["version"] != null) ? NormalizeBuildVersion(data["version"].ToString()) : GetSelectedBuildVersion();
+                SetSelectedBuildVersion(ver);
 
                 cancelRequested = false;
-
                 SetProgress(10, "Проверяем наличие обновлений...", true, false, null);
-
-                ThreadPool.QueueUserWorkItem((s) => DoUpdate(targetDir));
-
+                ThreadPool.QueueUserWorkItem((s) => DoUpdate(targetDir, true, ver));
                 SendJson(ctx, new Dictionary<string, object> { { "status", "started" } });
-
                 return;
-
             }
-
-
 
             if (endpoint == "uninstall")
-
             {
-
+                string body = ReadBody(ctx);
+                Dictionary<string, object> data = null;
+                try { data = jss.Deserialize<Dictionary<string, object>>(body); } catch { }
+                string ver = (data != null && data.ContainsKey("version") && data["version"] != null) ? NormalizeBuildVersion(data["version"].ToString()) : GetSelectedBuildVersion();
                 string mcDir = GetTargetMcDir();
-
-                if (string.IsNullOrEmpty(mcDir) || !TestIsInstalled(mcDir))
-
+                bool uninstLegacy = false;
+                bool uninstHasVer = !string.IsNullOrEmpty(mcDir) && (TestIsVersionInstalled(mcDir, ver, out uninstLegacy) || uninstLegacy);
+                if (string.IsNullOrEmpty(mcDir) || !uninstHasVer)
                 {
-
-                    SendJson(ctx, new Dictionary<string, object> { { "error", "Civilization не установлена в текущей папке" } });
-
+                    SendJson(ctx, new Dictionary<string, object> { { "error", "Civilization (" + ver + ") не установлена в текущей папке" } });
                     return;
-
                 }
-
                 cancelRequested = false;
-
                 SetProgress(5, "Подготовка к удалению...", true, false, null);
-
-                ThreadPool.QueueUserWorkItem((s) => DoUninstall(mcDir));
-
+                ThreadPool.QueueUserWorkItem((s) => DoUninstall(mcDir, ver));
                 SendJson(ctx, new Dictionary<string, object> { { "status", "started" } });
-
                 return;
-
             }
-
-
 
             if (endpoint == "open-folder")
 
@@ -4455,13 +4409,11 @@ namespace CivilizationLauncher
 
 
             if (endpoint == "mods")
-
             {
-
                 string mcDir = GetActiveMcDir();
-
-                string modsDir = Path.Combine(mcDir, @"versions\Civilization\mods");
-
+                string reqVer = ctx.Request.QueryString["version"];
+                string selVer = !string.IsNullOrEmpty(reqVer) ? NormalizeBuildVersion(reqVer) : GetSelectedBuildVersion();
+                string modsDir = Path.Combine(ResolveCivDirForVersion(mcDir, selVer, false), "mods");
                 var list = new System.Collections.Generic.List<Dictionary<string, object>>();
 
                 if (Directory.Exists(modsDir))
@@ -5364,28 +5316,33 @@ namespace CivilizationLauncher
 
 
             if (endpoint == "start-game")
-
             {
-
-                string mcDir = GetTargetMcDir();
-
-                if (!TestIsInstalled(mcDir) || IsLegacyVersionInstalled(mcDir))
-
+                string reqVer = ctx.Request.QueryString["version"];
+                if (string.IsNullOrEmpty(reqVer))
                 {
-
-                    SendJson(ctx, new Dictionary<string, object> {
-
-                        { "ok", false },
-
-                        { "msg", "Сборка ещё не установлена" }
-
-                    });
-
-                    return;
-
+                    try
+                    {
+                        string rawSg = ReadBody(ctx);
+                        if (!string.IsNullOrEmpty(rawSg))
+                        {
+                            var sgData = jss.Deserialize<Dictionary<string, object>>(rawSg);
+                            if (sgData != null && sgData.ContainsKey("version") && sgData["version"] != null) reqVer = sgData["version"].ToString();
+                        }
+                    }
+                    catch { }
                 }
-
-
+                string selVer = !string.IsNullOrEmpty(reqVer) ? NormalizeBuildVersion(reqVer) : GetSelectedBuildVersion();
+                SetSelectedBuildVersion(selVer);
+                string mcDir = GetTargetMcDir();
+                bool startLegNeed;
+                if (!TestIsVersionInstalled(mcDir, selVer, out startLegNeed))
+                {
+                    SendJson(ctx, new Dictionary<string, object> {
+                        { "ok", false },
+                        { "msg", startLegNeed ? "Установлена старая версия 1.21.8. Нажмите «Переустановить» или выберите 1.21.8." : "Сборка " + selVer + " ещё не установлена" }
+                    });
+                    return;
+                }
 
                 if (IsGameRunning())
 
@@ -5409,7 +5366,7 @@ namespace CivilizationLauncher
 
                 string err;
 
-                bool started = LaunchCivilizationGame(mcDir, out err);
+                bool started = LaunchCivilizationGame(mcDir, selVer, out err);
 
                 int pid = 0;
 
@@ -6484,43 +6441,33 @@ namespace CivilizationLauncher
 
 
 
-        static string FindJavaExe(string mcDir)
-
+        static string FindJavaExe(string mcDir, string explicitCivDir = null)
         {
-
-            string[] candidateRuntimes = new string[] {
-
+            var reqInfo = GetRequiredJavaInfo(mcDir, null, explicitCivDir);
+            int minMajor = reqInfo.Major > 0 ? reqInfo.Major : 21;
+            var candidateRuntimesList = new List<string>();
+            if (!string.IsNullOrEmpty(reqInfo.Component)) candidateRuntimesList.Add(reqInfo.Component);
+            string[] defaults = new string[] {
                 "java-runtime-epsilon",
-
                 "java-runtime-delta",
-
                 "java-runtime-gamma",
-
                 "java-runtime-beta",
-
                 "java-runtime-alpha",
-
                 "jre-x64",
-
                 "java"
-
             };
-
-            foreach (string r in candidateRuntimes)
-
+            foreach (string dr in defaults)
             {
-
-                string p1 = Path.Combine(mcDir, string.Format(@"runtime\{0}\windows\{0}\bin\javaw.exe", r));
-
-                if (File.Exists(p1) && GetJavaMajor(p1) >= 21) return p1;
-
-                string p2 = Path.Combine(mcDir, string.Format(@"runtime\{0}\bin\javaw.exe", r));
-
-                if (File.Exists(p2) && GetJavaMajor(p2) >= 21) return p2;
-
+                if (!candidateRuntimesList.Contains(dr)) candidateRuntimesList.Add(dr);
             }
 
-
+            foreach (string r in candidateRuntimesList)
+            {
+                string p1 = Path.Combine(mcDir, string.Format(@"runtime\{0}\windows\{0}\bin\javaw.exe", r));
+                if (File.Exists(p1) && GetJavaMajor(p1) >= minMajor) return p1;
+                string p2 = Path.Combine(mcDir, string.Format(@"runtime\{0}\bin\javaw.exe", r));
+                if (File.Exists(p2) && GetJavaMajor(p2) >= minMajor) return p2;
+            }
 
             string tlJvms = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".tlauncher\jvms");
 
@@ -6534,7 +6481,7 @@ namespace CivilizationLauncher
 
                     string jw = Path.Combine(d, @"bin\javaw.exe");
 
-                    if (File.Exists(jw) && GetJavaMajor(jw) >= 21) return jw;
+                    if (File.Exists(jw) && GetJavaMajor(jw) >= minMajor) return jw;
 
                 }
 
@@ -6566,7 +6513,7 @@ namespace CivilizationLauncher
 
                         string jw = Path.Combine(d, @"bin\javaw.exe");
 
-                        if (File.Exists(jw) && GetJavaMajor(jw) >= 21) return jw;
+                        if (File.Exists(jw) && GetJavaMajor(jw) >= minMajor) return jw;
 
                     }
 
@@ -6584,7 +6531,7 @@ namespace CivilizationLauncher
 
                         string jw = Path.Combine(d, @"bin\javaw.exe");
 
-                        if (File.Exists(jw) && GetJavaMajor(jw) >= 21) return jw;
+                        if (File.Exists(jw) && GetJavaMajor(jw) >= minMajor) return jw;
 
                     }
 
@@ -6602,7 +6549,7 @@ namespace CivilizationLauncher
 
                 string jw = Path.Combine(jh, @"bin\javaw.exe");
 
-                if (File.Exists(jw) && GetJavaMajor(jw) >= 21) return jw;
+                if (File.Exists(jw) && GetJavaMajor(jw) >= minMajor) return jw;
 
             }
 
@@ -6614,20 +6561,14 @@ namespace CivilizationLauncher
 
 
 
-        static bool LaunchCivilizationGame(string mcDir, out string error)
-
+        static bool LaunchCivilizationGame(string mcDir, string buildVer, out string error)
         {
-
             error = null;
-
             try
-
             {
-
+                string ver = NormalizeBuildVersion(buildVer);
                 try { AdServerBlocker.CleanAll(mcDir); } catch { }
-
-                string civDir = Path.Combine(mcDir, @"versions\Civilization");
-
+                string civDir = ResolveCivDirForVersion(mcDir, ver, false);
                 string jsonPath = Path.Combine(civDir, "Civilization.json");
 
                 if (!File.Exists(jsonPath))
@@ -6648,7 +6589,7 @@ namespace CivilizationLauncher
 
                 {
 
-                    SkinManager.SyncSkinToGame(appDir, mcDir);
+                    SkinManager.SyncSkinToGame(appDir, mcDir, civDir);
 
                 }
 
@@ -6960,15 +6901,14 @@ namespace CivilizationLauncher
 
 
 
-                string javaExe = FindJavaExe(mcDir);
-
+                string javaExe = FindJavaExe(mcDir, civDir);
                 if (string.IsNullOrEmpty(javaExe) || !File.Exists(javaExe))
                 {
-                    Log("Java 21 is missing before game launch. Triggering EnsureJava on the fly...");
+                    Log("Required Java is missing before game launch. Triggering EnsureJava on the fly...");
                     try
                     {
-                        EnsureJava(mcDir, null);
-                        javaExe = FindJavaExe(mcDir);
+                        EnsureJava(mcDir, null, civDir);
+                        javaExe = FindJavaExe(mcDir, civDir);
                     }
                     catch (Exception ex)
                     {
@@ -7309,275 +7249,203 @@ namespace CivilizationLauncher
 
 
 
-        static Dictionary<string, object> LoadState()
-
+        static Dictionary<string, object> LoadState(string buildVer = null)
         {
-
-            if (File.Exists(StateFile))
-
+            string ver = string.IsNullOrEmpty(buildVer) ? "26.3" : NormalizeBuildVersion(buildVer);
+            string sFile = GetStateFileForVersion(ver);
+            if (File.Exists(sFile))
             {
-
                 try
-
                 {
-
-                    string json = File.ReadAllText(StateFile, Encoding.UTF8);
-
+                    string json = File.ReadAllText(sFile, Encoding.UTF8);
                     return new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
-
                 }
-
                 catch { }
-
             }
-
             return null;
-
         }
 
-
-
-        private static string cachedRemoteSha = null;
-
-        private static DateTime lastRemoteCheck = DateTime.MinValue;
-
-        private static bool isCheckingUpdate = false;
-
+        private static readonly Dictionary<string, string> cachedRemoteShaByVer = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, DateTime> lastRemoteCheckByVer = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        private static readonly HashSet<string> checkingUpdateByVer = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private static object updateCheckLock = new object();
 
-
-
-        static string GetCachedOrFetchRemoteSha()
-
+        static string GetCachedShaOnly(string buildVer)
         {
-
+            string ver = NormalizeBuildVersion(buildVer);
             lock (updateCheckLock)
-
             {
-
-                if (cachedRemoteSha != null && (DateTime.Now - lastRemoteCheck).TotalSeconds < 30)
-
-                {
-
-                    return cachedRemoteSha;
-
-                }
-
+                string val;
+                if (cachedRemoteShaByVer.TryGetValue(ver, out val)) return val;
             }
-
-
-
-            if (!isCheckingUpdate)
-
-            {
-
-                ThreadPool.QueueUserWorkItem((s) => FetchRemoteShaInBackground());
-
-            }
-
-
-
-            return cachedRemoteSha;
-
+            return null;
         }
 
-
-
-        static string FetchRemoteShaSynchronous()
-
+        static string GetCachedOrFetchRemoteSha(string buildVer = null)
         {
-
-            string localVersionRepo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\version_repo");
-            if (!Directory.Exists(localVersionRepo) && IsDevEnvironment)
+            string ver = string.IsNullOrEmpty(buildVer) ? GetSelectedBuildVersion() : NormalizeBuildVersion(buildVer);
+            string curVal = null;
+            lock (updateCheckLock)
             {
-                localVersionRepo = @"E:\Civilization DEV\version_repo";
-            }
-            if (Directory.Exists(localVersionRepo) && File.Exists(Path.Combine(localVersionRepo, @"versions\Civilization\Civilization.json")))
-            {
-                try
+                DateTime lastChk;
+                if (cachedRemoteShaByVer.TryGetValue(ver, out curVal) &&
+                    lastRemoteCheckByVer.TryGetValue(ver, out lastChk) &&
+                    (DateTime.Now - lastChk).TotalSeconds < 30)
                 {
-                    var psiLocal = new ProcessStartInfo("git", "rev-parse HEAD");
-                    psiLocal.WorkingDirectory = localVersionRepo;
-                    psiLocal.CreateNoWindow = true;
-                    psiLocal.UseShellExecute = false;
-                    psiLocal.RedirectStandardOutput = true;
-                    using (var pl = Process.Start(psiLocal))
+                    return curVal;
+                }
+            }
+
+            bool alreadyChecking;
+            lock (updateCheckLock) { alreadyChecking = checkingUpdateByVer.Contains(ver); }
+            if (!alreadyChecking)
+            {
+                ThreadPool.QueueUserWorkItem((s) => FetchRemoteShaInBackground(ver));
+            }
+            return curVal;
+        }
+
+        static string FetchRemoteShaSynchronous(string buildVer = null)
+        {
+            string ver = string.IsNullOrEmpty(buildVer) ? GetSelectedBuildVersion() : NormalizeBuildVersion(buildVer);
+            string branch = GetRepoBranchForVersion(ver);
+
+            if (ver == "26.3")
+            {
+                string localVersionRepo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\version_repo");
+                if (!Directory.Exists(localVersionRepo) && IsDevEnvironment)
+                {
+                    localVersionRepo = @"E:\Civilization DEV\version_repo";
+                }
+                if (Directory.Exists(localVersionRepo) && File.Exists(Path.Combine(localVersionRepo, @"versions\Civilization\Civilization.json")))
+                {
+                    try
                     {
-                        string outLocal = pl.StandardOutput.ReadToEnd().Trim();
-                        pl.WaitForExit(3000);
-                        if (!string.IsNullOrEmpty(outLocal) && outLocal.Length >= 20)
+                        var psiBr = new ProcessStartInfo("git", "rev-parse --abbrev-ref HEAD");
+                        psiBr.WorkingDirectory = localVersionRepo;
+                        psiBr.CreateNoWindow = true;
+                        psiBr.UseShellExecute = false;
+                        psiBr.RedirectStandardOutput = true;
+                        string curBr = "";
+                        using (var pbr = Process.Start(psiBr))
                         {
-                            lock (updateCheckLock)
+                            curBr = pbr.StandardOutput.ReadToEnd().Trim();
+                            pbr.WaitForExit(2000);
+                        }
+                        if (curBr == "26.3")
+                        {
+                            var psiLocal = new ProcessStartInfo("git", "rev-parse HEAD");
+                            psiLocal.WorkingDirectory = localVersionRepo;
+                            psiLocal.CreateNoWindow = true;
+                            psiLocal.UseShellExecute = false;
+                            psiLocal.RedirectStandardOutput = true;
+                            using (var pl = Process.Start(psiLocal))
                             {
-                                cachedRemoteSha = outLocal;
-                                lastRemoteCheck = DateTime.Now;
+                                string outLocal = pl.StandardOutput.ReadToEnd().Trim();
+                                pl.WaitForExit(3000);
+                                if (!string.IsNullOrEmpty(outLocal) && outLocal.Length >= 20)
+                                {
+                                    lock (updateCheckLock)
+                                    {
+                                        cachedRemoteShaByVer[ver] = outLocal;
+                                        lastRemoteCheckByVer[ver] = DateTime.Now;
+                                    }
+                                    return outLocal;
+                                }
                             }
-                            return outLocal;
                         }
                     }
+                    catch { }
                 }
-                catch { }
             }
 
             try
-
             {
-
-                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/civilkaserver-sketch/Civilka-version/commits/26.3");
-
+                try { ServicePointManager.SecurityProtocol = (SecurityProtocolType)(3072 | 12288); }
+                catch { ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; }
+                var req = (HttpWebRequest)WebRequest.Create("https://api.github.com/repos/civilkaserver-sketch/Civilka-version/commits/" + branch);
                 req.UserAgent = "CivilizationLauncher";
-
                 req.Timeout = 6000;
-
-                // public repository, no token needed
-
                 using (var resp = req.GetResponse())
-
                 using (var sr = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
-
                 {
-
                     string json = sr.ReadToEnd();
-
                     var dict = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(json);
-
                     if (dict != null && dict.ContainsKey("sha"))
-
                     {
-
                         string sha = dict["sha"].ToString().Trim();
-
                         lock (updateCheckLock)
-
                         {
-
-                            cachedRemoteSha = sha;
-
-                            lastRemoteCheck = DateTime.Now;
-
+                            cachedRemoteShaByVer[ver] = sha;
+                            lastRemoteCheckByVer[ver] = DateTime.Now;
                         }
-
                         return sha;
-
                     }
-
                 }
-
             }
-
             catch { }
 
-
-
             try
-
             {
-
-                var psi = new ProcessStartInfo("git", "ls-remote https://github.com/civilkaserver-sketch/Civilka-version.git refs/heads/26.3");
-
+                var psi = new ProcessStartInfo("git", "ls-remote https://github.com/civilkaserver-sketch/Civilka-version.git refs/heads/" + branch);
                 psi.CreateNoWindow = true;
-
                 psi.UseShellExecute = false;
-
                 psi.RedirectStandardOutput = true;
-
                 using (var p = Process.Start(psi))
-
                 {
-
                     string outStr = p.StandardOutput.ReadToEnd();
-
                     p.WaitForExit(6000);
-
                     if (!string.IsNullOrEmpty(outStr))
-
                     {
-
                         var parts = outStr.Split(new char[] { '\t', ' ', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
                         if (parts.Length > 0 && parts[0].Length >= 20)
-
                         {
-
                             string sha = parts[0].Trim();
-
                             lock (updateCheckLock)
-
                             {
-
-                                cachedRemoteSha = sha;
-
-                                lastRemoteCheck = DateTime.Now;
-
+                                cachedRemoteShaByVer[ver] = sha;
+                                lastRemoteCheckByVer[ver] = DateTime.Now;
                             }
-
                             return sha;
-
                         }
-
                     }
-
                 }
-
             }
-
             catch { }
-
-
-
-            return cachedRemoteSha;
-
+            return null;
         }
 
-
-
-        static void FetchRemoteShaInBackground()
-
+        static void FetchRemoteShaInBackground(string buildVer = null)
         {
-
-            if (isCheckingUpdate) return;
-
-            isCheckingUpdate = true;
-
+            string ver = string.IsNullOrEmpty(buildVer) ? GetSelectedBuildVersion() : NormalizeBuildVersion(buildVer);
+            lock (updateCheckLock)
+            {
+                if (checkingUpdateByVer.Contains(ver)) return;
+                checkingUpdateByVer.Add(ver);
+            }
             try
-
             {
-
-                string sha = FetchRemoteShaSynchronous();
-
+                string sha = FetchRemoteShaSynchronous(ver);
                 if (!string.IsNullOrEmpty(sha))
-
                 {
-
-                    Log("Remote version SHA detected: " + sha);
-
+                    lock (updateCheckLock)
+                    {
+                        cachedRemoteShaByVer[ver] = sha;
+                        lastRemoteCheckByVer[ver] = DateTime.Now;
+                    }
                 }
-
             }
-
             catch (Exception ex)
-
             {
-
-                Log("FetchRemoteShaInBackground error: " + ex.Message);
-
+                Log("FetchRemoteShaInBackground error (" + ver + "): " + ex.Message);
             }
-
             finally
-
             {
-
-                isCheckingUpdate = false;
-
+                lock (updateCheckLock) { checkingUpdateByVer.Remove(ver); }
             }
-
         }
 
-
-
-        private static string CurrentLauncherSha = "0024fc740bdf254184328afabbb3f998f900a075";
+        private static string CurrentLauncherSha = "10d8f1984dbd3c17a98201f2077f4b666e9d5cc7";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -8003,89 +7871,44 @@ namespace CivilizationLauncher
 
 
 
-        static bool SaveState(string mcDir, List<string> files, string commitSha = null)
-
+        static bool SaveState(string mcDir, List<string> files, string commitSha = null, string buildVer = null)
         {
-
+            string ver = string.IsNullOrEmpty(buildVer) ? "26.3" : NormalizeBuildVersion(buildVer);
+            string targetFile = GetStateFileForVersion(ver);
             for (int attempt = 1; attempt <= 3; attempt++)
-
             {
-
                 try
-
                 {
-
                     if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
-
-                    var dict = LoadState() ?? new Dictionary<string, object>();
-
+                    var dict = LoadState(ver) ?? new Dictionary<string, object>();
                     dict["mcDir"] = mcDir;
-
+                    dict["version"] = ver;
                     dict["installedAt"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
                     dict["files"] = files;
-
-                    if (!string.IsNullOrEmpty(commitSha))
-
-                    {
-
-                        dict["commitSha"] = commitSha;
-
-                    }
-
+                    if (!string.IsNullOrEmpty(commitSha)) dict["commitSha"] = commitSha;
                     string json = new JavaScriptSerializer().Serialize(dict);
-
-                    // Пишем через временный файл: обрыв/антивирус не должны оставить
-                    // обрезанный state.json, иначе игрок будет «обновляться» бесконечно.
-                    string tmp = StateFile + ".tmp";
-
+                    string tmp = targetFile + ".tmp";
                     File.WriteAllText(tmp, json, Encoding.UTF8);
-
-                    if (File.Exists(StateFile)) File.Replace(tmp, StateFile, null);
-
-                    else File.Move(tmp, StateFile);
-
+                    if (File.Exists(targetFile)) File.Replace(tmp, targetFile, null);
+                    else File.Move(tmp, targetFile);
                     return true;
-
                 }
-
                 catch (Exception ex)
-
                 {
-
                     Log(string.Format("SaveState attempt {0}/3 failed: {1}", attempt, ex.Message));
-
                     Thread.Sleep(200 * attempt);
-
                 }
-
             }
-
             Log("SaveState FAILED: state.json was not written. Update state is now stale.");
-
             return false;
-
         }
 
-
-
-        static void ClearState()
-
+        static void ClearState(string buildVer = null)
         {
-
-            try
-
-            {
-
-                if (File.Exists(StateFile)) File.Delete(StateFile);
-
-            }
-
-            catch { }
-
+            string ver = string.IsNullOrEmpty(buildVer) ? "26.3" : NormalizeBuildVersion(buildVer);
+            string targetFile = GetStateFileForVersion(ver);
+            try { if (File.Exists(targetFile)) File.Delete(targetFile); } catch { }
         }
-
-
 
         static void SaveCustomMcDir(string mcDir)
 
@@ -8127,22 +7950,167 @@ namespace CivilizationLauncher
 
 
 
+        private static string cachedSelectedVersion = null;
+
+        static string NormalizeBuildVersion(string v)
+        {
+            if (!string.IsNullOrEmpty(v) && v.Trim() == "1.21.8") return "1.21.8";
+            return "26.3";
+        }
+
+        static string GetSelectedBuildVersion()
+        {
+            if (!string.IsNullOrEmpty(cachedSelectedVersion)) return cachedSelectedVersion;
+            try
+            {
+                string selPath = Path.Combine(StateDir, "selected_version.txt");
+                if (File.Exists(selPath))
+                {
+                    cachedSelectedVersion = NormalizeBuildVersion(File.ReadAllText(selPath, Encoding.UTF8));
+                    return cachedSelectedVersion;
+                }
+            }
+            catch { }
+            cachedSelectedVersion = "26.3";
+            return cachedSelectedVersion;
+        }
+
+        static void SetSelectedBuildVersion(string ver)
+        {
+            string norm = NormalizeBuildVersion(ver);
+            cachedSelectedVersion = norm;
+            try
+            {
+                if (!Directory.Exists(StateDir)) Directory.CreateDirectory(StateDir);
+                File.WriteAllText(Path.Combine(StateDir, "selected_version.txt"), norm, Encoding.UTF8);
+            }
+            catch { }
+        }
+
+        static string GetRepoBranchForVersion(string ver)
+        {
+            return NormalizeBuildVersion(ver) == "1.21.8" ? "main" : "26.3";
+        }
+
+        static string GetRepoZipUrlForVersion(string ver)
+        {
+            return "https://github.com/civilkaserver-sketch/Civilka-version/archive/refs/heads/" + GetRepoBranchForVersion(ver) + ".zip";
+        }
+
+        static string GetStateFileForVersion(string ver)
+        {
+            return NormalizeBuildVersion(ver) == "1.21.8" ? Path.Combine(StateDir, "state_1.21.8.json") : StateFile;
+        }
+
+        static string GetCacheDirForVersion(string ver)
+        {
+            return NormalizeBuildVersion(ver) == "1.21.8" ? Path.Combine(Path.GetTempPath(), "Civilka-version-main") : CacheDir;
+        }
+
+        static string GetExtractDirForVersion(string ver)
+        {
+            return NormalizeBuildVersion(ver) == "1.21.8" ? Path.Combine(Path.GetTempPath(), "civilka_extracted_main") : ExtractDir;
+        }
+
+        static bool IsJsonVersion1218(string jsonPath)
+        {
+            try
+            {
+                if (!File.Exists(jsonPath)) return false;
+                string txt = File.ReadAllText(jsonPath, Encoding.UTF8);
+                return txt.IndexOf("intermediary:26.3", StringComparison.OrdinalIgnoreCase) < 0;
+            }
+            catch { return false; }
+        }
+
+        static string ResolveCivDirForVersion(string mcDir, string ver, bool forInstall = false)
+        {
+            string norm = NormalizeBuildVersion(ver);
+            string primary = Path.Combine(mcDir, @"versions\Civilization");
+            if (norm == "26.3") return primary;
+
+            string sep = Path.Combine(mcDir, @"versions\Civilization-1.21.8");
+            if (File.Exists(Path.Combine(sep, "Civilization.json"))) return sep;
+            if (!forInstall)
+            {
+                string primaryJson = Path.Combine(primary, "Civilization.json");
+                if (File.Exists(primaryJson) && IsJsonVersion1218(primaryJson)) return primary;
+            }
+            return sep;
+        }
+
+        static string GetCivRelativeSubdir(string mcDir, string civDir)
+        {
+            if (!string.IsNullOrEmpty(civDir) && civDir.EndsWith("Civilization-1.21.8", StringComparison.OrdinalIgnoreCase))
+            {
+                return @"versions\Civilization-1.21.8";
+            }
+            return @"versions\Civilization";
+        }
+
+        static string MapPackRelPath(string rel, string targetCivSubdir)
+        {
+            string norm = (rel ?? "").Replace('/', '\\');
+            string prefix = @"versions\Civilization\";
+            if (!string.IsNullOrEmpty(targetCivSubdir) &&
+                !targetCivSubdir.Equals(@"versions\Civilization", StringComparison.OrdinalIgnoreCase) &&
+                norm.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                return targetCivSubdir + "\\" + norm.Substring(prefix.Length);
+            }
+            return norm;
+        }
+
+        static bool TestIsVersionInstalledForSelected(string mcDir)
+        {
+            bool dummy;
+            return TestIsVersionInstalled(mcDir, GetSelectedBuildVersion(), out dummy);
+        }
+
+        static bool TestIsVersionInstalled(string mcDir, string ver, out bool legacyReinstallNeeded)
+        {
+            legacyReinstallNeeded = false;
+            if (string.IsNullOrEmpty(mcDir)) return false;
+            string norm = NormalizeBuildVersion(ver);
+
+            if (norm == "1.21.8")
+            {
+                string sepJson = Path.Combine(mcDir, @"versions\Civilization-1.21.8\Civilization.json");
+                if (File.Exists(sepJson)) return true;
+                string primaryJson = Path.Combine(mcDir, @"versions\Civilization\Civilization.json");
+                if (File.Exists(primaryJson) && IsJsonVersion1218(primaryJson)) return true;
+                return false;
+            }
+
+            string jsonPath = Path.Combine(mcDir, @"versions\Civilization\Civilization.json");
+            if (File.Exists(jsonPath))
+            {
+                if (!IsJsonVersion1218(jsonPath)) return true;
+                legacyReinstallNeeded = true;
+                return false;
+            }
+            try
+            {
+                string modsDir = Path.Combine(mcDir, @"versions\Civilization\mods");
+                if (Directory.Exists(modsDir) && Directory.GetFiles(modsDir, "*.jar").Length > 0)
+                {
+                    legacyReinstallNeeded = true;
+                    return false;
+                }
+            }
+            catch { }
+            return false;
+        }
+
         static bool IsLegacyVersionInstalled(string mcDir)
         {
             if (string.IsNullOrEmpty(mcDir)) return false;
             try
             {
                 string jsonPath = Path.Combine(mcDir, @"versions\Civilization\Civilization.json");
-                if (File.Exists(jsonPath))
-                {
-                    string txt = File.ReadAllText(jsonPath, Encoding.UTF8);
-                    return txt.IndexOf("intermediary:26.3", StringComparison.OrdinalIgnoreCase) < 0;
-                }
+                if (File.Exists(jsonPath)) return IsJsonVersion1218(jsonPath);
                 string modsDir = Path.Combine(mcDir, @"versions\Civilization\mods");
-                if (Directory.Exists(modsDir) && Directory.GetFiles(modsDir, "*.jar").Length > 0)
-                {
-                    return true;
-                }
+                if (Directory.Exists(modsDir) && Directory.GetFiles(modsDir, "*.jar").Length > 0) return true;
             }
             catch { }
             return false;
@@ -8518,16 +8486,12 @@ namespace CivilizationLauncher
 
 
 
-        static JavaReqInfo GetRequiredJavaInfo(string mcDir, string sourceDir = null)
-
+        static JavaReqInfo GetRequiredJavaInfo(string mcDir, string sourceDir = null, string explicitCivDir = null)
         {
-
             var def = new JavaReqInfo();
-
             var candidates = new List<string>();
-
+            if (!string.IsNullOrEmpty(explicitCivDir)) candidates.Add(Path.Combine(explicitCivDir, "Civilization.json"));
             if (!string.IsNullOrEmpty(mcDir)) candidates.Add(Path.Combine(mcDir, @"versions\Civilization\Civilization.json"));
-
             if (!string.IsNullOrEmpty(sourceDir)) candidates.Add(Path.Combine(sourceDir, @"versions\Civilization\Civilization.json"));
 
             candidates.Add(Path.Combine(appDir, @"versions\Civilization\Civilization.json"));
@@ -8898,19 +8862,12 @@ namespace CivilizationLauncher
 
 
 
-        static bool EnsureJava(string mcDir, string sourceDir)
-
+        static bool EnsureJava(string mcDir, string sourceDir, string explicitCivDir = null)
         {
-
-            SetProgress(88, "Проверка Java 21...", true, false, null);
-
-            var info = GetRequiredJavaInfo(mcDir, sourceDir);
-
+            var info = GetRequiredJavaInfo(mcDir, sourceDir, explicitCivDir);
+            SetProgress(88, string.Format("Проверка Java {0}...", info.Major), true, false, null);
             int need = info.Major;
-
             string comp = info.Component;
-
-
 
             string runtimeDir = Path.Combine(mcDir, string.Format(@"runtime\{0}\windows\{0}", comp));
 
@@ -9404,8 +9361,12 @@ namespace CivilizationLauncher
             }
         }
 
-        static List<string> InstallFiles(string sourceDir, string mcDir)
+        static List<string> InstallFiles(string sourceDir, string mcDir, string buildVer = null)
         {
+            string ver = string.IsNullOrEmpty(buildVer) ? "26.3" : NormalizeBuildVersion(buildVer);
+            string targetCivDir = ResolveCivDirForVersion(mcDir, ver, true);
+            string targetCivRel = GetCivRelativeSubdir(mcDir, targetCivDir);
+
             var files = new List<string>();
             SetProgress(60, "Копирование библиотек Fabric...", true, false, null);
             CopyTracked(Path.Combine(sourceDir, "libraries"), Path.Combine(mcDir, "libraries"), "libraries", files);
@@ -9416,7 +9377,7 @@ namespace CivilizationLauncher
 
             try
             {
-                string targetMods = Path.Combine(mcDir, @"versions\Civilization\mods");
+                string targetMods = Path.Combine(targetCivDir, "mods");
                 string sourceMods = Path.Combine(sourceDir, @"versions\Civilization\mods");
                 if (Directory.Exists(targetMods) && Directory.Exists(sourceMods))
                 {
@@ -9426,13 +9387,14 @@ namespace CivilizationLauncher
                         newModFiles.Add(Path.GetFileName(mf));
                     }
 
-                    // Какие моды ставил именно лаунчер — берём из state (список файлов).
                     var prevPackMods = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-                    string prevModsPrefix = @"versions\Civilization\mods\";
-                    foreach (string tracked in GetTrackedFilesList(LoadState()))
+                    string prevModsPrefix1 = @"versions\Civilization\mods\";
+                    string prevModsPrefix2 = targetCivRel + @"\mods\";
+                    foreach (string tracked in GetTrackedFilesList(LoadState(ver)))
                     {
                         string norm = tracked.Replace('/', '\\');
-                        if (norm.StartsWith(prevModsPrefix, StringComparison.OrdinalIgnoreCase) &&
+                        if ((norm.StartsWith(prevModsPrefix1, StringComparison.OrdinalIgnoreCase) ||
+                             norm.StartsWith(prevModsPrefix2, StringComparison.OrdinalIgnoreCase)) &&
                             norm.EndsWith(".jar", StringComparison.OrdinalIgnoreCase))
                         {
                             prevPackMods.Add(Path.GetFileName(norm));
@@ -9444,11 +9406,9 @@ namespace CivilizationLauncher
                         string fn = Path.GetFileName(existingMod);
                         if (newModFiles.Contains(fn)) continue;
 
-                        // Удаляем ТОЛЬКО то, что раньше поставил сам лаунчер.
-                        // Моды игрока (replaymod, JEI, собственные сборки sodium и т.п.) не трогаем.
                         bool wasInstalledByPack = prevPackMods.Count > 0
                             ? prevPackMods.Contains(fn)
-                            : IsOfficialMod(fn); // state без списка файлов — старое поведение
+                            : IsOfficialMod(fn);
 
                         if (!wasInstalledByPack) continue;
 
@@ -9470,46 +9430,34 @@ namespace CivilizationLauncher
             }
 
             SetProgress(75, "Копирование модов, ресурспаков и конфигов...", true, false, null);
-            CopyTracked(Path.Combine(sourceDir, @"versions\Civilization"), Path.Combine(mcDir, @"versions\Civilization"), @"versions\Civilization", files);
+            CopyTracked(Path.Combine(sourceDir, @"versions\Civilization"), targetCivDir, targetCivRel, files);
 
             return files;
         }
 
-        static void RemoveStale(string mcDir, List<string> oldFiles, List<string> newFiles)
+        static void RemoveStale(string mcDir, List<string> oldFiles, List<string> newFiles, string explicitCivDir = null)
         {
             if (oldFiles == null || oldFiles.Count == 0) return;
             var newSet = new HashSet<string>(newFiles, StringComparer.OrdinalIgnoreCase);
-            int removed = 0;
             foreach (string o in oldFiles)
             {
-                // NEVER delete protected configs, saves, options, etc.
                 if (IsProtectedPath(o)) continue;
-
                 if (!newSet.Contains(o))
                 {
                     string p = Path.Combine(mcDir, o);
                     if (File.Exists(p))
                     {
-                        try { File.Delete(p); removed++; } catch { }
+                        try { File.Delete(p); } catch { }
                     }
                 }
             }
 
-
-
-            string civDir = Path.Combine(mcDir, @"versions\Civilization");
-
+            string civDir = !string.IsNullOrEmpty(explicitCivDir) ? explicitCivDir : Path.Combine(mcDir, @"versions\Civilization");
             if (Directory.Exists(civDir))
-
             {
-
                 CleanEmptyDirs(civDir);
-
             }
-
         }
-
-
 
         static void CleanEmptyDirs(string startLocation)
 
@@ -9703,23 +9651,28 @@ namespace CivilizationLauncher
 
 
 
-        static string DownloadBuild(bool isUpdate = false, string pinnedSha = null)
-
+        static string DownloadBuild(bool isUpdate = false, string pinnedSha = null, string buildVer = null)
         {
+            string ver = string.IsNullOrEmpty(buildVer) ? "26.3" : NormalizeBuildVersion(buildVer);
+            string branch = GetRepoBranchForVersion(ver);
+            string cacheDir = GetCacheDirForVersion(ver);
+            string extractDir = GetExtractDirForVersion(ver);
 
-            Log(string.Format("DownloadBuild started (isUpdate={0})", isUpdate));
+            Log(string.Format("DownloadBuild started (isUpdate={0}, ver={1})", isUpdate, ver));
 
-            // 0. Быстрое локальное обновление/установка из репозитория разработки, если доступен
-            string localVersionRepo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\version_repo");
-            if (!Directory.Exists(localVersionRepo) && IsDevEnvironment)
+            if (ver == "26.3")
             {
-                localVersionRepo = @"E:\Civilization DEV\version_repo";
-            }
-            if (Directory.Exists(localVersionRepo) && File.Exists(Path.Combine(localVersionRepo, @"versions\Civilization\Civilization.json")))
-            {
-                Log("Using local version_repo: " + localVersionRepo);
-                SetProgress(50, "Использование локального репозитория сборки...", true, false, null);
-                return localVersionRepo;
+                string localVersionRepo = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, @"..\version_repo");
+                if (!Directory.Exists(localVersionRepo) && IsDevEnvironment)
+                {
+                    localVersionRepo = @"E:\Civilization DEV\version_repo";
+                }
+                if (Directory.Exists(localVersionRepo) && File.Exists(Path.Combine(localVersionRepo, @"versions\Civilization\Civilization.json")))
+                {
+                    Log("Using local version_repo: " + localVersionRepo);
+                    SetProgress(50, "Использование локального репозитория сборки...", true, false, null);
+                    return localVersionRepo;
+                }
             }
 
             string labelPrep = isUpdate ? "Подготовка к загрузке обновления..." : "Подготовка к загрузке сборки...";
@@ -9732,9 +9685,9 @@ namespace CivilizationLauncher
 
 
 
-            // 1. Быстрое обновление через Git, если репозиторий уже есть в CacheDir
+            // 1. Быстрое обновление через Git, если репозиторий уже есть в cacheDir
 
-            if (Directory.Exists(Path.Combine(CacheDir, ".git")))
+            if (Directory.Exists(Path.Combine(cacheDir, ".git")))
 
             {
 
@@ -9742,13 +9695,13 @@ namespace CivilizationLauncher
 
                 {
 
-                    Log("Existing git repository found in CacheDir. Performing fast update...");
+                    Log("Existing git repository found in cacheDir. Performing fast update...");
 
                     SetProgress(isUpdate ? 30 : 15, "Быстрое обновление через Git...", true, false, null);
 
-                    var psiFetch = new ProcessStartInfo("git", "fetch --depth 1 origin 26.3");
+                    var psiFetch = new ProcessStartInfo("git", "fetch --depth 1 origin " + branch);
 
-                    psiFetch.WorkingDirectory = CacheDir;
+                    psiFetch.WorkingDirectory = cacheDir;
 
                     psiFetch.CreateNoWindow = true;
 
@@ -9776,9 +9729,9 @@ namespace CivilizationLauncher
 
                         {
 
-                            var psiReset = new ProcessStartInfo("git", "reset --hard origin/26.3");
+                            var psiReset = new ProcessStartInfo("git", "reset --hard origin/" + branch);
 
-                            psiReset.WorkingDirectory = CacheDir;
+                            psiReset.WorkingDirectory = cacheDir;
 
                             psiReset.CreateNoWindow = true;
 
@@ -9790,13 +9743,13 @@ namespace CivilizationLauncher
 
                                 pr.WaitForExit(10000);
 
-                                if (pr.ExitCode == 0 && File.Exists(Path.Combine(CacheDir, @"versions\Civilization\Civilization.json")))
+                                if (pr.ExitCode == 0 && File.Exists(Path.Combine(cacheDir, @"versions\Civilization\Civilization.json")))
 
                                 {
 
-                                    Log("Fast git update succeeded in " + CacheDir);
+                                    Log("Fast git update succeeded in " + cacheDir);
 
-                                    return CacheDir;
+                                    return cacheDir;
 
                                 }
 
@@ -9830,9 +9783,9 @@ namespace CivilizationLauncher
 
                 Log("Attempting git clone from https://github.com/civilkaserver-sketch/Civilka-version.git...");
 
-                ForceDeleteDirectory(CacheDir);
+                ForceDeleteDirectory(cacheDir);
 
-                var psi = new ProcessStartInfo("git", string.Format("clone --depth 1 -b 26.3 \"https://github.com/civilkaserver-sketch/Civilka-version.git\" \"{0}\"", CacheDir));
+                var psi = new ProcessStartInfo("git", string.Format("clone --depth 1 -b {0} \"https://github.com/civilkaserver-sketch/Civilka-version.git\" \"{1}\"", branch, cacheDir));
 
                 psi.CreateNoWindow = true;
 
@@ -9876,13 +9829,13 @@ namespace CivilizationLauncher
 
                     }
 
-                    if (exited && p.ExitCode == 0 && File.Exists(Path.Combine(CacheDir, @"versions\Civilization\Civilization.json")))
+                    if (exited && p.ExitCode == 0 && File.Exists(Path.Combine(cacheDir, @"versions\Civilization\Civilization.json")))
 
                     {
 
-                        Log("Git clone succeeded into " + CacheDir);
+                        Log("Git clone succeeded into " + cacheDir);
 
-                        return CacheDir;
+                        return cacheDir;
 
                     }
 
@@ -9916,18 +9869,18 @@ namespace CivilizationLauncher
 
             CheckCancelled();
 
-            string zipPath = Path.Combine(Path.GetTempPath(), "civilka_full.zip");
+            string zipPath = Path.Combine(Path.GetTempPath(), "civilka_" + branch + ".zip");
 
             if (File.Exists(zipPath)) File.Delete(zipPath);
 
-            ForceDeleteDirectory(ExtractDir);
+            ForceDeleteDirectory(extractDir);
 
 
 
             // Качаем ровно тот коммит, который потом запишем в state.json.
             // Иначе получается «state новее, а файлы старые» и бесконечные обновления.
             string zipUrl = string.IsNullOrEmpty(pinnedSha)
-                ? RepoZip
+                ? GetRepoZipUrlForVersion(ver)
                 : string.Format("https://github.com/civilkaserver-sketch/Civilka-version/archive/{0}.zip", pinnedSha);
 
             Log("Downloading zip archive from " + zipUrl + " to " + zipPath);
@@ -9986,17 +9939,17 @@ namespace CivilizationLauncher
 
             SetProgress(isUpdate ? 72 : 52, isUpdate ? "Распаковка обновления..." : "Распаковка сборки...", true, false, null);
 
-            Log("Extracting zip to: " + ExtractDir);
+            Log("Extracting zip to: " + extractDir);
 
-            ForceDeleteDirectory(ExtractDir);
+            ForceDeleteDirectory(extractDir);
 
             try
             {
-                ZipFile.ExtractToDirectory(zipPath, ExtractDir);
+                ZipFile.ExtractToDirectory(zipPath, extractDir);
             }
             catch (Exception zex)
             {
-                ForceDeleteDirectory(ExtractDir);
+                ForceDeleteDirectory(extractDir);
                 try { File.Delete(zipPath); } catch { }
                 Log("Zip extraction failed: " + zex.ToString());
                 throw new TransientUpdateException("архив сборки повреждён при загрузке. Повторите обновление.");
@@ -10008,13 +9961,13 @@ namespace CivilizationLauncher
 
 
 
-            string unpacked = Path.Combine(ExtractDir, "Civilka-version-26.3");
+            string unpacked = Path.Combine(extractDir, (branch == "main" ? "Civilka-version-main" : "Civilka-version-26.3"));
 
             if (!Directory.Exists(unpacked))
 
             {
 
-                foreach (string d in Directory.GetDirectories(ExtractDir))
+                foreach (string d in Directory.GetDirectories(extractDir))
 
                 {
 
@@ -10377,27 +10330,20 @@ namespace CivilizationLauncher
 
 
 
-        static void DoInstall(string mcDir)
-
+        static void DoInstall(string mcDir, string buildVer = null)
         {
-
-            Log("=== Starting Installation: mcDir=" + mcDir + " ===");
-
+            string ver = string.IsNullOrEmpty(buildVer) ? GetSelectedBuildVersion() : NormalizeBuildVersion(buildVer);
+            string targetCivDir = ResolveCivDirForVersion(mcDir, ver, true);
+            Log("=== Starting Installation (" + ver + "): mcDir=" + mcDir + ", civDir=" + targetCivDir + " ===");
             try
-
             {
-
                 if (!Directory.Exists(mcDir)) Directory.CreateDirectory(mcDir);
 
-
-
-                string installSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
-
-                string sourceDir = DownloadBuild(false, installSha);
-
+                string installSha = GetCachedShaOnly(ver) ?? FetchRemoteShaSynchronous(ver);
+                string sourceDir = DownloadBuild(false, installSha, ver);
                 CheckCancelled();
 
-                if (IsLegacyVersionInstalled(mcDir))
+                if (ver == "26.3" && IsLegacyVersionInstalled(mcDir))
                 {
                     Log("Legacy 1.21.8 build detected before DoInstall - cleaning old mods and version json...");
                     try
@@ -10441,36 +10387,21 @@ namespace CivilizationLauncher
 
                 Log("Copying files from: " + sourceDir);
 
-                var files = InstallFiles(sourceDir, mcDir);
-
+                var files = InstallFiles(sourceDir, mcDir, ver);
                 Log(string.Format("Copied {0} files", files.Count));
 
-
-
                 CheckCancelled();
-
                 SetProgress(82, "Регистрация профиля Civilization...", true, false, null);
-
-                RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
-
-                string currentSha = installSha ?? (cachedRemoteSha ?? FetchRemoteShaSynchronous());
-
-                if (!SaveState(mcDir, files, currentSha))
-
+                RegisterProfile(mcDir, targetCivDir);
+                string currentSha = installSha ?? (GetCachedShaOnly(ver) ?? FetchRemoteShaSynchronous(ver));
+                if (!SaveState(mcDir, files, currentSha, ver))
                 {
-
                     throw new TransientUpdateException("файлы установлены, но state.json не записался (антивирус/права/диск).");
-
                 }
-
-                Log("Profile registered and state saved (SHA: " + currentSha + ").");
-
-
+                Log("Profile registered and state saved (" + ver + ", SHA: " + currentSha + ").");
 
                 CheckCancelled();
-
-                EnsureJava(mcDir, sourceDir);
-
+                EnsureJava(mcDir, sourceDir, targetCivDir);
                 EnsureAssets(mcDir);
 
 
@@ -10526,11 +10457,14 @@ namespace CivilizationLauncher
             return list;
         }
 
-        static bool TryFastDiffUpdate(string mcDir)
+        static bool TryFastDiffUpdate(string mcDir, string buildVer = null)
         {
+            string ver = string.IsNullOrEmpty(buildVer) ? "26.3" : NormalizeBuildVersion(buildVer);
+            string targetCivDir = ResolveCivDirForVersion(mcDir, ver, false);
+            string targetCivSubdir = GetCivRelativeSubdir(mcDir, targetCivDir);
             try
             {
-                var state = LoadState();
+                var state = LoadState(ver);
                 if (state == null || !state.ContainsKey("commitSha"))
                 {
                     Log("FastDiffUpdate: no commitSha in state, fallback to full download.");
@@ -10544,7 +10478,7 @@ namespace CivilizationLauncher
                     return false;
                 }
 
-                string remoteSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
+                string remoteSha = GetCachedShaOnly(ver) ?? FetchRemoteShaSynchronous(ver);
                 if (string.IsNullOrEmpty(remoteSha))
                 {
                     Log("FastDiffUpdate: could not fetch remoteSha, fallback to full download.");
@@ -10593,8 +10527,8 @@ namespace CivilizationLauncher
                 {
                     Log("FastDiffUpdate: 0 changed files reported by compare, saving new SHA.");
                     var curFiles = GetTrackedFilesList(state);
-                    if (!SaveState(mcDir, curFiles, remoteSha)) throw new TransientUpdateException("не удалось записать state.json");
-                    RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
+                    if (!SaveState(mcDir, curFiles, remoteSha, ver)) throw new TransientUpdateException("не удалось записать state.json");
+                    RegisterProfile(mcDir, targetCivDir);
                     SetProgress(100, "Обновление успешно завершено!", false, true, null);
                     return true;
                 }
@@ -10661,8 +10595,9 @@ namespace CivilizationLauncher
                     }
                 }
 
-                foreach (var delRel in filesToDelete)
+                foreach (var rawDelRel in filesToDelete)
                 {
+                    string delRel = MapPackRelPath(rawDelRel, targetCivSubdir);
                     try
                     {
                         string targetPath = Path.Combine(mcDir, delRel);
@@ -10692,12 +10627,13 @@ namespace CivilizationLauncher
                 {
                     CheckCancelled();
                     var f = filesToDownload[i];
-                    string fn = f["filename"].ToString().Trim().Replace('/', '\\');
+                    string rawFn = f["filename"].ToString().Trim().Replace('/', '\\');
+                    string fn = MapPackRelPath(rawFn, targetCivSubdir);
                     string targetPath = Path.Combine(mcDir, fn);
                     string targetDir = Path.GetDirectoryName(targetPath);
                     if (!Directory.Exists(targetDir)) Directory.CreateDirectory(targetDir);
 
-                    string downloadUrl = string.Format("https://raw.githubusercontent.com/civilkaserver-sketch/Civilka-version/{0}/{1}", remoteSha, fn.Replace('\\', '/'));
+                    string downloadUrl = string.Format("https://raw.githubusercontent.com/civilkaserver-sketch/Civilka-version/{0}/{1}", remoteSha, rawFn.Replace('\\', '/'));
                     string fileNameOnly = Path.GetFileName(fn);
 
                     int basePct = 20 + (int)((double)i / (double)totalToDl * 65.0);
@@ -10769,12 +10705,12 @@ namespace CivilizationLauncher
                 CheckCancelled();
 
                 SetProgress(90, "Обновление конфигурации профиля...", true, false, null);
-                RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
-                EnsureJava(mcDir, null);
+                RegisterProfile(mcDir, targetCivDir);
+                EnsureJava(mcDir, null, targetCivDir);
                 EnsureAssets(mcDir);
 
                 var finalFilesList = new List<string>(trackedFiles);
-                if (!SaveState(mcDir, finalFilesList, remoteSha))
+                if (!SaveState(mcDir, finalFilesList, remoteSha, ver))
                 {
                     throw new TransientUpdateException("файлы обновлены, но не удалось записать state.json (антивирус/права/диск)");
                 }
@@ -10799,54 +10735,30 @@ namespace CivilizationLauncher
             }
         }
 
-        static void DoUpdate(string mcDir, bool userInitiated = true)
-
+        static void DoUpdate(string mcDir, bool userInitiated = true, string buildVer = null)
         {
-
-            // Один поток обновления за раз: тихий автоапдейт + клик «Обновить» +
-            // второй экземпляр лаунчера не должны качать и писать state.json параллельно.
             if (Interlocked.CompareExchange(ref updateInProgress, 1, 0) != 0)
-
             {
-
-                Log("Update is already running, duplicate request ignored.");
-
+                Log("DoUpdate skipped: another update is already in progress.");
                 return;
-
             }
-
             try
-
             {
-
-                DoUpdateCore(mcDir, userInitiated);
-
+                DoUpdateCore(mcDir, userInitiated, buildVer);
             }
-
             finally
-
             {
-
                 Interlocked.Exchange(ref updateInProgress, 0);
-
             }
-
         }
 
-
-
-        static void DoUpdateCore(string mcDir, bool userInitiated)
-
+        static void DoUpdateCore(string mcDir, bool userInitiated, string buildVer = null)
         {
-
-            Log("=== Starting Update: mcDir=" + mcDir + " (userInitiated=" + userInitiated + ") ===");
-
+            string ver = string.IsNullOrEmpty(buildVer) ? GetSelectedBuildVersion() : NormalizeBuildVersion(buildVer);
+            string targetCivDir = ResolveCivDirForVersion(mcDir, ver, false);
+            Log("=== Starting Update (" + ver + "): mcDir=" + mcDir + ", civDir=" + targetCivDir + " (userInitiated=" + userInitiated + ") ===");
             try
-
             {
-
-                // Пока Minecraft запущен, его jar-файлы заняты: обновление гарантированно
-                // упрётся в IOException и игрок будет жать «Обновить» бесконечно.
                 if (IsGameRunning())
 
                 {
@@ -10885,100 +10797,51 @@ namespace CivilizationLauncher
 
                 {
 
-                    if (TryFastDiffUpdate(mcDir)) return;
-
+                    if (TryFastDiffUpdate(mcDir, ver)) return;
                 }
-
                 catch (TransientUpdateException tex)
-
                 {
-
-                    // Сетевая ошибка диффа не должна превращаться в заливку 300 МБ.
                     cancelRequested = false;
-
                     Log("Diff update aborted, full rebuild suppressed: " + tex.Message);
-
                     SetProgress(0, "Обновление прервано: " + tex.Message, false, false, tex.Message);
-
                     return;
-
                 }
-
-
 
                 SetProgress(20, "Обновление найдено, подготовка к загрузке...", true, false, null);
-
-                string targetSha = cachedRemoteSha ?? FetchRemoteShaSynchronous();
-
-                string sourceDir = DownloadBuild(true, targetSha);
-
+                string targetSha = GetCachedShaOnly(ver) ?? FetchRemoteShaSynchronous(ver);
+                string sourceDir = DownloadBuild(true, targetSha, ver);
                 CheckCancelled();
 
-
-
                 SetProgress(75, "Распаковка и установка файлов...", true, false, null);
-
-
-
-                var state = LoadState();
-
+                var state = LoadState(ver);
                 var oldFiles = new List<string>();
-
                 if (state != null && state.ContainsKey("files"))
-
                 {
-
                     var arr = state["files"] as ArrayList;
-
                     if (arr != null)
-
                     {
-
                         foreach (var it in arr) oldFiles.Add(it.ToString());
-
                     }
-
                 }
-
                 Log(string.Format("Previous state had {0} files", oldFiles.Count));
 
-
-
-                var files = InstallFiles(sourceDir, mcDir);
-
+                var files = InstallFiles(sourceDir, mcDir, ver);
                 Log(string.Format("Copied {0} new files", files.Count));
 
-
-
                 SetProgress(88, "Очистка устаревших файлов...", true, false, null);
-
-                RemoveStale(mcDir, oldFiles, files);
-
-
+                RemoveStale(mcDir, oldFiles, files, targetCivDir);
 
                 SetProgress(94, "Обновление профиля игры...", true, false, null);
-
-                RegisterProfile(mcDir, Path.Combine(mcDir, @"versions\Civilization"));
-
-                string currentSha = targetSha ?? (cachedRemoteSha ?? FetchRemoteShaSynchronous());
-
-                if (!SaveState(mcDir, files, currentSha))
-
+                RegisterProfile(mcDir, targetCivDir);
+                string currentSha = targetSha ?? (GetCachedShaOnly(ver) ?? FetchRemoteShaSynchronous(ver));
+                if (!SaveState(mcDir, files, currentSha, ver))
                 {
-
                     throw new TransientUpdateException("файлы установлены, но state.json не записался (антивирус/права/диск). Повторите обновление.");
-
                 }
+                Log("Profile registered and state saved (" + ver + ", SHA: " + currentSha + ").");
 
-                Log("Profile registered and state saved (SHA: " + currentSha + ").");
-
-
-
-                EnsureJava(mcDir, sourceDir);
-
+                EnsureJava(mcDir, sourceDir, targetCivDir);
                 EnsureAssets(mcDir);
-
-
 
                 SetProgress(100, "Обновление успешно завершено!", false, true, null);
 
@@ -11014,79 +10877,50 @@ namespace CivilizationLauncher
 
 
 
-        static void DoUninstall(string mcDir)
-
+        static void DoUninstall(string mcDir, string buildVer = null)
         {
-
-            Log("=== Starting Uninstall: mcDir=" + mcDir + " ===");
-
+            string ver = string.IsNullOrEmpty(buildVer) ? GetSelectedBuildVersion() : NormalizeBuildVersion(buildVer);
+            string targetCivDir = ResolveCivDirForVersion(mcDir, ver, false);
+            Log("=== Starting Uninstall (" + ver + "): mcDir=" + mcDir + ", civDir=" + targetCivDir + " ===");
             try
-
             {
-
                 SetProgress(10, "Удаление профиля Civilization...", true, false, null);
+                if (ver == "26.3") UnregisterProfile(mcDir);
 
-                UnregisterProfile(mcDir);
-
-
-
-                var state = LoadState();
-
+                var state = LoadState(ver);
                 var files = new List<string>();
-
                 if (state != null && state.ContainsKey("files"))
-
                 {
-
                     var arr = state["files"] as ArrayList;
-
                     if (arr != null)
-
                     {
-
                         foreach (var it in arr) files.Add(it.ToString());
-
                     }
-
                 }
-
-
 
                 SetProgress(30, "Удаление установленных файлов...", true, false, null);
 
                 int delCount = 0;
 
+                string otherVer = ver == "26.3" ? "1.21.8" : "26.3";
+                bool otherLeg = false;
+                bool otherInstalled = TestIsVersionInstalled(mcDir, otherVer, out otherLeg) || otherLeg;
                 foreach (string rel in files)
-
                 {
-
+                    if (otherInstalled && (rel.StartsWith("libraries\\", StringComparison.OrdinalIgnoreCase) || rel.StartsWith("libraries/", StringComparison.OrdinalIgnoreCase) || rel.StartsWith("assets\\", StringComparison.OrdinalIgnoreCase) || rel.StartsWith("assets/", StringComparison.OrdinalIgnoreCase))) continue;
                     string p = Path.Combine(mcDir, rel);
-
                     if (File.Exists(p))
-
                     {
-
                         try { File.Delete(p); delCount++; } catch { }
-
                     }
-
                 }
-
                 Log(string.Format("Deleted {0} of {1} tracked files", delCount, files.Count));
 
-
-
-                string civDst = Path.Combine(mcDir, @"versions\Civilization");
-
+                string civDst = targetCivDir;
                 if (Directory.Exists(civDst))
-
                 {
-
-                    try { Directory.Delete(civDst, true); Log("Deleted versions/Civilization directory"); } catch (Exception ex) { Log("Failed to delete civDst: " + ex.Message); }
-
+                    try { Directory.Delete(civDst, true); Log("Deleted " + civDst); } catch (Exception ex) { Log("Failed to delete civDst: " + ex.Message); }
                 }
-
-
 
                 string libRoot = Path.Combine(mcDir, "libraries");
 
@@ -11100,7 +10934,9 @@ namespace CivilizationLauncher
 
 
 
-                ClearState();
+                ClearState(ver);
+                string vCache = GetCacheDirForVersion(ver);
+                try { if (Directory.Exists(vCache)) Directory.Delete(vCache, true); } catch { }
 
                 SetProgress(100, "Сборка успешно удалена.", false, true, null);
 
@@ -13446,21 +13282,14 @@ namespace CivilizationLauncher
 
 
 
-        public static void SyncSkinToGame(string appDir, string mcDir)
-
+        public static void SyncSkinToGame(string appDir, string mcDir, string explicitCivDir = null)
         {
-
             try
-
             {
-
                 string localSkinDir = (Directory.Exists(Path.Combine(appDir, "skins"))) ? Path.Combine(appDir, "skins") : Program.GetLauncherSkinsDir();
-
                 string localPng = Path.Combine(localSkinDir, "current_skin.png");
-
-                string civDir = !string.IsNullOrEmpty(mcDir) ? Path.Combine(mcDir, @"versions\Civilization") : null;
-
-
+                string civDir = !string.IsNullOrEmpty(explicitCivDir) ? explicitCivDir : (!string.IsNullOrEmpty(mcDir) ? Path.Combine(mcDir, @"versions\Civilization") : null);
+                string sep1218Dir = !string.IsNullOrEmpty(mcDir) ? Path.Combine(mcDir, @"versions\Civilization-1.21.8") : null;
 
                 if (!File.Exists(localPng))
 
@@ -13553,6 +13382,7 @@ namespace CivilizationLauncher
                 {
 
                     SaveSkinFiles(civDir, bytes, model);
+                    if (!string.IsNullOrEmpty(sep1218Dir) && Directory.Exists(sep1218Dir) && !sep1218Dir.Equals(civDir, StringComparison.OrdinalIgnoreCase)) { SaveSkinFiles(sep1218Dir, bytes, model); }
 
                     Program.Log(string.Format("[SkinManager] Синхронизирован скин в GameDir ({0}): {1}x{2}, model={3}", civDir, width, height, model));
 
