@@ -7384,7 +7384,7 @@ namespace CivilizationLauncher
             }
         }
 
-        private static string CurrentLauncherSha = "3758783ac01aea9f4c5a783b94dd28ee6002b866";
+        private static string CurrentLauncherSha = "3c78f7f9ad2962d715c0142ba64c215e2d9794a3";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -8884,7 +8884,14 @@ namespace CivilizationLauncher
 
 
 
-        static void EnsureAssets(string mcDir, Dictionary<string, object> root = null)
+        private class MissingAssetItem
+        {
+            public string Hash;
+            public string DestPath;
+            public long ExpectedSize;
+        }
+
+        static void EnsureAssets(string mcDir, Dictionary<string, object> root = null, bool updateProgress = false)
 
         {
 
@@ -8905,6 +8912,11 @@ namespace CivilizationLauncher
                     string civDir = Path.Combine(mcDir, @"versions\Civilization");
 
                     string jsonPath = Path.Combine(civDir, "Civilization.json");
+                    if (!File.Exists(jsonPath))
+                    {
+                        string altJson = Path.Combine(mcDir, @"versions\Civilization-1.21.8\Civilization.json");
+                        if (File.Exists(altJson)) jsonPath = altJson;
+                    }
 
                     if (File.Exists(jsonPath))
 
@@ -8916,7 +8928,9 @@ namespace CivilizationLauncher
 
                             string jsonTxt = File.ReadAllText(jsonPath, Encoding.UTF8);
 
-                            root = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(jsonTxt);
+                            var jssRoot = new JavaScriptSerializer();
+                            jssRoot.MaxJsonLength = int.MaxValue;
+                            root = jssRoot.Deserialize<Dictionary<string, object>>(jsonTxt);
 
                         }
 
@@ -8983,10 +8997,11 @@ namespace CivilizationLauncher
 
 
                 ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                if (ServicePointManager.DefaultConnectionLimit < 32) ServicePointManager.DefaultConnectionLimit = 32;
 
 
 
-                if (!File.Exists(indexFilePath))
+                if (!File.Exists(indexFilePath) || new FileInfo(indexFilePath).Length == 0)
 
                 {
 
@@ -9010,35 +9025,73 @@ namespace CivilizationLauncher
 
 
 
-                var targetLangFiles = new string[] {
-                    "pack.mcmeta",
-                    "minecraft/lang/ru_ru.json",
-                    "minecraft/lang/uk_ua.json",
-                    "minecraft/lang/be_by.json",
-                    "minecraft/lang/kk_kz.json"
-                };
+                string defaultAssetsObjs = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".minecraft\assets\objects");
+                var missingAssets = new List<MissingAssetItem>();
+                var seenHashes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                var langHashes = new List<string>();
+                Action<string, long> queueAssetIfMissing = (hash, expectedSize) =>
+                {
+                    if (string.IsNullOrEmpty(hash) || hash.Length < 2) return;
+                    if (!seenHashes.Add(hash)) return;
+
+                    string sub = hash.Substring(0, 2);
+                    string objPath = Path.Combine(assetsDir, "objects", sub, hash);
+                    if (File.Exists(objPath))
+                    {
+                        var fi = new FileInfo(objPath);
+                        if (fi.Length > 0 && (expectedSize <= 0 || fi.Length == expectedSize)) return;
+                    }
+
+                    // Fast local copy from default %APPDATA%\.minecraft\assets\objects if present
+                    string defaultObj = Path.Combine(defaultAssetsObjs, sub, hash);
+                    if (!string.Equals(defaultObj, objPath, StringComparison.OrdinalIgnoreCase) && File.Exists(defaultObj))
+                    {
+                        try
+                        {
+                            var dfi = new FileInfo(defaultObj);
+                            if (dfi.Length > 0 && (expectedSize <= 0 || dfi.Length == expectedSize))
+                            {
+                                string d = Path.GetDirectoryName(objPath);
+                                if (!Directory.Exists(d)) Directory.CreateDirectory(d);
+                                File.Copy(defaultObj, objPath, true);
+                                return;
+                            }
+                        }
+                        catch { }
+                    }
+
+                    missingAssets.Add(new MissingAssetItem
+                    {
+                        Hash = hash,
+                        DestPath = objPath,
+                        ExpectedSize = expectedSize
+                    });
+                };
 
                 if (File.Exists(indexFilePath))
                 {
                     try
                     {
                         string indexJson = File.ReadAllText(indexFilePath, Encoding.UTF8);
-                        var indexRoot = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(indexJson);
+                        var jssIdx = new JavaScriptSerializer();
+                        jssIdx.MaxJsonLength = int.MaxValue;
+                        var indexRoot = jssIdx.Deserialize<Dictionary<string, object>>(indexJson);
                         if (indexRoot != null && indexRoot.ContainsKey("objects") && indexRoot["objects"] is Dictionary<string, object>)
                         {
                             var objs = (Dictionary<string, object>)indexRoot["objects"];
-                            foreach (var langKey in targetLangFiles)
+                            foreach (var kv in objs)
                             {
-                                if (objs.ContainsKey(langKey) && objs[langKey] is Dictionary<string, object>)
+                                var aObj = kv.Value as Dictionary<string, object>;
+                                if (aObj == null) continue;
+                                if (aObj.ContainsKey("hash") && aObj["hash"] != null)
                                 {
-                                    var lObj = (Dictionary<string, object>)objs[langKey];
-                                    if (lObj.ContainsKey("hash") && lObj["hash"] != null)
+                                    string h = aObj["hash"].ToString().Trim();
+                                    long sz = 0;
+                                    if (aObj.ContainsKey("size") && aObj["size"] != null)
                                     {
-                                        string h = lObj["hash"].ToString().Trim();
-                                        if (!string.IsNullOrEmpty(h) && !langHashes.Contains(h)) langHashes.Add(h);
+                                        try { sz = Convert.ToInt64(aObj["size"]); } catch { }
                                     }
+                                    queueAssetIfMissing(h, sz);
                                 }
                             }
                         }
@@ -9050,71 +9103,54 @@ namespace CivilizationLauncher
                 }
 
                 // Ensure critical MC 1.21.8 language definition assets are always present
-                if (!langHashes.Contains("6cb57c8bf7f43ecb75339be01e23b5be0c83f0c9"))
+                queueAssetIfMissing("6cb57c8bf7f43ecb75339be01e23b5be0c83f0c9", 0); // pack.mcmeta
+                queueAssetIfMissing("e5572ca1507224dc231272b15dbf45851d36d9af", 0); // ru_ru.json
+                queueAssetIfMissing("e3c58e2ec87d68c8671ec6be4b30e261f7b1fe9e", 0); // uk_ua.json
+
+                if (missingAssets.Count > 0)
                 {
-                    langHashes.Add("6cb57c8bf7f43ecb75339be01e23b5be0c83f0c9"); // pack.mcmeta LanguageMetadataSection
-                }
-                if (!langHashes.Contains("e5572ca1507224dc231272b15dbf45851d36d9af"))
-                {
-                    langHashes.Add("e5572ca1507224dc231272b15dbf45851d36d9af"); // ru_ru.json
-                }
-                if (!langHashes.Contains("e3c58e2ec87d68c8671ec6be4b30e261f7b1fe9e"))
-                {
-                    langHashes.Add("e3c58e2ec87d68c8671ec6be4b30e261f7b1fe9e"); // uk_ua.json
-                }
+                    Log(string.Format("[Assets] Missing {0} asset objects in '{1}'. Downloading...", missingAssets.Count, assetsDir));
+                    int completed = 0;
+                    int failed = 0;
+                    int nextIdx = 0;
+                    int workers = Math.Min(16, missingAssets.Count);
+                    var doneEvent = new CountdownEvent(workers);
 
-
-
-                foreach (string hash in langHashes)
-
-                {
-
-                    if (string.IsNullOrEmpty(hash) || hash.Length < 2) continue;
-
-                    string sub = hash.Substring(0, 2);
-
-                    string objPath = Path.Combine(assetsDir, "objects", sub, hash);
-
-                    if (!File.Exists(objPath))
-
+                    for (int w = 0; w < workers; w++)
                     {
-
-                        string objDir = Path.GetDirectoryName(objPath);
-
-                        if (!Directory.Exists(objDir)) Directory.CreateDirectory(objDir);
-
-                        string objUrl = string.Format("https://resources.download.minecraft.net/{0}/{1}", sub, hash);
-
-                        try
-
+                        ThreadPool.QueueUserWorkItem(_ =>
                         {
-
-                            Log(string.Format("[Assets] Downloading language asset ({0})...", hash));
-
-                            using (var wc = new WebClient())
-
+                            try
                             {
-
-                                wc.Headers.Add("User-Agent", "CV-Launcher");
-
-                                wc.DownloadFile(objUrl, objPath);
-
+                                while (true)
+                                {
+                                    int idx = Interlocked.Increment(ref nextIdx) - 1;
+                                    if (idx >= missingAssets.Count) break;
+                                    var m = missingAssets[idx];
+                                    string sub = m.Hash.Substring(0, 2);
+                                    string objUrl = string.Format("https://resources.download.minecraft.net/{0}/{1}", sub, m.Hash);
+                                    bool ok = DownloadFileWithFallback(new List<string> { objUrl }, m.DestPath, m.ExpectedSize);
+                                    if (!ok)
+                                    {
+                                        Interlocked.Increment(ref failed);
+                                    }
+                                    int doneNow = Interlocked.Increment(ref completed);
+                                    if (updateProgress && (doneNow % 25 == 0 || doneNow == missingAssets.Count))
+                                    {
+                                        int pct = 92 + (doneNow * 7) / missingAssets.Count;
+                                        SetProgress(pct, string.Format("Загрузка ресурсов игры ({0}/{1})...", doneNow, missingAssets.Count), true, false, null);
+                                    }
+                                }
                             }
-
-                            Log(string.Format("[Assets] Language asset {0} downloaded successfully.", hash));
-
-                        }
-
-                        catch (Exception ex)
-
-                        {
-
-                            Log(string.Format("[Assets] Warning: Failed to download language asset {0}: {1}", hash, ex.Message));
-
-                        }
-
+                            finally
+                            {
+                                doneEvent.Signal();
+                            }
+                        });
                     }
 
+                    doneEvent.Wait();
+                    Log(string.Format("[Assets] Asset download finished: {0} total, {1} failed.", missingAssets.Count, failed));
                 }
 
 
@@ -10593,7 +10629,7 @@ namespace CivilizationLauncher
 
                 CheckCancelled();
                 EnsureJava(mcDir, sourceDir, targetCivDir);
-                EnsureAssets(mcDir);
+                EnsureAssets(mcDir, null, true);
                 EnsureMissingLibraries(mcDir, targetCivDir, null, true);
                 try { AdServerBlocker.CleanAll(mcDir); AdServerBlocker.SetupWatchers(); } catch { }
 
@@ -11034,7 +11070,7 @@ namespace CivilizationLauncher
                 Log("Profile registered and state saved (" + ver + ", SHA: " + currentSha + ").");
 
                 EnsureJava(mcDir, sourceDir, targetCivDir);
-                EnsureAssets(mcDir);
+                EnsureAssets(mcDir, null, true);
                 EnsureMissingLibraries(mcDir, targetCivDir, null, true);
                 try { AdServerBlocker.CleanAll(mcDir); AdServerBlocker.SetupWatchers(); } catch { }
 
