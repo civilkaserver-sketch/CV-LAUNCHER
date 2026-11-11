@@ -37,6 +37,7 @@
     --r:6px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  b,strong,h1,h2,h3,h4,th{font-weight:normal}
   html,body{height:100%}
   body{
     font-family:'Minecraft Rus','Courier New',monospace;
@@ -46,6 +47,7 @@
     letter-spacing:.3px;
     line-height:1.6;
     -webkit-font-smoothing:none;
+    font-synthesis:none;
     overflow:hidden;
   }
   input{font-family:inherit}
@@ -83,7 +85,7 @@
     height:50px;width:100%;
     display:flex;align-items:center;justify-content:center;
     transition:background .15s,opacity .15s;
-    font-weight:bold;
+    font-weight:normal;
   }
   .play-btn:hover{background:#fff}
   .play-btn:disabled{opacity:.35;cursor:not-allowed}
@@ -138,6 +140,51 @@
     display:flex;
     flex-direction:column;
     gap:6px;
+  }
+  .side-server-status{
+    width:100%;
+    height:36px;
+    padding:0 12px;
+    border-radius:var(--r);
+    background:var(--card);
+    border:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    letter-spacing:.6px;
+    color:var(--muted);
+    user-select:none;
+    cursor:pointer;
+    transition:background .15s,border-color .15s;
+    -webkit-app-region:no-drag;
+  }
+  .side-server-status:hover{
+    background:var(--card-hover);
+    border-color:var(--line-strong);
+  }
+  .side-server-dot{
+    width:8px;
+    height:8px;
+    border-radius:2px;
+    background:#5e5e5e;
+    flex-shrink:0;
+  }
+  .side-server-dot.online{ background:#4ade80; }
+  .side-server-dot.offline{ background:#ef4444; }
+  .side-server-text{
+    color:var(--text);
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .side-server-players{
+    margin-left:auto;
+    color:var(--muted);
+    font-size:11px;
+    letter-spacing:.4px;
+    white-space:nowrap;
+    flex-shrink:0;
   }
   .side-nav-item.side-update-btn{
     width:100%;
@@ -382,7 +429,7 @@
     background-position:center right !important;
     background-size:cover !important;
     background-repeat:no-repeat !important;
-    transition:opacity 1.2s ease-in-out !important;
+    transition:opacity 1.2s ease-in-out;
     pointer-events:none !important;
     z-index:0 !important;
   }
@@ -608,7 +655,7 @@
     stroke:currentColor !important;
     color:inherit !important;
     flex-shrink:0 !important;
-    transition:transform .25s ease !important;
+    transition:transform .25s ease;
     transform-origin:center center !important;
   }
   .more-btn.open svg,
@@ -752,7 +799,7 @@
   }
   .banner-progress-row .pct{
     color:#fff;
-    font-weight:bold;
+    font-weight:normal;
     letter-spacing:1px;
   }
   .bar{
@@ -853,7 +900,7 @@
   }
   .changelog-item strong{
     color:var(--text);
-    font-weight:bold;
+    font-weight:normal;
   }
   .changelog-more-link{
     background:none;
@@ -952,7 +999,7 @@
     background-position: center !important;
     background-size: 100% 100% !important;
     background-repeat: no-repeat !important;
-    transition: opacity 1.2s ease-in-out, transform .6s ease !important;
+    transition: opacity 1.2s ease-in-out, transform .6s ease;
     pointer-events: none !important;
     z-index: 0 !important;
   }
@@ -1011,7 +1058,7 @@
     min-width: 0 !important;
     border-radius: 2px;
     background: rgba(255, 255, 255, 0.35) !important;
-    transition: background .25s ease !important;
+    transition: background .25s ease;
   }
   .showcase-dot.active{
     background: #ffffff !important;
@@ -1062,7 +1109,7 @@
     font-size:13px;
     color:var(--text);
     letter-spacing:.4px;
-    font-weight:bold;
+    font-weight:normal;
   }
   .server-status-sep{
     width:1px;
@@ -1095,7 +1142,7 @@
     font-size:11px;
     letter-spacing:2px;
     color:var(--dim);
-    font-weight:bold;
+    font-weight:normal;
     text-transform:uppercase;
     flex-shrink:0;
   }
@@ -1149,7 +1196,7 @@
 
   .actions{display:flex;gap:12px;flex-wrap:wrap}
   .btn{
-    font-family:inherit;font-size:15px;letter-spacing:1px;
+    font-family:inherit;font-size:17px;letter-spacing:1px;
     padding:0 24px;height:48px;border-radius:var(--r);
     border:1px solid transparent;cursor:pointer;
     display:inline-flex;align-items:center;justify-content:center;gap:8px;
@@ -1159,7 +1206,7 @@
     user-select:none;
   }
   .btn:focus-visible{outline:2px solid rgba(255,255,255,.4);outline-offset:2px}
-  .btn.primary{background:var(--accent,#f0f0f2);color:var(--accent-text,#0b0b0d);font-weight:bold}
+  .btn.primary{background:var(--accent,#f0f0f2);color:var(--accent-text,#0b0b0d);font-weight:normal}
   .btn.primary:hover{filter:brightness(1.12)}
   .btn.ghost{border-color:var(--line);background:var(--card);color:var(--text)}
   .btn.ghost:hover{background:var(--card-hover);border-color:var(--line-strong);color:var(--text-hover)}
@@ -1170,7 +1217,7 @@
     border-top-color:rgba(255, 255, 255, 0.24);
     color:var(--text-hover);
   }
-  .btn.danger{border-color:rgba(235,87,87,.45);background:rgba(235,87,87,.12);color:#ff6b6b;font-weight:bold}
+  .btn.danger{border-color:rgba(235,87,87,.45);background:rgba(235,87,87,.12);color:#ff6b6b;font-weight:normal}
   .btn.danger:hover{background:rgba(235,87,87,.22);border-color:rgba(235,87,87,.85);color:#fff}
   .btn:disabled{opacity:.3;cursor:not-allowed}
   .actions .btn{flex:1;min-width:130px}
@@ -1486,7 +1533,7 @@
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    font-weight: 700;
+    font-weight: normal;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--muted);
@@ -1619,7 +1666,7 @@
 
   .skin-card-add-title {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: normal;
     color: var(--text);
     text-align: center;
   }
@@ -1725,13 +1772,13 @@
     border-radius: 4px;
     color: var(--accent);
     background: rgba(var(--accent-rgb, 240, 240, 242), 0.08);
-    font-weight: 700;
+    font-weight: normal;
   }
   .btn.copied{
     background:#f0f0f2 !important;
     color:#0b0b0d !important;
     border-color:#f0f0f2 !important;
-    font-weight:bold;
+    font-weight:normal;
   }
 
   /* Кнопка настроек в хедере */
@@ -1792,6 +1839,7 @@
   }
   .modal-backdrop.show{
     display:flex;
+    opacity:1;
     animation: modalBackdropFadeIn 0.2s ease forwards;
   }
   .modal-dialog{
@@ -1808,11 +1856,17 @@
     box-sizing:border-box;
   }
   .modal-backdrop.show .modal-dialog{
+    opacity:1;
+    transform:scale(1) translateY(0);
     animation: modalDialogPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
+  .modal-backdrop.show.no-reopen-anim,
+  .modal-backdrop.show.no-reopen-anim .modal-dialog{
+    animation:none !important;
+  }
   .modal-header{
-    height:64px;
-    flex:0 0 64px;
+    height:56px;
+    flex:0 0 56px;
     display:flex;
     align-items:center;
     justify-content:space-between;
@@ -1821,9 +1875,9 @@
     background:rgba(255,255,255,.015);
   }
   .modal-title{
-    font-size:13px;
-    font-weight:700;
-    letter-spacing:2px;
+    font-size:14px;
+    font-weight:normal;
+    letter-spacing:1.5px;
     color:var(--text);
   }
   .modal-sub{
@@ -1835,10 +1889,17 @@
   .modal-body{
     flex:1;
     overflow-y:auto;
-    padding:22px 24px;
+    padding:22px 24px 44px;
     display:flex;
     flex-direction:column;
     gap:22px;
+    scrollbar-width:none;
+    -ms-overflow-style:none;
+  }
+  .modal-body::-webkit-scrollbar{
+    display:none;
+    width:0;
+    height:0;
   }
   .settings-group{
     display:flex;
@@ -1851,11 +1912,10 @@
     gap:3px;
   }
   .settings-title{
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:2px;
+    font-size:13px;
+    font-weight:normal;
+    letter-spacing:1.2px;
     color:var(--text);
-    text-transform:uppercase;
   }
   .settings-desc{
     font-size:12px;
@@ -1870,10 +1930,6 @@
     display:flex;
     flex-direction:column;
     gap:14px;
-  }
-  body.no-transitions *{
-    transition: none !important;
-    animation: none !important;
   }
 
   @keyframes cv-spin {
@@ -2064,6 +2120,8 @@
     color:var(--dim);
   }
   .modal-footer{
+    position: relative;
+    z-index: 2;
     height: 64px;
     flex: 0 0 64px;
     display: flex;
@@ -2071,7 +2129,23 @@
     justify-content: space-between;
     padding: 0 24px;
     box-sizing: border-box;
-    background: linear-gradient(to top, var(--card, #0c0c0c) 75%, transparent 100%);
+    background: var(--card, #0c0c0c);
+  }
+  .modal-footer::before{
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 100%;
+    height: 54px;
+    pointer-events: none;
+    background: linear-gradient(
+      to top,
+      var(--card, #0c0c0c) 0%,
+      rgba(12, 12, 12, 0.92) 32%,
+      rgba(12, 12, 12, 0.55) 68%,
+      transparent 100%
+    );
   }
 
   /* Кнопки внутри тела модального окна (строго единый размер и вес) */
@@ -2082,7 +2156,7 @@
     max-height: 30px !important;
     padding: 0 14px !important;
     font-size: 11px !important;
-    font-weight: 500 !important;
+    font-weight: normal !important;
     letter-spacing: .6px !important;
     border-radius: var(--r) !important;
     display: inline-flex;
@@ -2110,7 +2184,7 @@
     max-height: 38px !important;
     padding: 0 18px !important;
     font-size: 12px !important;
-    font-weight: 600 !important;
+    font-weight: normal !important;
     letter-spacing: .8px !important;
     border-radius: var(--r) !important;
     display: inline-flex !important;
@@ -2298,7 +2372,7 @@
   }
   .news-shot-title{
     font-size:11px;
-    font-weight:700;
+    font-weight:normal;
     letter-spacing:2px;
     text-transform:uppercase;
     color:var(--text);
@@ -2326,7 +2400,7 @@
     width:24px;height:24px;border-radius:var(--r);
     font-size:12px;background:rgba(255,255,255,.05);color:var(--text);
   }
-  .rank-1{background:#f0f0f2;color:#0b0b0d;font-weight:bold}
+  .rank-1{background:#f0f0f2;color:#0b0b0d;font-weight:normal}
   .rank-2{background:rgba(255,255,255,.2);color:#fff}
   .rank-3{background:rgba(255,255,255,.1);color:#fff}
 
@@ -2404,9 +2478,9 @@
     flex-shrink:0;
   }
   .friends-toggle-dot.is-none{background:#5e5e5e;}
-  .friends-unread-pill{display:none;min-width:16px;height:16px;padding:0 5px;border-radius:999px;background:#f2f2f2;color:#0d0d0d;font-size:10px;font-weight:700;line-height:16px;text-align:center;letter-spacing:0;}
+  .friends-unread-pill{display:none;min-width:16px;height:16px;padding:0 5px;border-radius:999px;background:#f2f2f2;color:#0d0d0d;font-size:10px;font-weight:normal;line-height:16px;text-align:center;letter-spacing:0;}
   .friends-unread-pill.show{display:inline-block;}
-  .friend-unread-badge{display:none;margin-left:auto;min-width:17px;height:17px;padding:0 5px;border-radius:999px;background:#ededed;color:#0c0c0c;font-size:10px;font-weight:700;line-height:17px;text-align:center;flex-shrink:0;}
+  .friend-unread-badge{display:none;margin-left:auto;min-width:17px;height:17px;padding:0 5px;border-radius:999px;background:#ededed;color:#0c0c0c;font-size:10px;font-weight:normal;line-height:17px;text-align:center;flex-shrink:0;}
   .friend-unread-badge.show{display:inline-block;}
   .friends-status-note{padding:7px 14px;font-size:10px;color:var(--dim);border-bottom:1px solid rgba(255,255,255,0.04);line-height:1.35;}
   .friends-toggle-count{
@@ -2765,6 +2839,34 @@
     color:#000000;
   }
 
+  html body.no-transitions,
+  html body.no-transitions *,
+  html body.no-transitions *::before,
+  html body.no-transitions *::after,
+  html body.no-transitions #bannerCard *,
+  html body.no-transitions #friendsDrawer,
+  html body.no-transitions #settingsModal,
+  html body.no-transitions #settingsModal * {
+    transition: none !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    animation: none !important;
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    scroll-behavior: auto !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  html body.no-transitions #bannerCard .banner-bg-layer {
+    transition: opacity 1.2s ease-in-out !important;
+  }
+  html body.no-transitions #showcaseCard .showcase-bg-layer {
+    transition: opacity 1.2s ease-in-out, transform .6s ease !important;
+  }
+  html body.no-transitions #showcaseCard .showcase-dot {
+    transition: background .25s ease !important;
+  }
+
 </style>
 </head>
 <body>
@@ -2787,6 +2889,11 @@
     </div>
 
     <div class="side-footer">
+      <div class="side-server-status" id="serverStatusBar" onclick="checkServerStatus()" title="Проверка статуса сервера...">
+        <span class="side-server-dot" id="serverStatusDot"></span>
+        <span class="side-server-text" id="serverStatusText">Сервер</span>
+        <span class="side-server-players" id="serverStatusPlayers"></span>
+      </div>
       <button class="side-nav-item side-update-btn" id="btnUpdateLauncherSide" onclick="updateLauncherNow()" title="Доступно обновление лаунчера">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:.9">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -2843,7 +2950,7 @@
               </svg>
             </div>
             <div style="min-width:0;">
-              <div style="font-size:13px;font-weight:600;color:#fff;">Доступно обновление оболочки лаунчера!</div>
+              <div style="font-size:13px;font-weight:normal;color:#fff;">Доступно обновление оболочки лаунчера!</div>
               <div style="font-size:11px;color:rgba(255,255,255,0.7);margin-top:2px;" id="launcherUpdateBannerSub">Нажмите «Обновить лаунчер», чтобы скачать новую версию и перезапустить.</div>
             </div>
           </div>
@@ -3148,7 +3255,7 @@
 <div class="modal-backdrop" id="settingsModal" onclick="handleSettingsBackdrop(event)">
   <div class="modal-dialog">
     <div class="modal-header">
-      <div class="modal-title">ПАРАМЕТРЫ</div>
+      <div class="modal-title">Параметры</div>
       <button class="lightbox-close" onclick="closeSettingsModal()" title="Закрыть (Esc)">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -3183,6 +3290,17 @@
             </div>
             <label class="switch">
               <input type="checkbox" id="performanceModeToggle" onchange="togglePerformanceMode(this.checked)">
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-toggle-row" style="border-top:1px solid var(--line);padding-top:12px;">
+            <div class="settings-toggle-info">
+              <div class="settings-toggle-title">Быстродействие</div>
+              <div class="settings-toggle-desc">Отключает анимации и размытие интерфейса лаунчера</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="disableAnimationsToggle" onchange="toggleDisableAnimations(this.checked)">
               <span class="slider"></span>
             </label>
           </div>
@@ -3253,7 +3371,7 @@
         <div class="settings-card-box">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
             <div>
-              <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;">
+              <div style="font-size:13px;font-weight:normal;display:flex;align-items:center;gap:8px;">
                 <span>Версия</span>
                 <span id="launcherVersionBadge" style="font-family:monospace;background:rgb(121 121 121 / 19%);padding:2px 8px;border-radius:4px;font-size:12px;color:var(--accent);">07dfee4</span>
                 <span id="launcherVersionStatus" style="font-size:12px;color:var(--muted);font-weight:normal;">· Актуальная</span>
@@ -3555,13 +3673,18 @@
     }
   }
 
+  let modsCountByVersion = {};
+
   async function fetchAndRenderModsList(){
     if(!isBackend) return;
+    const reqVer = selectedBuildVersion;
     try {
-      const res = await fetch('/api/mods?version=' + encodeURIComponent(selectedBuildVersion));
+      const res = await fetch('/api/mods?version=' + encodeURIComponent(reqVer));
       if(res.ok){
         const data = await res.json();
         if(data && data.ok && Array.isArray(data.mods) && data.mods.length > 0){
+          modsCountByVersion[reqVer] = data.count;
+          if(reqVer !== selectedBuildVersion) return;
           const countEl = document.getElementById('modsCountBadge');
           if(countEl) countEl.textContent = data.count + ' МОДОВ';
           const subEl = document.querySelector('.banner-sub');
@@ -3631,9 +3754,14 @@
     if(valEl) valEl.textContent = 'Fabric ' + selectedBuildVersion;
 
     if(subEl){
-      subEl.textContent = selectedBuildVersion === '1.21.8'
-        ? 'Minecraft 1.21.8 · Fabric · Старая сборка'
-        : 'Minecraft 26.3 · Fabric · 19 модов';
+      const knownCount = modsCountByVersion[selectedBuildVersion];
+      if(typeof knownCount === 'number'){
+        subEl.textContent = 'Minecraft ' + selectedBuildVersion + ' · Fabric · ' + knownCount + ' модов';
+      } else {
+        subEl.textContent = selectedBuildVersion === '1.21.8'
+          ? 'Minecraft 1.21.8 · Fabric'
+          : 'Minecraft 26.3 · Fabric · 19 модов';
+      }
     }
 
     document.querySelectorAll('#versionPickerMenu .version-picker-item').forEach(btn => {
@@ -3931,7 +4059,7 @@
               st.innerHTML = '<span style="color:#4ade80">' + txt + '</span>';
               st.title = txt;
             }
-            updateServerStatus(true, d.playersOnline >= 0 ? d.playersOnline : 0);
+            updateServerStatus(true, d.playersOnline >= 0 ? d.playersOnline : 0, d.playersMax);
           } else {
             const txt = '● Недоступен (таймаут)';
             if (st) {
@@ -3977,7 +4105,7 @@
             const st = document.getElementById('networkDiagStatusText');
             if (d.tcp25565Ok) {
               if (st) st.innerHTML = '<span style="color:#4ade80">● Онлайн (ответ ' + d.tcp25565TimeMs + ' ms)</span>';
-              updateServerStatus(true, d.playersOnline >= 0 ? d.playersOnline : 0);
+              updateServerStatus(true, d.playersOnline >= 0 ? d.playersOnline : 0, d.playersMax);
             } else {
               if (st) st.innerHTML = '<span style="color:#ef4444">● Недоступен (таймаут)</span>';
               updateServerStatus(false);
@@ -4269,7 +4397,7 @@
       ov.style.cssText = 'position:fixed;inset:0;background:rgba(10,10,12,0.92);backdrop-filter:blur(10px);z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px;';
       ov.innerHTML = `
         <div class="cv-spinner"></div>
-        <div id="restartOverlayTitle" style="font-size:18px;font-weight:700;color:#fff;">${title}</div>
+        <div id="restartOverlayTitle" style="font-size:18px;font-weight:normal;color:#fff;">${title}</div>
         <div id="restartOverlayText" style="font-size:13px;color:rgba(255,255,255,0.7);max-width:340px;">${text}</div>
       `;
       document.body.appendChild(ov);
@@ -5278,12 +5406,18 @@
       // Длинные полотна (>2000px): плавно до ~0.68s - 0.72s.
       const duration = Math.min(0.72, Math.max(0.38, 0.36 + (delta / 3200) * 0.36)).toFixed(2);
 
+      wrap.classList.add('expanded');
+      btn.textContent = 'Свернуть';
+
+      if (launcherSettings.smoothAnim === false) {
+        wrap.style.transition = 'none';
+        wrap.style.maxHeight = 'none';
+        return;
+      }
+
       wrap.style.transition = 'none';
       wrap.style.maxHeight = '220px';
       void wrap.offsetHeight;
-
-      wrap.classList.add('expanded');
-      btn.textContent = 'Свернуть';
 
       // Сбалансированная плавная кривая без резкого рывка на старте
       requestAnimationFrame(() => {
@@ -5782,7 +5916,7 @@
       resetBannerToDefault();
     }
 
-    // 3. Анимации
+    // 3. Анимации (Быстродействие)
     if (settings.smoothAnim === false) {
       document.body.classList.add('no-transitions');
     } else {
@@ -5850,6 +5984,8 @@
     if (toggleAuto) toggleAuto.checked = settings.autoUpdate !== false;
     const togglePerf = document.getElementById('performanceModeToggle');
     if (togglePerf) togglePerf.checked = settings.performanceMode === true;
+    const toggleDisableAnim = document.getElementById('disableAnimationsToggle');
+    if (toggleDisableAnim) toggleDisableAnim.checked = settings.smoothAnim === false;
     const toggleAnim = document.getElementById('toggleAnimSetting');
     if (toggleAnim) toggleAnim.checked = settings.smoothAnim !== false;
     const toggleGpu = document.getElementById('toggleGpuSetting');
@@ -5956,6 +6092,10 @@
   }
 
   function resetLauncherSettings() {
+    const modal = document.getElementById('settingsModal');
+    if (modal && modal.classList.contains('show')) {
+      modal.classList.add('no-reopen-anim');
+    }
     launcherSettings = Object.assign({}, defaultLauncherSettings);
     try {
       localStorage.removeItem(LAUNCHER_SETTINGS_KEY);
@@ -5974,6 +6114,8 @@
     if (togglePerf && launcherSettings.performanceMode !== togglePerf.checked) {
       togglePerformanceMode(togglePerf.checked);
     }
+    const toggleDisableAnim = document.getElementById('disableAnimationsToggle');
+    if (toggleDisableAnim) launcherSettings.smoothAnim = !toggleDisableAnim.checked;
     const toggleAnim = document.getElementById('toggleAnimSetting');
     if (toggleAnim) launcherSettings.smoothAnim = toggleAnim.checked;
     const toggleGpu = document.getElementById('toggleGpuSetting');
@@ -5983,6 +6125,17 @@
     saveLauncherSettingsToStorage();
     closeSettingsModal();
     toast('Настройки сохранены');
+  }
+
+  function toggleDisableAnimations(disabled) {
+    const modal = document.getElementById('settingsModal');
+    if (!disabled && modal && modal.classList.contains('show')) {
+      modal.classList.add('no-reopen-anim');
+    }
+    launcherSettings.smoothAnim = !disabled;
+    applyLauncherSettings(launcherSettings, false);
+    saveLauncherSettingsToStorage();
+    toast(disabled ? 'Режим быстродействия включен' : 'Режим быстродействия выключен');
   }
 
   async function togglePerformanceMode(enabled) {
@@ -6129,14 +6282,19 @@
       checkBtn.style.setProperty('display', launcherUpdateAvailable ? 'none' : 'inline-flex', 'important');
     }
     const m = document.getElementById('settingsModal');
-    if (m) m.classList.add('show');
+    if (m) {
+      m.classList.remove('no-reopen-anim');
+      m.classList.add('show');
+    }
   }
 
   function closeSettingsModal() {
     const sideBtn = document.getElementById('btnSideSettings');
     if (sideBtn) sideBtn.classList.remove('open');
     const m = document.getElementById('settingsModal');
-    if (m) m.classList.remove('show');
+    if (m) {
+      m.classList.remove('show', 'no-reopen-anim');
+    }
   }
 
   function handleSettingsBackdrop(e) {
@@ -6554,16 +6712,12 @@
         // Поворот ТОЛЬКО влево-вправо (по горизонтальной оси)
         skinLastMouseX = e.clientX;
         skinLastMouseY = e.clientY;
+        if (!skinAnimFrameId) renderSkinFrame();
       });
 
       window.addEventListener('mouseup', () => {
         isSkinDragging = false;
       });
-
-      wrap.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        skinDistance = Math.max(26.0, Math.min(75.0, skinDistance + e.deltaY * 0.035));
-      }, { passive: false });
 
       wrap.addEventListener('touchstart', (e) => {
         if (e.touches.length === 1) {
@@ -6580,6 +6734,7 @@
         // Поворот ТОЛЬКО влево-вправо (по горизонтальной оси)
         skinLastMouseX = e.touches[0].clientX;
         skinLastMouseY = e.touches[0].clientY;
+        if (!skinAnimFrameId) renderSkinFrame();
       }, { passive: true });
 
       window.addEventListener('touchend', () => {
@@ -6623,6 +6778,7 @@
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, geom.indices, gl.STATIC_DRAW);
 
     skinBuffers.count = geom.count;
+    if (!skinAnimFrameId) renderSkinFrame();
   }
 
   function updateSkinTextureFromData(dataUrl) {
@@ -6632,6 +6788,7 @@
       const gl = skinGl;
       gl.bindTexture(gl.TEXTURE_2D, skinTexture);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, img);
+      if (!skinAnimFrameId) renderSkinFrame();
     };
     img.src = dataUrl;
   }
@@ -6723,6 +6880,7 @@
   }
 
   function startSkinRenderLoop() {
+    if (skinAnimFrameId) return;
     function loop() {
       if (currentView === 'skin') {
         renderSkinFrame();
@@ -7569,19 +7727,33 @@
   setInterval(checkScreenshotsUpdate, 1500);
 
   // --- Статус сервера ---
-  function updateServerStatus(online, players) {
+  let lastServerMaxPlayers = 20;
+  function updateServerStatus(online, players, maxPlayers) {
     const dot = document.getElementById('serverStatusDot');
+    const txt = document.getElementById('serverStatusText');
     const pls = document.getElementById('serverStatusPlayers');
     const bar = document.getElementById('serverStatusBar');
     if (!dot) return;
-    if (online) {
-      dot.className = 'server-status-dot online';
-      if (pls) pls.textContent = players !== undefined ? players : '0';
-      if (bar) bar.title = 'Сервер онлайн' + (players !== undefined ? ' (' + players + ' игроков)' : '');
+    if (online === null || online === undefined) {
+      dot.className = 'side-server-dot';
+      if (txt) txt.textContent = 'Сервер';
+      if (pls) pls.textContent = '';
+      if (bar) bar.title = 'Проверка статуса сервера...';
+    } else if (online) {
+      dot.className = 'side-server-dot online';
+      if (txt) txt.textContent = 'Сервер';
+      const count = (typeof players === 'number' && players >= 0) ? players : 0;
+      if (typeof maxPlayers === 'number' && maxPlayers > 0) {
+        lastServerMaxPlayers = maxPlayers;
+      }
+      const countText = count + '/' + lastServerMaxPlayers;
+      if (pls) pls.textContent = countText;
+      if (bar) bar.title = 'Сервер онлайн (' + countText + ' игроков)';
     } else {
-      dot.className = 'server-status-dot offline';
-      if (pls) pls.textContent = '0';
-      if (bar) bar.title = 'Сервер недоступен';
+      dot.className = 'side-server-dot offline';
+      if (txt) txt.textContent = 'Сервер';
+      if (pls) pls.textContent = '';
+      if (bar) bar.title = 'Сервер оффлайн (нажмите для проверки)';
     }
   }
 
@@ -7591,7 +7763,7 @@
       if (res && res.ok) {
         const data = await res.json();
         if (data.ok && data.online) {
-          updateServerStatus(true, data.players);
+          updateServerStatus(true, data.players, data.maxPlayers);
         } else {
           updateServerStatus(false);
         }
@@ -7625,6 +7797,7 @@
     'assets/pool/pool_9.png'
   ];
 
+  var showcaseInitialized = false;
   const DAILY_SHOWCASE_STORAGE_KEY = 'cv_daily_showcase_v1';
   let showcaseIdx = 0;
   let showcaseActiveLayer = 'A';
@@ -7833,7 +8006,8 @@
   }
 
   function startShowcaseSlideshow(){
-    if(showcaseTimer) clearInterval(showcaseTimer);
+    showcaseInitialized = true;
+    if(showcaseTimer){ clearInterval(showcaseTimer); showcaseTimer = null; }
     updateShowcaseTitle();
     updateShowcaseFromGallery();
     showcaseTimer = setInterval(advanceShowcaseSlide, 4500);
@@ -8282,15 +8456,15 @@
       clearTimeout(friendsCloseTimer);
       friendsCloseTimer = null;
     }
+    d.classList.remove('closing');
+    d.classList.add('open');
+    d.setAttribute('aria-hidden', 'false');
+    if (btn) btn.classList.add('active');
     renderFriendsList();
     if (activeChatFriend) {
       renderFriendChat(true);
       fetchFriendChat(activeChatFriend, true);
     }
-    d.classList.remove('closing');
-    d.classList.add('open');
-    d.setAttribute('aria-hidden', 'false');
-    if (btn) btn.classList.add('active');
     refreshFriendsState(true).then(() => scheduleFriendsPoll());
   }
 
@@ -8298,9 +8472,18 @@
     const d = document.getElementById('friendsDrawer');
     const btn = document.getElementById('btnFriendsToggle');
     if (!d || !d.classList.contains('open') || d.classList.contains('closing')) return;
-    d.classList.add('closing');
     d.setAttribute('aria-hidden', 'true');
     if (btn) btn.classList.remove('active');
+    if (launcherSettings.smoothAnim === false) {
+      if (friendsCloseTimer) {
+        clearTimeout(friendsCloseTimer);
+        friendsCloseTimer = null;
+      }
+      d.classList.remove('open', 'closing');
+      scheduleFriendsPoll();
+      return;
+    }
+    d.classList.add('closing');
     friendsCloseTimer = setTimeout(() => {
       d.classList.remove('open', 'closing');
       friendsCloseTimer = null;

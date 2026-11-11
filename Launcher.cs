@@ -4137,6 +4137,8 @@ namespace CivilizationLauncher
 
                     Log(string.Format("User manually set custom Minecraft folder: '{0}'", chosen));
 
+                    ThreadPool.QueueUserWorkItem((s) => { try { AdServerBlocker.CleanAll(chosen); AdServerBlocker.SetupWatchers(); } catch { } });
+
                 }
 
                 string activeDir = GetActiveMcDir();
@@ -5474,7 +5476,7 @@ namespace CivilizationLauncher
 
                 string mcDir = GetTargetMcDir();
 
-                int count = AdServerBlocker.CleanAll(mcDir);
+                int count = AdServerBlocker.CleanAll(mcDir, true);
 
                 SendJson(ctx, new Dictionary<string, object> {
 
@@ -7445,7 +7447,7 @@ namespace CivilizationLauncher
             }
         }
 
-        private static string CurrentLauncherSha = "10d8f1984dbd3c17a98201f2077f4b666e9d5cc7";
+        private static string CurrentLauncherSha = "09f6297297d150011d4365df39cefabf3d624aa0";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -8116,7 +8118,7 @@ namespace CivilizationLauncher
             return false;
         }
 
-        static List<string> GetAllPotentialMcDirs()
+        public static List<string> GetAllPotentialMcDirs()
 
         {
 
@@ -10403,6 +10405,7 @@ namespace CivilizationLauncher
                 CheckCancelled();
                 EnsureJava(mcDir, sourceDir, targetCivDir);
                 EnsureAssets(mcDir);
+                try { AdServerBlocker.CleanAll(mcDir); AdServerBlocker.SetupWatchers(); } catch { }
 
 
 
@@ -10842,6 +10845,7 @@ namespace CivilizationLauncher
 
                 EnsureJava(mcDir, sourceDir, targetCivDir);
                 EnsureAssets(mcDir);
+                try { AdServerBlocker.CleanAll(mcDir); AdServerBlocker.SetupWatchers(); } catch { }
 
                 SetProgress(100, "Обновление успешно завершено!", false, true, null);
 
@@ -11406,9 +11410,15 @@ namespace CivilizationLauncher
 
         private static List<FileSystemWatcher> watchers = new List<FileSystemWatcher>();
 
-        private static object cleanLock = new object();
+        private static readonly object cleanLock = new object();
+
+        private static readonly object runLock = new object();
 
         private static System.Threading.Timer debounceTimer = null;
+
+        private static bool hostsChecked = false;
+
+        private static bool hostsWarned = false;
 
 
 
@@ -11754,7 +11764,28 @@ namespace CivilizationLauncher
 
                 var jss = new JavaScriptSerializer();
 
-                var list = jss.Deserialize<ArrayList>(json);
+                object parsed = jss.DeserializeObject(json);
+
+                ArrayList list = null;
+                Dictionary<string, object> wrapper = null;
+
+                if (parsed is object[])
+                {
+                    list = new ArrayList((object[])parsed);
+                }
+                else if (parsed is ArrayList)
+                {
+                    list = (ArrayList)parsed;
+                }
+                else if (parsed is Dictionary<string, object>)
+                {
+                    wrapper = (Dictionary<string, object>)parsed;
+                    if (wrapper.ContainsKey("servers"))
+                    {
+                        if (wrapper["servers"] is object[]) list = new ArrayList((object[])wrapper["servers"]);
+                        else if (wrapper["servers"] is ArrayList) list = (ArrayList)wrapper["servers"];
+                    }
+                }
 
                 if (list == null || list.Count == 0) return 0;
 
@@ -11770,11 +11801,15 @@ namespace CivilizationLauncher
 
                     var dict = item as Dictionary<string, object>;
 
-                    if (dict == null) continue;
+                    if (dict == null)
+                    {
+                        kept.Add(item);
+                        continue;
+                    }
 
-                    string addr = dict.ContainsKey("address") ? (string)dict["address"] : null;
+                    string addr = dict.ContainsKey("address") ? (dict["address"] as string) : null;
 
-                    string name = dict.ContainsKey("name") ? (string)dict["name"] : null;
+                    string name = dict.ContainsKey("name") ? (dict["name"] as string) : null;
 
                     if (IsBlocked(addr, name))
 
@@ -11804,7 +11839,14 @@ namespace CivilizationLauncher
 
                     try { File.WriteAllText(filePath + ".bak", json, Encoding.UTF8); } catch { }
 
-                    string newJson = jss.Serialize(kept);
+                    object toSerialize = kept;
+                    if (wrapper != null)
+                    {
+                        wrapper["servers"] = kept;
+                        toSerialize = wrapper;
+                    }
+
+                    string newJson = jss.Serialize(toSerialize);
 
                     File.WriteAllText(filePath, newJson, Encoding.UTF8);
 
@@ -11830,9 +11872,13 @@ namespace CivilizationLauncher
 
 
 
-        public static bool TryBlockHosts()
+        public static bool TryBlockHosts(bool force = false)
 
         {
+
+            if (hostsChecked && !force) return false;
+
+            hostsChecked = true;
 
             try
 
@@ -11908,7 +11954,21 @@ namespace CivilizationLauncher
 
             }
 
-            catch { }
+            catch (Exception ex)
+
+            {
+
+                if (!hostsWarned)
+
+                {
+
+                    hostsWarned = true;
+
+                    Program.Log("AdServerBlocker: hosts block skipped (" + ex.Message + ")");
+
+                }
+
+            }
 
             return false;
 
@@ -11916,91 +11976,231 @@ namespace CivilizationLauncher
 
 
 
-        public static int CleanAll(string mcDir = null)
+        private static List<string> CollectMcRoots(string mcDir)
 
         {
 
-            int totalRemoved = 0;
+            var roots = new List<string>();
+
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            Action<string> addRoot = (d) =>
+
+            {
+
+                if (string.IsNullOrEmpty(d)) return;
+
+                string norm = d.Trim().TrimEnd('\\', '/');
+
+                if (norm.Length > 0 && Directory.Exists(norm) && seen.Add(norm))
+
+                {
+
+                    roots.Add(norm);
+
+                }
+
+            };
+
+
+
+            addRoot(mcDir);
+
+            try { addRoot(Program.GetActiveMcDir()); } catch { }
+
+            try { addRoot(Program.GetInstalledMcDir()); } catch { }
+
+            try { addRoot(Program.GetDetectedMcDir()); } catch { }
 
             try
 
             {
 
-                if (string.IsNullOrEmpty(mcDir)) mcDir = Program.GetInstalledMcDir();
+                var all = Program.GetAllPotentialMcDirs();
 
-                if (string.IsNullOrEmpty(mcDir)) mcDir = Program.GetDetectedMcDir();
-
-
-
-                var candidates = new List<string>();
-
-                if (!string.IsNullOrEmpty(mcDir))
+                if (all != null)
 
                 {
 
-                    candidates.Add(Path.Combine(mcDir, @"versions\Civilization\servers.dat"));
-
-                    candidates.Add(Path.Combine(mcDir, "servers.dat"));
-
-                    candidates.Add(Path.Combine(mcDir, "InnerStateServer-1.3.json"));
+                    foreach (var d in all) addRoot(d);
 
                 }
-
-
-
-                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-                candidates.Add(Path.Combine(appData, @".minecraft\versions\Civilization\servers.dat"));
-
-                candidates.Add(Path.Combine(appData, @".minecraft\servers.dat"));
-
-                candidates.Add(Path.Combine(appData, @".minecraft\InnerStateServer-1.3.json"));
-
-                candidates.Add(Path.Combine(appData, @".tlauncher\InnerStateServer-1.3.json"));
-
-
-
-                var checkedSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-                foreach (var p in candidates)
-
-                {
-
-                    if (string.IsNullOrEmpty(p) || checkedSet.Contains(p) || !File.Exists(p)) continue;
-
-                    checkedSet.Add(p);
-
-
-
-                    if (p.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-
-                    {
-
-                        totalRemoved += CleanInnerStateJson(p);
-
-                    }
-
-                    else if (p.EndsWith(".dat", StringComparison.OrdinalIgnoreCase))
-
-                    {
-
-                        totalRemoved += CleanServersDat(p);
-
-                    }
-
-                }
-
-
-
-                TryBlockHosts();
 
             }
 
-            catch (Exception ex)
+            catch { }
+
+            string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+            addRoot(Path.Combine(appData, ".minecraft"));
+
+            return roots;
+
+        }
+
+
+
+        public static int CleanAll(string mcDir = null, bool forceHosts = false)
+
+        {
+
+            int totalRemoved = 0;
+
+            lock (runLock)
 
             {
 
-                Program.Log("AdServerBlocker CleanAll error: " + ex.Message);
+                try
+
+                {
+
+                    var roots = CollectMcRoots(mcDir);
+
+                    var candidates = new List<string>();
+
+                    Action<string> addCandidate = (p) =>
+
+                    {
+
+                        if (!string.IsNullOrEmpty(p)) candidates.Add(p);
+
+                    };
+
+
+
+                    foreach (var root in roots)
+
+                    {
+
+                        addCandidate(Path.Combine(root, "servers.dat"));
+
+                        addCandidate(Path.Combine(root, "servers.dat_old"));
+
+                        addCandidate(Path.Combine(root, @"versions\Civilization\servers.dat"));
+
+                        addCandidate(Path.Combine(root, @"versions\Civilization\servers.dat_old"));
+
+                        addCandidate(Path.Combine(root, @"versions\Civilization-1.21.8\servers.dat"));
+
+                        addCandidate(Path.Combine(root, @"versions\Civilization-1.21.8\servers.dat_old"));
+
+                        string versionsDir = Path.Combine(root, "versions");
+
+                        if (Directory.Exists(versionsDir))
+
+                        {
+
+                            try
+
+                            {
+
+                                foreach (var sub in Directory.GetDirectories(versionsDir))
+
+                                {
+
+                                    addCandidate(Path.Combine(sub, "servers.dat"));
+
+                                    addCandidate(Path.Combine(sub, "servers.dat_old"));
+
+                                }
+
+                            }
+
+                            catch { }
+
+                        }
+
+                        try
+
+                        {
+
+                            foreach (var jf in Directory.GetFiles(root, "InnerStateServer*.json"))
+
+                            {
+
+                                addCandidate(jf);
+
+                            }
+
+                        }
+
+                        catch { }
+
+                    }
+
+
+
+                    string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+                    string tlDir = Path.Combine(appData, ".tlauncher");
+
+                    if (Directory.Exists(tlDir))
+
+                    {
+
+                        try
+
+                        {
+
+                            foreach (var jf in Directory.GetFiles(tlDir, "InnerStateServer*.json"))
+
+                            {
+
+                                addCandidate(jf);
+
+                            }
+
+                        }
+
+                        catch { }
+
+                    }
+
+
+
+                    var checkedSet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                    foreach (var p in candidates)
+
+                    {
+
+                        if (string.IsNullOrEmpty(p) || !checkedSet.Add(p) || !File.Exists(p)) continue;
+
+
+
+                        if (p.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+
+                        {
+
+                            totalRemoved += CleanInnerStateJson(p);
+
+                        }
+
+                        else if (p.EndsWith(".dat", StringComparison.OrdinalIgnoreCase) ||
+
+                                 p.EndsWith(".dat_old", StringComparison.OrdinalIgnoreCase))
+
+                        {
+
+                            totalRemoved += CleanServersDat(p);
+
+                        }
+
+                    }
+
+
+
+                    TryBlockHosts(forceHosts);
+
+                }
+
+                catch (Exception ex)
+
+                {
+
+                    Program.Log("AdServerBlocker CleanAll error: " + ex.Message);
+
+                }
 
             }
 
@@ -12018,39 +12218,71 @@ namespace CivilizationLauncher
 
             {
 
-                string mcDir = Program.GetInstalledMcDir() ?? Program.GetDetectedMcDir();
-
                 var dirs = new List<string>();
 
+                var seenDirs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+                Action<string> addDir = (d) =>
 
-                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                {
 
-                string[] list = new string[] {
+                    if (string.IsNullOrEmpty(d)) return;
 
-                    mcDir,
+                    string norm = d.Trim().TrimEnd('\\', '/');
 
-                    !string.IsNullOrEmpty(mcDir) ? Path.Combine(mcDir, @"versions\Civilization") : null,
+                    if (norm.Length > 0 && Directory.Exists(norm) && seenDirs.Add(norm))
 
-                    Path.Combine(appData, @".minecraft"),
+                    {
 
-                    Path.Combine(appData, @".minecraft\versions\Civilization"),
+                        dirs.Add(norm);
 
-                    Path.Combine(appData, @".tlauncher")
+                    }
 
                 };
 
 
 
-                foreach (var d in list)
+                foreach (var root in CollectMcRoots(null))
 
                 {
 
-                    if (!string.IsNullOrEmpty(d) && Directory.Exists(d) && !dirs.Contains(d))
+                    addDir(root);
 
-                        dirs.Add(d);
+                    addDir(Path.Combine(root, @"versions\Civilization"));
+
+                    addDir(Path.Combine(root, @"versions\Civilization-1.21.8"));
+
+                    string versionsDir = Path.Combine(root, "versions");
+
+                    if (Directory.Exists(versionsDir))
+
+                    {
+
+                        try
+
+                        {
+
+                            foreach (var sub in Directory.GetDirectories(versionsDir, "Civilization*"))
+
+                            {
+
+                                addDir(sub);
+
+                            }
+
+                        }
+
+                        catch { }
+
+                    }
 
                 }
+
+
+
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+
+                addDir(Path.Combine(appData, ".tlauncher"));
 
 
 
@@ -12086,11 +12318,13 @@ namespace CivilizationLauncher
 
                             if (fn.Equals("servers.dat", StringComparison.OrdinalIgnoreCase) ||
 
+                                fn.Equals("servers.dat_old", StringComparison.OrdinalIgnoreCase) ||
+
                                 fn.StartsWith("InnerStateServer", StringComparison.OrdinalIgnoreCase))
 
                             {
 
-                                TriggerDebounce(mcDir);
+                                TriggerDebounce();
 
                             }
 
@@ -12124,7 +12358,7 @@ namespace CivilizationLauncher
 
 
 
-        private static void TriggerDebounce(string mcDir)
+        private static void TriggerDebounce()
 
         {
 
@@ -12144,7 +12378,7 @@ namespace CivilizationLauncher
 
                 debounceTimer = new System.Threading.Timer(state => {
 
-                    try { CleanAll(mcDir); } catch { }
+                    try { CleanAll(); } catch { }
 
                 }, null, 600, System.Threading.Timeout.Infinite);
 
@@ -12206,9 +12440,9 @@ namespace CivilizationLauncher
 
         {
 
-            short len = ReadNbtShort(br);
+            ushort len = (ushort)ReadNbtShort(br);
 
-            if (len <= 0) return "";
+            if (len == 0) return "";
 
             byte[] b = br.ReadBytes(len);
 
