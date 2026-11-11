@@ -52,8 +52,9 @@ csc_path = r"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 args = [
     csc_path,
     "/target:winexe",
-    "/platform:x64",
+    "/platform:anycpu",
     "/optimize+",
+    "/debug:pdbonly",
     "/win32icon:icon.ico",
     "/win32manifest:app.manifest",
     '/out:CV Launcher.exe',

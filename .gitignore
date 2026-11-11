@@ -6,6 +6,7 @@ RunAndCatch.*
 
 skins/
 *.old
+*.pdb
 friends-worker/node_modules/
 friends-worker/.wrangler/
 friends_url.txt
