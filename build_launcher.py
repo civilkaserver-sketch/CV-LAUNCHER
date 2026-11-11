@@ -55,6 +55,7 @@ args = [
     "/platform:x64",
     "/optimize+",
     "/win32icon:icon.ico",
+    "/win32manifest:app.manifest",
     '/out:CV Launcher.exe',
     "/r:System.IO.Compression.FileSystem.dll",
     "/r:System.Web.Extensions.dll",

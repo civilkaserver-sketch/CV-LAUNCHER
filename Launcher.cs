@@ -1317,6 +1317,31 @@ namespace CivilizationLauncher
             }
         }
 
+        static void CleanupOldLauncherBinary()
+        {
+            try
+            {
+                string currentExe = Process.GetCurrentProcess().MainModule.FileName;
+                string oldExe = currentExe + ".old";
+                if (File.Exists(oldExe))
+                {
+                    for (int i = 0; i < 5; i++)
+                    {
+                        try
+                        {
+                            File.Delete(oldExe);
+                            break;
+                        }
+                        catch
+                        {
+                            Thread.Sleep(200);
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
         [STAThread]
 
         static void Main(string[] args)
@@ -1324,6 +1349,8 @@ namespace CivilizationLauncher
         {
 
             AppDomain.CurrentDomain.UnhandledException += (s, e) => Log("Unhandled: " + (e.ExceptionObject != null ? e.ExceptionObject.ToString() : "unknown"));
+
+            CleanupOldLauncherBinary();
 
             bool isSilentMode = false;
             if (args != null)
@@ -2815,62 +2842,72 @@ namespace CivilizationLauncher
 
 
 
-        static bool CreateDesktopShortcut()
+        [ComImport]
+        [Guid("00021401-0000-0000-C000-000000000046")]
+        private class ShellLinkCoClass { }
 
+        [ComImport]
+        [InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+        [Guid("000214F9-0000-0000-C000-000000000046")]
+        private interface IShellLinkW
         {
+            void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszFile, int cchMaxPath, IntPtr pfd, uint fFlags);
+            void GetIDList(out IntPtr ppidl);
+            void SetIDList(IntPtr pidl);
+            void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszName, int cchMaxName);
+            void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string pszName);
+            void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszDir, int cchMaxPath);
+            void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string pszDir);
+            void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszArgs, int cchMaxPath);
+            void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
+            void GetHotkey(out short pwHotkey);
+            void SetHotkey(short wHotkey);
+            void GetShowCmd(out int piShowCmd);
+            void SetShowCmd(int iShowCmd);
+            void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] StringBuilder pszIconPath, int cchIconPath, out int piIcon);
+            void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string pszIconPath, int iIcon);
+            void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, uint dwReserved);
+            void Resolve(IntPtr hwnd, uint fFlags);
+            void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
+        }
 
+        static string ResolveShortcutTarget(string shortcutPath)
+        {
+            if (string.IsNullOrEmpty(shortcutPath) || !File.Exists(shortcutPath)) return null;
+            var link = (IShellLinkW)new ShellLinkCoClass();
+            var file = (System.Runtime.InteropServices.ComTypes.IPersistFile)link;
+            file.Load(shortcutPath, 0);
+            var sb = new StringBuilder(520);
+            link.GetPath(sb, sb.Capacity, IntPtr.Zero, 0);
+            return sb.ToString();
+        }
+
+        static bool CreateDesktopShortcut()
+        {
             try
-
             {
-
                 string desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-
                 string shortcutPath = Path.Combine(desktop, "CV Launcher.lnk");
-
                 string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
-
                 if (string.IsNullOrEmpty(exePath) || !File.Exists(exePath)) return false;
 
+                var link = (IShellLinkW)new ShellLinkCoClass();
+                link.SetPath(exePath);
+                link.SetWorkingDirectory(Path.GetDirectoryName(exePath));
+                link.SetDescription("Civilization Reborn Launcher");
+                link.SetIconLocation(exePath, 0);
 
+                var file = (System.Runtime.InteropServices.ComTypes.IPersistFile)link;
+                file.Save(shortcutPath, false);
 
-                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
-
-                if (shellType != null)
-
-                {
-
-                    dynamic shell = Activator.CreateInstance(shellType);
-
-                    dynamic shortcut = shell.CreateShortcut(shortcutPath);
-
-                    shortcut.TargetPath = exePath;
-
-                    shortcut.WorkingDirectory = Path.GetDirectoryName(exePath);
-
-                    shortcut.Description = "Civilization Reborn Launcher";
-
-                    shortcut.IconLocation = exePath + ",0";
-
-                    shortcut.Save();
-
-                    Log("Created desktop shortcut: " + shortcutPath);
-
-                    return true;
-
-                }
-
+                Log("Created desktop shortcut: " + shortcutPath);
+                return true;
             }
-
             catch (Exception ex)
-
             {
-
                 Log("CreateDesktopShortcut error: " + ex.Message);
-
             }
-
             return false;
-
         }
 
 
@@ -3891,7 +3928,8 @@ namespace CivilizationLauncher
                     { "javaOk", jMaj >= jNeed },
                     { "smartRamMb", CalculateOptimalRamMb() },
                     { "totalRamGb", Math.Round(GetTotalPhysicalRamGb(), 1) },
-                    { "performanceMode", IsPerformanceModeEnabled() }
+                    { "performanceMode", IsPerformanceModeEnabled() },
+                    { "isDev", IsDevWorkspace() }
                 });
 
                 return;
@@ -5863,23 +5901,10 @@ namespace CivilizationLauncher
                     {
 
                         if (!activeGameProcess.HasExited)
-
                         {
-
-                            int pid = activeGameProcess.Id;
-
-                            var psi = new ProcessStartInfo("taskkill", string.Format("/PID {0} /T /F", pid));
-
-                            psi.CreateNoWindow = true;
-
-                            psi.UseShellExecute = false;
-
-                            var p = Process.Start(psi);
-
-                            if (p != null) p.WaitForExit(3000);
-
+                            activeGameProcess.Kill();
+                            try { activeGameProcess.WaitForExit(3000); } catch { }
                             killedAny = true;
-
                         }
 
                     }
@@ -5933,35 +5958,9 @@ namespace CivilizationLauncher
                                 title.IndexOf("Minecraft", StringComparison.OrdinalIgnoreCase) >= 0)
 
                             {
-
-                                int pid = p.Id;
-
-                                try
-
-                                {
-
-                                    var psi = new ProcessStartInfo("taskkill", string.Format("/PID {0} /T /F", pid));
-
-                                    psi.CreateNoWindow = true;
-
-                                    psi.UseShellExecute = false;
-
-                                    var kp = Process.Start(psi);
-
-                                    if (kp != null) kp.WaitForExit(2000);
-
-                                }
-
-                                catch
-
-                                {
-
-                                    p.Kill();
-
-                                }
-
+                                p.Kill();
+                                try { p.WaitForExit(2000); } catch { }
                                 killedAny = true;
-
                             }
 
                         }
@@ -6400,27 +6399,10 @@ namespace CivilizationLauncher
             {
 
                 string lnk = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @"Microsoft\Windows\Start Menu\Programs\TLauncher.lnk");
-
                 if (File.Exists(lnk))
-
                 {
-
-                    Type shellType = Type.GetTypeFromProgID("WScript.Shell");
-
-                    if (shellType != null)
-
-                    {
-
-                        dynamic shell = Activator.CreateInstance(shellType);
-
-                        dynamic shortcut = shell.CreateShortcut(lnk);
-
-                        string target = shortcut.TargetPath;
-
-                        if (!string.IsNullOrEmpty(target) && File.Exists(target)) candidates.Insert(0, target);
-
-                    }
-
+                    string target = ResolveShortcutTarget(lnk);
+                    if (!string.IsNullOrEmpty(target) && File.Exists(target)) candidates.Insert(0, target);
                 }
 
             }
@@ -6773,7 +6755,7 @@ namespace CivilizationLauncher
 
 
 
-                // 3. Сборка classpath из библиотек Civilization.json
+                // 3. Проверка недостающих библиотек и сборка classpath из Civilization.json
 
                 var cpList = new List<string>();
 
@@ -6785,7 +6767,8 @@ namespace CivilizationLauncher
 
                 var root = jss.Deserialize<Dictionary<string, object>>(jsonTxt);
 
-
+                try { EnsureMissingLibraries(mcDir, civDir, root, false); }
+                catch (Exception ex) { Log("[Libs] EnsureMissingLibraries launch error: " + ex.Message); }
 
                 if (root.ContainsKey("libraries") && root["libraries"] is ArrayList)
 
@@ -6801,59 +6784,13 @@ namespace CivilizationLauncher
 
                         if (lib == null) continue;
 
+                        if (!IsLibraryAllowedOnWindows(lib)) continue;
 
-
-                        if (lib.ContainsKey("rules") && lib["rules"] is ArrayList)
-
-                        {
-
-                            var rules = (ArrayList)lib["rules"];
-
-                            bool allowed = false;
-
-                            foreach (object rObj in rules)
-
-                            {
-
-                                var rule = rObj as Dictionary<string, object>;
-
-                                if (rule == null) continue;
-
-                                string action = (string)rule["action"];
-
-                                if (rule.ContainsKey("os") && rule["os"] is Dictionary<string, object>)
-
-                                {
-
-                                    var osDict = (Dictionary<string, object>)rule["os"];
-
-                                    string osName = (string)osDict["name"];
-
-                                    if (osName == "windows") allowed = (action == "allow");
-
-                                }
-
-                                else
-
-                                {
-
-                                    allowed = (action == "allow");
-
-                                }
-
-                            }
-
-                            if (!allowed) continue;
-
-                        }
-
-
-
-                        if (lib.ContainsKey("name"))
+                        if (lib.ContainsKey("name") && lib["name"] != null)
 
                         {
 
-                            string coord = (string)lib["name"];
+                            string coord = lib["name"].ToString();
 
                             string[] parts = coord.Split(':');
 
@@ -7447,7 +7384,7 @@ namespace CivilizationLauncher
             }
         }
 
-        private static string CurrentLauncherSha = "09f6297297d150011d4365df39cefabf3d624aa0";
+        private static string CurrentLauncherSha = "3758783ac01aea9f4c5a783b94dd28ee6002b866";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -7800,66 +7737,48 @@ namespace CivilizationLauncher
                 launcherUpdateMsg = "Перезапуск лаунчера...";
 
                 Process curProc = Process.GetCurrentProcess();
-                int curPid = curProc.Id;
                 string currentExe = curProc.MainModule.FileName;
-                string currentExeName = Path.GetFileName(currentExe);
                 string currentDir = Path.GetDirectoryName(currentExe);
+                string oldExe = currentExe + ".old";
                 string versionShaFile = Path.Combine(GetLauncherDataDir(), "version.sha");
 
-                string tempDir = Path.GetTempPath();
-                string batPath = Path.Combine(tempDir, "cv_launcher_updater.bat");
-                string newShaFile = Path.Combine(tempDir, "version_new.sha");
+                try
+                {
+                    if (File.Exists(oldExe)) File.Delete(oldExe);
+                }
+                catch { }
+
+                File.Move(currentExe, oldExe);
+                try
+                {
+                    File.Copy(newExePath, currentExe, true);
+                }
+                catch
+                {
+                    // Roll back if copying the new binary fails
+                    try { if (!File.Exists(currentExe) && File.Exists(oldExe)) File.Move(oldExe, currentExe); } catch { }
+                    throw;
+                }
 
                 if (!string.IsNullOrEmpty(remoteSha))
                 {
-                    // version.sha пишем НЕ здесь: только после успешной подмены exe
-                    // (это делает bat-апдейтер). Иначе при неудачной копии лаунчер
-                    // считает себя обновлённым и больше не предложит апдейт.
-                    try { File.WriteAllText(newShaFile, remoteSha); } catch { }
+                    try { File.WriteAllText(versionShaFile, remoteSha); } catch { }
                 }
 
-                var sb = new StringBuilder();
-                sb.AppendLine("@echo off");
-                sb.AppendLine("chcp 65001 > nul");
-                sb.AppendLine("timeout /t 1 /nobreak > nul");
-                sb.AppendLine(string.Format("taskkill /f /pid {0} > nul 2>&1", curPid));
-                sb.AppendLine(string.Format("taskkill /f /im \"{0}\" > nul 2>&1", currentExeName));
-                sb.AppendLine("set /a attempts=0");
-                sb.AppendLine(":retry_copy_exe");
-                sb.AppendLine("set /a attempts+=1");
-                sb.AppendLine(string.Format("copy /y \"{0}\" \"{1}\" > nul 2>&1", newExePath, currentExe));
-                sb.AppendLine("if errorlevel 1 (");
-                sb.AppendLine("    if %attempts% geq 20 goto copy_failed");
-                sb.AppendLine("    timeout /t 1 /nobreak > nul");
-                sb.AppendLine("    goto retry_copy_exe");
-                sb.AppendLine(")");
-                sb.AppendLine(string.Format("if exist \"{0}\" (", newShaFile));
-                sb.AppendLine(string.Format("    copy /y \"{0}\" \"{1}\" > nul 2>&1", newShaFile, versionShaFile));
-                sb.AppendLine(string.Format("    del /f /q \"{0}\" > nul 2>&1", newShaFile));
-                sb.AppendLine(")");
-                sb.AppendLine(string.Format("del /f /q \"{0}\" > nul 2>&1", newExePath));
-                sb.AppendLine(string.Format("cd /d \"{0}\"", currentDir));
-                sb.AppendLine(string.Format("start \"\" \"{0}\"", currentExe));
-                sb.AppendLine("del \"%~f0\" & exit");
-                sb.AppendLine(":copy_failed");
-                sb.AppendLine(string.Format("start \"\" \"{0}\"", currentExe));
-                sb.AppendLine("del \"%~f0\" & exit");
+                try { if (File.Exists(newExePath)) File.Delete(newExePath); } catch { }
 
-                File.WriteAllText(batPath, sb.ToString(), Encoding.GetEncoding(65001));
-
-                Log("Launching updater batch: " + batPath);
+                Log("Launching updated launcher binary: " + currentExe);
                 var psi = new ProcessStartInfo
                 {
-                    FileName = "cmd.exe",
-                    Arguments = "/c \"" + batPath + "\"",
-                    WindowStyle = ProcessWindowStyle.Hidden,
+                    FileName = currentExe,
+                    WorkingDirectory = currentDir,
                     UseShellExecute = true
                 };
                 Process.Start(psi);
 
                 ThreadPool.QueueUserWorkItem((s) => {
-                    Thread.Sleep(500);
-                    Log("Terminating process for updater restart...");
+                    Thread.Sleep(400);
+                    Log("Terminating old process after update...");
                     Environment.Exit(0);
                 });
             }
@@ -9243,6 +9162,276 @@ namespace CivilizationLauncher
 
         }
 
+        static bool IsLibraryAllowedOnWindows(Dictionary<string, object> lib)
+        {
+            if (lib == null) return false;
+            if (!lib.ContainsKey("rules") || !(lib["rules"] is ArrayList)) return true;
+
+            var rules = (ArrayList)lib["rules"];
+            bool allowed = false;
+            foreach (object rObj in rules)
+            {
+                var rule = rObj as Dictionary<string, object>;
+                if (rule == null) continue;
+                string action = rule.ContainsKey("action") && rule["action"] != null ? rule["action"].ToString() : "";
+                if (rule.ContainsKey("os") && rule["os"] is Dictionary<string, object>)
+                {
+                    var osDict = (Dictionary<string, object>)rule["os"];
+                    if (osDict.ContainsKey("name") && osDict["name"] != null)
+                    {
+                        string osName = osDict["name"].ToString();
+                        if (string.Equals(osName, "windows", StringComparison.OrdinalIgnoreCase))
+                        {
+                            allowed = string.Equals(action, "allow", StringComparison.OrdinalIgnoreCase);
+                        }
+                    }
+                }
+                else
+                {
+                    allowed = string.Equals(action, "allow", StringComparison.OrdinalIgnoreCase);
+                }
+            }
+            return allowed;
+        }
+
+        private class MissingLibItem
+        {
+            public string Coord;
+            public string DestPath;
+            public List<string> Urls;
+            public long ExpectedSize;
+        }
+
+        static bool DownloadFileWithFallback(List<string> urls, string destPath, long expectedSize)
+        {
+            if (urls == null || urls.Count == 0) return false;
+            string dir = Path.GetDirectoryName(destPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+            string tmpPath = destPath + ".tmp." + Thread.CurrentThread.ManagedThreadId;
+            foreach (string url in urls)
+            {
+                if (string.IsNullOrEmpty(url)) continue;
+                for (int attempt = 1; attempt <= 2; attempt++)
+                {
+                    try
+                    {
+                        var req = (HttpWebRequest)WebRequest.Create(url);
+                        req.UserAgent = "CV-Launcher";
+                        req.Timeout = 30000;
+                        req.ReadWriteTimeout = 60000;
+                        using (var resp = (HttpWebResponse)req.GetResponse())
+                        {
+                            if (resp.StatusCode != HttpStatusCode.OK) continue;
+                            using (var stream = resp.GetResponseStream())
+                            using (var fs = new FileStream(tmpPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                            {
+                                byte[] buf = new byte[32768];
+                                int read;
+                                while ((read = stream.Read(buf, 0, buf.Length)) > 0)
+                                {
+                                    fs.Write(buf, 0, read);
+                                }
+                            }
+                        }
+
+                        var fi = new FileInfo(tmpPath);
+                        if (fi.Exists && fi.Length > 0 && (expectedSize <= 0 || fi.Length == expectedSize))
+                        {
+                            if (File.Exists(destPath)) File.Delete(destPath);
+                            File.Move(tmpPath, destPath);
+                            return true;
+                        }
+                    }
+                    catch { }
+                    try { if (File.Exists(tmpPath)) File.Delete(tmpPath); } catch { }
+                }
+            }
+            return false;
+        }
+
+        static void EnsureMissingLibraries(string mcDir, string civDir, Dictionary<string, object> root = null, bool updateProgress = false)
+        {
+            try
+            {
+                if (root == null)
+                {
+                    string jsonPath = Path.Combine(civDir, "Civilization.json");
+                    if (!File.Exists(jsonPath)) return;
+                    var jss = new JavaScriptSerializer();
+                    jss.MaxJsonLength = int.MaxValue;
+                    root = jss.Deserialize<Dictionary<string, object>>(File.ReadAllText(jsonPath, Encoding.UTF8));
+                }
+                if (root == null) return;
+
+                ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
+                if (ServicePointManager.DefaultConnectionLimit < 16) ServicePointManager.DefaultConnectionLimit = 16;
+
+                // Ensure Civilization.jar if missing
+                string civJar = Path.Combine(civDir, "Civilization.jar");
+                if (!File.Exists(civJar) || new FileInfo(civJar).Length < 1024)
+                {
+                    if (root.ContainsKey("downloads") && root["downloads"] is Dictionary<string, object>)
+                    {
+                        var dl = (Dictionary<string, object>)root["downloads"];
+                        if (dl.ContainsKey("client") && dl["client"] is Dictionary<string, object>)
+                        {
+                            var cl = (Dictionary<string, object>)dl["client"];
+                            string clientUrl = cl.ContainsKey("url") && cl["url"] != null ? cl["url"].ToString() : null;
+                            long clientSize = cl.ContainsKey("size") && cl["size"] != null ? Convert.ToInt64(cl["size"]) : 0;
+                            if (!string.IsNullOrEmpty(clientUrl))
+                            {
+                                Log("[Libs] Civilization.jar missing, downloading client jar...");
+                                if (updateProgress) SetProgress(91, "Загрузка ядра игры (Civilization.jar)...", true, false, null);
+                                DownloadFileWithFallback(new List<string> { clientUrl }, civJar, clientSize);
+                            }
+                        }
+                    }
+                }
+
+                if (!root.ContainsKey("libraries") || !(root["libraries"] is ArrayList)) return;
+
+                string defaultMcLibs = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), @".minecraft\libraries");
+                var missing = new List<MissingLibItem>();
+                var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (object item in (ArrayList)root["libraries"])
+                {
+                    var lib = item as Dictionary<string, object>;
+                    if (lib == null || !IsLibraryAllowedOnWindows(lib)) continue;
+                    if (!lib.ContainsKey("name") || lib["name"] == null) continue;
+
+                    string coord = lib["name"].ToString();
+                    string[] parts = coord.Split(':');
+                    if (parts.Length < 3) continue;
+
+                    string groupWin = parts[0].Replace('.', '\\');
+                    string groupUrl = parts[0].Replace('.', '/');
+                    string artifact = parts[1];
+                    string version = parts[2];
+                    string classifier = parts.Length > 3 ? ("-" + parts[3]) : "";
+                    string jarName = string.Format("{0}-{1}{2}.jar", artifact, version, classifier);
+                    string relWin = Path.Combine(groupWin, artifact, version, jarName);
+                    string relUrl = string.Format("{0}/{1}/{2}/{3}", groupUrl, artifact, version, jarName);
+                    string destPath = Path.Combine(mcDir, "libraries", relWin);
+
+                    if (!seenPaths.Add(destPath)) continue;
+                    if (File.Exists(destPath) && new FileInfo(destPath).Length > 0) continue;
+
+                    // Fast local copy from default %APPDATA%\.minecraft\libraries if available
+                    string defaultCopy = Path.Combine(defaultMcLibs, relWin);
+                    if (!string.Equals(defaultCopy, destPath, StringComparison.OrdinalIgnoreCase) &&
+                        File.Exists(defaultCopy) && new FileInfo(defaultCopy).Length > 0)
+                    {
+                        try
+                        {
+                            string d = Path.GetDirectoryName(destPath);
+                            if (!Directory.Exists(d)) Directory.CreateDirectory(d);
+                            File.Copy(defaultCopy, destPath, true);
+                            continue;
+                        }
+                        catch { }
+                    }
+
+                    var urls = new List<string>();
+                    long expectedSize = 0;
+
+                    if (lib.ContainsKey("downloads") && lib["downloads"] is Dictionary<string, object>)
+                    {
+                        var dl = (Dictionary<string, object>)lib["downloads"];
+                        if (dl.ContainsKey("artifact") && dl["artifact"] is Dictionary<string, object>)
+                        {
+                            var art = (Dictionary<string, object>)dl["artifact"];
+                            if (art.ContainsKey("url") && art["url"] != null)
+                            {
+                                string u = art["url"].ToString().Trim();
+                                if (!string.IsNullOrEmpty(u)) urls.Add(u);
+                            }
+                            if (art.ContainsKey("size") && art["size"] != null)
+                            {
+                                try { expectedSize = Convert.ToInt64(art["size"]); } catch { }
+                            }
+                        }
+                    }
+
+                    if (lib.ContainsKey("url") && lib["url"] != null)
+                    {
+                        string baseUrl = lib["url"].ToString().Trim().TrimEnd('/');
+                        if (!string.IsNullOrEmpty(baseUrl)) urls.Add(baseUrl + "/" + relUrl);
+                    }
+
+                    if (coord.StartsWith("net.fabricmc:", StringComparison.OrdinalIgnoreCase) ||
+                        coord.StartsWith("org.ow2.asm:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        urls.Add("https://maven.fabricmc.net/" + relUrl);
+                        urls.Add("https://repo1.maven.org/maven2/" + relUrl);
+                    }
+                    else
+                    {
+                        urls.Add("https://libraries.minecraft.net/" + relUrl);
+                        urls.Add("https://maven.fabricmc.net/" + relUrl);
+                        urls.Add("https://repo1.maven.org/maven2/" + relUrl);
+                    }
+
+                    missing.Add(new MissingLibItem
+                    {
+                        Coord = coord,
+                        DestPath = destPath,
+                        Urls = urls,
+                        ExpectedSize = expectedSize
+                    });
+                }
+
+                if (missing.Count == 0) return;
+
+                Log(string.Format("[Libs] Missing {0} libraries in '{1}'. Downloading...", missing.Count, mcDir));
+                int completed = 0;
+                int failed = 0;
+                int nextIdx = 0;
+                int workers = Math.Min(6, missing.Count);
+                var doneEvent = new CountdownEvent(workers);
+
+                for (int w = 0; w < workers; w++)
+                {
+                    ThreadPool.QueueUserWorkItem(_ =>
+                    {
+                        try
+                        {
+                            while (true)
+                            {
+                                int idx = Interlocked.Increment(ref nextIdx) - 1;
+                                if (idx >= missing.Count) break;
+                                var m = missing[idx];
+                                bool ok = DownloadFileWithFallback(m.Urls, m.DestPath, m.ExpectedSize);
+                                if (!ok)
+                                {
+                                    Interlocked.Increment(ref failed);
+                                    Log("[Libs] Failed to download library: " + m.Coord);
+                                }
+                                int doneNow = Interlocked.Increment(ref completed);
+                                if (updateProgress)
+                                {
+                                    int pct = 90 + (doneNow * 8) / missing.Count;
+                                    SetProgress(pct, string.Format("Загрузка библиотек ({0}/{1})...", doneNow, missing.Count), true, false, null);
+                                }
+                            }
+                        }
+                        finally
+                        {
+                            doneEvent.Signal();
+                        }
+                    });
+                }
+
+                doneEvent.Wait();
+                Log(string.Format("[Libs] Library download finished: {0} total, {1} failed.", missing.Count, failed));
+            }
+            catch (Exception ex)
+            {
+                Log("[Libs] Error in EnsureMissingLibraries: " + ex.Message);
+            }
+        }
+
 
 
         static void CopyDirectory(string sourceDir, string targetDir)
@@ -10405,6 +10594,7 @@ namespace CivilizationLauncher
                 CheckCancelled();
                 EnsureJava(mcDir, sourceDir, targetCivDir);
                 EnsureAssets(mcDir);
+                EnsureMissingLibraries(mcDir, targetCivDir, null, true);
                 try { AdServerBlocker.CleanAll(mcDir); AdServerBlocker.SetupWatchers(); } catch { }
 
 
@@ -10845,6 +11035,7 @@ namespace CivilizationLauncher
 
                 EnsureJava(mcDir, sourceDir, targetCivDir);
                 EnsureAssets(mcDir);
+                EnsureMissingLibraries(mcDir, targetCivDir, null, true);
                 try { AdServerBlocker.CleanAll(mcDir); AdServerBlocker.SetupWatchers(); } catch { }
 
                 SetProgress(100, "Обновление успешно завершено!", false, true, null);
@@ -11416,10 +11607,6 @@ namespace CivilizationLauncher
 
         private static System.Threading.Timer debounceTimer = null;
 
-        private static bool hostsChecked = false;
-
-        private static bool hostsWarned = false;
-
 
 
         public static bool IsBlocked(string ip, string name)
@@ -11872,110 +12059,6 @@ namespace CivilizationLauncher
 
 
 
-        public static bool TryBlockHosts(bool force = false)
-
-        {
-
-            if (hostsChecked && !force) return false;
-
-            hostsChecked = true;
-
-            try
-
-            {
-
-                string sysDir = Environment.GetFolderPath(Environment.SpecialFolder.System);
-
-                string hostsPath = Path.Combine(sysDir, @"drivers\etc\hosts");
-
-                if (!File.Exists(hostsPath)) return false;
-
-
-
-                string content = File.ReadAllText(hostsPath, Encoding.UTF8);
-
-                string[] domains = new string[] {
-
-                    "mc.dexland.org",
-
-                    "mc.masedworld.net",
-
-                    "mc.skycave.pro",
-
-                    "mc.hypemc.pro",
-
-                    "mc.vimemc.net",
-
-                    "go.bigcraft.pro",
-
-                    "mc.mineblaze.net"
-
-                };
-
-
-
-                var missing = new List<string>();
-
-                foreach (var d in domains)
-
-                {
-
-                    if (content.IndexOf(d, StringComparison.OrdinalIgnoreCase) < 0)
-
-                    {
-
-                        missing.Add("127.0.0.1 " + d);
-
-                    }
-
-                }
-
-
-
-                if (missing.Count > 0)
-
-                {
-
-                    var sb = new StringBuilder();
-
-                    sb.AppendLine();
-
-                    sb.AppendLine("# Civilization Launcher - Blocked TLauncher Ad Servers");
-
-                    foreach (var m in missing) sb.AppendLine(m);
-
-                    File.AppendAllText(hostsPath, sb.ToString(), Encoding.UTF8);
-
-                    Program.Log("AdServerBlocker: successfully blocked ad domains in hosts file");
-
-                    return true;
-
-                }
-
-            }
-
-            catch (Exception ex)
-
-            {
-
-                if (!hostsWarned)
-
-                {
-
-                    hostsWarned = true;
-
-                    Program.Log("AdServerBlocker: hosts block skipped (" + ex.Message + ")");
-
-                }
-
-            }
-
-            return false;
-
-        }
-
-
-
         private static List<string> CollectMcRoots(string mcDir)
 
         {
@@ -12187,10 +12270,6 @@ namespace CivilizationLauncher
                         }
 
                     }
-
-
-
-                    TryBlockHosts(forceHosts);
 
                 }
 
