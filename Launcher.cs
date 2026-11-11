@@ -7245,6 +7245,28 @@ namespace CivilizationLauncher
             return curVal;
         }
 
+        static string FetchGitBranchShaOverHttps(string repoGitUrl, string branch)
+        {
+            try
+            {
+                try { ServicePointManager.SecurityProtocol = (SecurityProtocolType)(3072 | 12288); }
+                catch { ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12; }
+                string url = repoGitUrl.TrimEnd('/') + "/info/refs?service=git-upload-pack";
+                var req = (HttpWebRequest)WebRequest.Create(url);
+                req.UserAgent = "git/2.40.0";
+                req.Timeout = 6000;
+                using (var resp = req.GetResponse())
+                using (var sr = new StreamReader(resp.GetResponseStream(), Encoding.ASCII))
+                {
+                    string body = sr.ReadToEnd();
+                    var m = Regex.Match(body, @"([0-9a-fA-F]{40})\s+refs/heads/" + Regex.Escape(branch) + @"(?:[\0\r\n]|$)");
+                    if (m.Success) return m.Groups[1].Value.ToLowerInvariant();
+                }
+            }
+            catch { }
+            return null;
+        }
+
         static string FetchRemoteShaSynchronous(string buildVer = null)
         {
             string ver = string.IsNullOrEmpty(buildVer) ? GetSelectedBuildVersion() : NormalizeBuildVersion(buildVer);
@@ -7297,6 +7319,17 @@ namespace CivilizationLauncher
                     }
                     catch { }
                 }
+            }
+
+            string directVerSha = FetchGitBranchShaOverHttps("https://github.com/civilkaserver-sketch/Civilka-version.git", branch);
+            if (!string.IsNullOrEmpty(directVerSha))
+            {
+                lock (updateCheckLock)
+                {
+                    cachedRemoteShaByVer[ver] = directVerSha;
+                    lastRemoteCheckByVer[ver] = DateTime.Now;
+                }
+                return directVerSha;
             }
 
             try
@@ -7385,7 +7418,7 @@ namespace CivilizationLauncher
             }
         }
 
-        private static string CurrentLauncherSha = "6b19d07cc39cd3f34d45153bb7233fffc5c76044";
+        private static string CurrentLauncherSha = "146650edaa8785b78144004ef381fbd7879bbc91";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -7472,7 +7505,7 @@ namespace CivilizationLauncher
 
             {
 
-                if (cachedLauncherRemoteSha != null && (DateTime.Now - lastLauncherCheck).TotalSeconds < 30)
+                if (cachedLauncherRemoteSha != null && (DateTime.Now - lastLauncherCheck).TotalSeconds < 180)
 
                 {
 
@@ -7503,6 +7536,17 @@ namespace CivilizationLauncher
         static string FetchLauncherRemoteShaSynchronous()
 
         {
+
+            string directSha = FetchGitBranchShaOverHttps("https://github.com/civilkaserver-sketch/CV-LAUNCHER.git", "main");
+            if (!string.IsNullOrEmpty(directSha))
+            {
+                lock (launcherCheckLock)
+                {
+                    cachedLauncherRemoteSha = directSha;
+                    lastLauncherCheck = DateTime.Now;
+                }
+                return directSha;
+            }
 
             try
 
@@ -7672,18 +7716,26 @@ namespace CivilizationLauncher
 
         static bool DownloadFileFromRepo(string repoFileName, string destinationPath, Action<int, string> onProgress = null)
         {
+            string escaped = Uri.EscapeDataString(repoFileName);
+            string[] candidateUrls = new string[] {
+                "https://github.com/civilkaserver-sketch/CV-LAUNCHER/raw/main/" + escaped,
+                "https://raw.githubusercontent.com/civilkaserver-sketch/CV-LAUNCHER/main/" + escaped,
+                "https://api.github.com/repos/civilkaserver-sketch/CV-LAUNCHER/contents/" + escaped + "?ref=main"
+            };
             for (int attempt = 1; attempt <= 3; attempt++)
             {
+                string url = candidateUrls[(attempt - 1) % candidateUrls.Length];
                 try
                 {
                     ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-                    string url = "https://api.github.com/repos/civilkaserver-sketch/CV-LAUNCHER/contents/" + Uri.EscapeDataString(repoFileName) + "?ref=main";
                     var req = (HttpWebRequest)WebRequest.Create(url);
                     req.UserAgent = "CV-Launcher";
                     req.Timeout = 120000;
                     req.ReadWriteTimeout = 300000;
-                    // public repository, no token needed
-                    req.Accept = "application/vnd.github.v3.raw";
+                    if (url.IndexOf("api.github.com", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        req.Accept = "application/vnd.github.v3.raw";
+                    }
 
                     using (var resp = req.GetResponse())
                     {
