@@ -6927,6 +6927,7 @@ namespace CivilizationLauncher
                 }
 
                 try { EnsureAssets(mcDir, root); } catch (Exception ex) { Log("[Assets] EnsureAssets launch error: " + ex.Message); }
+                try { EnsureSafeGraphicsConfig(civDir); } catch (Exception ex) { Log("[Graphics] EnsureSafeGraphicsConfig error: " + ex.Message); }
 
 
 
@@ -7384,7 +7385,7 @@ namespace CivilizationLauncher
             }
         }
 
-        private static string CurrentLauncherSha = "3c78f7f9ad2962d715c0142ba64c215e2d9794a3";
+        private static string CurrentLauncherSha = "463507e6ccc76df9d2bf779d9517a1154f362675";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -9228,6 +9229,39 @@ namespace CivilizationLauncher
                 }
             }
             return allowed;
+        }
+
+        static void EnsureSafeGraphicsConfig(string civDir)
+        {
+            if (string.IsNullOrEmpty(civDir)) return;
+
+            // 1. Sodium: disable KHR_no_error GL context which causes "No context is current" on hybrid/laptop GPUs
+            string sodiumCfg = Path.Combine(civDir, @"config\sodium-options.json");
+            if (File.Exists(sodiumCfg))
+            {
+                string txt = File.ReadAllText(sodiumCfg, Encoding.UTF8);
+                string updated = Regex.Replace(txt, @"""use_no_error_g_l_context""\s*:\s*true", @"""use_no_error_g_l_context"": false");
+                if (updated != txt)
+                {
+                    File.WriteAllText(sodiumCfg, updated, new UTF8Encoding(false));
+                    Log("[Graphics] Disabled use_no_error_g_l_context in sodium-options.json");
+                }
+            }
+
+            // 2. Options: reset stuck OpenGL/exclusiveFullscreen flags from prior startup crash fallback
+            string optPath = Path.Combine(civDir, "options.txt");
+            if (File.Exists(optPath))
+            {
+                string opt = File.ReadAllText(optPath, Encoding.UTF8);
+                string updated = opt;
+                updated = Regex.Replace(updated, @"(?m)^preferredGraphicsBackend:(?!""default"")[^\r\n]*", @"preferredGraphicsBackend:""default""");
+                updated = Regex.Replace(updated, @"(?m)^exclusiveFullscreen:true(?=\r?$)", @"exclusiveFullscreen:false");
+                if (updated != opt)
+                {
+                    File.WriteAllText(optPath, updated, new UTF8Encoding(false));
+                    Log("[Graphics] Reset stuck graphics backend / exclusiveFullscreen in options.txt");
+                }
+            }
         }
 
         private class MissingLibItem
