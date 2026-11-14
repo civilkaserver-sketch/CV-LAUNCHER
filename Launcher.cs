@@ -7418,7 +7418,7 @@ namespace CivilizationLauncher
             }
         }
 
-        private static string CurrentLauncherSha = "146650edaa8785b78144004ef381fbd7879bbc91";
+        private static string CurrentLauncherSha = "fb7ba24483469f4eb6298b406499eace052d896f";
         public static string launcherUpdateState = "idle"; // "idle", "downloading", "restarting", "error"
         public static int launcherUpdatePct = 0;
         public static string launcherUpdateMsg = "";
@@ -13199,7 +13199,7 @@ namespace CivilizationLauncher
                 friendsList.Add(new Dictionary<string, object> {
                     { "nick", nick },
                     { "status", "offline" },
-                    { "activity", "Оффлайн" },
+                    { "activity", "Не в сети" },
                     { "lastSeenMs", 0 },
                     { "skinHash", "" },
                     { "skinModel", "classic" },

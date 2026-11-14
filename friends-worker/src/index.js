@@ -43,15 +43,22 @@ function makePairKey(a, b) {
 }
 
 function formatOfflineDuration(diffMs) {
-  if (!Number.isFinite(diffMs) || diffMs <= 0) return "Оффлайн";
+  if (!Number.isFinite(diffMs) || diffMs <= 0) return "Не в сети";
   const mins = Math.floor(diffMs / 60000);
-  if (mins < 2) return "Оффлайн · только что";
-  if (mins < 60) return "Оффлайн · " + mins + "м назад";
+  if (mins < 2) return "Был в сети только что";
+  if (mins < 60) return "Был в сети " + mins + " мин назад";
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return "Оффлайн · " + hours + "ч назад";
+  if (hours < 24) return "Был в сети " + hours + "ч назад";
   const days = Math.floor(hours / 24);
-  if (days === 1) return "Оффлайн · вчера";
-  return "Оффлайн · " + days + "д назад";
+  if (days === 1) return "Был в сети вчера";
+  const mod10 = days % 10;
+  const mod100 = days % 100;
+  let dayWord = "дней";
+  if (mod100 < 11 || mod100 > 19) {
+    if (mod10 === 1) dayWord = "день";
+    else if (mod10 >= 2 && mod10 <= 4) dayWord = "дня";
+  }
+  return "Был в сети " + days + " " + dayWord + " назад";
 }
 
 function jsonResponse(obj, status = 200) {
@@ -314,7 +321,7 @@ export class FriendsHub extends DurableObject {
         ? entry.activity || (effStatus === "ingame" ? "Играет в Civilization" : "В лаунчере")
         : seenMs > 0
           ? formatOfflineDuration(now - seenMs)
-          : "Оффлайн";
+          : "Не в сети";
 
       const pairKey = makePairKey(me, nick);
       friends.push({

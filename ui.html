@@ -786,6 +786,10 @@
     flex-direction:column;
     justify-content:center;
   }
+  /* Скрываем выбор версии во время установки/обновления (когда виден прогресс-бар) */
+  .banner-progress.show ~ .version-picker-wrap{
+    display:none !important;
+  }
   .banner-progress-row{
     display:flex;
     justify-content:space-between;
@@ -3386,7 +3390,6 @@
               </div>
             </div>
             <div style="display:flex;gap:8px;">
-              <button class="btn ghost" id="btnSimulateLauncherUpdate" onclick="simulateLauncherUpdate()" style="display:none;" title="Тестовый прогон экрана обновления (только в dev)">Симуляция</button>
               <button class="btn line" id="btnCheckLauncherUpdate" onclick="manualCheckLauncherUpdate()">Проверить</button>
               <button class="btn primary" id="btnModalUpdateLauncher" onclick="updateLauncherNow()" style="display:none;">Обновить</button>
             </div>
@@ -3523,6 +3526,11 @@
   function setBar(pct, label){
     const bp = document.getElementById('bannerProgress');
     if(bp) bp.classList.add('show');
+    const vpw = document.getElementById('versionPickerWrap');
+    if(vpw){
+      vpw.classList.remove('open');
+      vpw.style.display = 'none';
+    }
     const fill = document.getElementById('barFill');
     if(fill) fill.style.width = pct+'%';
     const pText = document.getElementById('barPct');
@@ -3533,6 +3541,8 @@
   function hideBar(){
     const bp = document.getElementById('bannerProgress');
     if(bp) bp.classList.remove('show');
+    const vpw = document.getElementById('versionPickerWrap');
+    if(vpw) vpw.style.display = '';
     const fill = document.getElementById('barFill');
     if(fill) fill.style.width = '0%';
     const pText = document.getElementById('barPct');
@@ -4220,8 +4230,6 @@
           runSilentBackgroundUpdate();
         }
         handleLauncherUpdateUI(data.launcherUpdateAvailable, data.currentLauncherSha, data.remoteLauncherSha);
-        const simBtn = document.getElementById('btnSimulateLauncherUpdate');
-        if(simBtn) simBtn.style.display = data.isDev ? 'inline-flex' : 'none';
         if(typeof data.performanceMode !== 'undefined'){
           launcherSettings.performanceMode = !!data.performanceMode;
           const togglePerf = document.getElementById('performanceModeToggle');
@@ -8125,11 +8133,11 @@
     offline: true,
     error: '',
     friends: [
-      { nick: 'wwzmx', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
-      { nick: 'wlimon4ik', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
-      { nick: 'batton111221', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
-      { nick: 'syn_mijaghi', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
-      { nick: 'IMPERATOR_MIDASS', status: 'offline', activity: 'Оффлайн', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 }
+      { nick: 'wwzmx', status: 'offline', activity: 'Не в сети', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
+      { nick: 'wlimon4ik', status: 'offline', activity: 'Не в сети', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
+      { nick: 'batton111221', status: 'offline', activity: 'Не в сети', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
+      { nick: 'syn_mijaghi', status: 'offline', activity: 'Не в сети', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 },
+      { nick: 'IMPERATOR_MIDASS', status: 'offline', activity: 'Не в сети', lastSeenMs: 0, skinHash: '', unread: 0, lastMsgId: 0 }
     ]
   };
 
@@ -8227,6 +8235,47 @@
     updateFriendsActiveSelection();
   }
 
+  function formatFriendActivity(f) {
+    if (!f) return 'Не в сети';
+    if (f.status === 'ingame') return f.activity || 'Играет в Civilization';
+    if (f.status === 'launcher') return f.activity || 'В лаунчере';
+
+    const lastSeen = Number(f.lastSeenMs) || 0;
+    if (lastSeen > 0) {
+      const diffMs = Date.now() - lastSeen;
+      if (diffMs > 0) {
+        const mins = Math.floor(diffMs / 60000);
+        if (mins < 2) return 'Был в сети только что';
+        if (mins < 60) return 'Был в сети ' + mins + ' мин назад';
+        const hours = Math.floor(mins / 60);
+        if (hours < 24) return 'Был в сети ' + hours + 'ч назад';
+        const days = Math.floor(hours / 24);
+        if (days === 1) return 'Был в сети вчера';
+        const mod10 = days % 10;
+        const mod100 = days % 100;
+        let dayWord = 'дней';
+        if (mod100 < 11 || mod100 > 19) {
+          if (mod10 === 1) dayWord = 'день';
+          else if (mod10 >= 2 && mod10 <= 4) dayWord = 'дня';
+        }
+        return 'Был в сети ' + days + ' ' + dayWord + ' назад';
+      }
+    }
+
+    if (f.activity) {
+      if (typeof f.activity === 'string') {
+        if (f.activity.startsWith('Оффлайн · ')) {
+          const rest = f.activity.substring('Оффлайн · '.length).trim();
+          return 'Был в сети ' + rest;
+        }
+        if (f.activity === 'Оффлайн') return 'Не в сети';
+      }
+      return f.activity;
+    }
+
+    return 'Не в сети';
+  }
+
   function renderFriendsList() {
     const listEl = document.getElementById('friendsList');
     const topCountEl = document.getElementById('friendsTopCount');
@@ -8302,7 +8351,7 @@
       const nameEl = row.querySelector('.friend-name');
       if (nameEl && nameEl.textContent !== f.nick) nameEl.textContent = f.nick;
       const actEl = row.querySelector('.friend-activity');
-      const actText = f.activity || (f.status === 'ingame' ? 'Играет в Civilization' : (f.status === 'launcher' ? 'В лаунчере' : 'Оффлайн'));
+      const actText = formatFriendActivity(f);
       if (actEl && actEl.textContent !== actText) actEl.textContent = actText;
 
       const badgeEl = row.querySelector('.friend-unread-badge');
